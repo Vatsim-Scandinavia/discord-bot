@@ -1,4 +1,5 @@
 from discord.ext import commands
+from asyncio import sleep
 
 class AdminCog(commands.Cog):
 
@@ -53,6 +54,58 @@ class AdminCog(commands.Cog):
     @commands.has_any_role('web team', 'admin')
     async def ping(self, ctx):
         await ctx.send('Pong')
+
+    @commands.command(name='say')
+    @commands.has_any_role('web team', 'admin')
+    async def say(self, ctx, *, content: str) -> None:
+        await ctx.send(content)
+
+    @commands.command(name="announce")
+    @commands.has_any_role('web team', 'admin')
+    async def announce(self, ctx) -> None:
+        await ctx.send('Awesome! Where would you like to post the announcement?')
+        channels = self._get_channels(ctx)
+        roles = self._get_roles(ctx)
+        message = self._get_message(ctx)
+
+        format = ""
+
+        for role in roles:
+            format += role.mention
+
+        format += f"\n\n{message}"
+
+        for channel in channels:
+            channel.send(format)
+
+        await ctx.send(channels)
+
+    async def _get_channels(self, ctx):
+        message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
+
+        if len(message.channel_mentions) < 1:
+            await ctx.send('Announcement cancled.')
+            return
+
+        return message.channel_mentions
+
+    async def _get_roles(self, ctx):
+        message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
+
+        if len(message.role_mentions) < 1:
+            await ctx.send('Announcement cancled.')
+            return
+
+        return message.role_mentions
+
+    async def _get_message(self, ctx):
+        message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
+
+        if len(message.content) < 1:
+            await ctx.send('Announcement cancelled. No message was provided.')
+            return
+
+        return message.message.content
 
 def setup(bot):
     bot.add_cog(AdminCog(bot))
