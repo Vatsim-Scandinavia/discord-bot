@@ -11,6 +11,7 @@ PRESENCE_TEXT = 'VATSCA Airspace'
 COGS = [
     'cogs.admin',
     'cogs.member',
+    'cogs.announcement',
 ]
 
 def prefix() -> list:
