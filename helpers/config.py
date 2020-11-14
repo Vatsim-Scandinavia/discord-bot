@@ -12,6 +12,7 @@ COGS = [
     'cogs.admin',
     'cogs.member',
     'cogs.announcement',
+    'cogs.tasks',
 ]
 
 def prefix() -> list:
