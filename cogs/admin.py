@@ -121,5 +121,16 @@ class AdminCog(commands.Cog):
             await ctx.send(exception)
             raise exception
 
+    @commands.command(name='delete', aliases=['purge'])
+    @commands.has_any_role('web team', 'admin')
+    async def delete(self, ctx, *, number: int = 0):
+        try:
+            msg_delete = []
+            async for msg in ctx.channel.history(limit=number):
+                msg_delete.append(msg)
+
+            await ctx.message.channel.delete_messages(msg_delete)
+        except Exception as exception:
+            await ctx.send(exception)
 def setup(bot):
     bot.add_cog(AdminCog(bot))
