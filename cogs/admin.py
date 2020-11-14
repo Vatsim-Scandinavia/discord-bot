@@ -63,51 +63,63 @@ class AdminCog(commands.Cog):
     @commands.command(name="announce")
     @commands.has_any_role('web team', 'admin')
     async def announce(self, ctx) -> None:
-        await ctx.send('Awesome! Where would you like to post the announcement?')
         
         channels = await self._get_channels(ctx)
         roles = await self._get_roles(ctx)
         message = await self._get_message(ctx)
 
-        format = ""
+        format_message = ""
 
         for role in roles:
-            format += role.mention
+            format_message += role.mention
 
-        format += message.clean_content
+        if format_message != "":
+            format_message += "\n"
+
+        format_message += message
 
         for channel in channels:
-            channel.send(format)
+            await channel.send(format_message)
 
     async def _get_channels(self, ctx):
-        message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
+        try:
+            await ctx.send('Awesome! Where would you like to post the announcement?')
 
-        if len(message.channel_mentions) < 1:
-            await ctx.send('Announcement cancled.')
-            raise ValueError
+            message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
 
-        return message.channel_mentions
+            if len(message.channel_mentions) < 1:
+                await ctx.send('Announcement cancled.')
+                raise ValueError
+
+            return message.channel_mentions
+        except Exception as exception:
+            await ctx.send(exception)
+            raise exception
 
     async def _get_roles(self, ctx):
-        await ctx.send('Which roles should be tagged?')
-        
-        message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
+        try:
+            await ctx.send('Which roles should be tagged?')
+            
+            message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
 
-        if len(message.role_mentions) < 1:
-            await ctx.send('Announcement cancled.')
-            raise ValueError
-
-        return message.role_mentions
+            return message.role_mentions
+        except Exception as exception:
+            await ctx.send(exception)
+            raise exception
 
     async def _get_message(self, ctx):
-        await ctx.send('Message?')
-        message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
+        try:
+            await ctx.send('Message?')
+            message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
 
-        if len(message.content) < 1:
-            await ctx.send('Announcement cancelled. No message was provided.')
-            raise ValueError
+            if len(message.content) < 1:
+                await ctx.send('Announcement cancelled. No message was provided.')
+                raise ValueError
 
-        return message.content
+            return message.content
+        except Exception as exception:
+            await ctx.send(exception)
+            raise exception
 
 def setup(bot):
     bot.add_cog(AdminCog(bot))
