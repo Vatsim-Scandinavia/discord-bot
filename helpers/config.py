@@ -15,6 +15,10 @@ COGS = [
     'cogs.tasks',
 ]
 
+VATSIM_MEMBER_ROLE = "Vatsim Member"
+
+CHECK_MEMBERS_INTERVAL = 86400
+
 def prefix() -> list:
     return PREFIXES
 
