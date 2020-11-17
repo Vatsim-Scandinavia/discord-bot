@@ -20,7 +20,7 @@ class TasksCog(commands.Cog):
     def cog_unload(self):
         self.checkMembers.cancel()
 
-    @tasks.loop(seconds=5)
+    @tasks.loop(seconds=CHECK_MEMBERS_INTERVAL)
     async def checkMembers(self):
         guild = self.bot.get_guild(776110954437148672)
         users = guild.members
@@ -51,6 +51,8 @@ class TasksCog(commands.Cog):
                 await user.add_roles(role, reason='Member is now part of VATSCA')
             elif role in user.roles and result[0] != 'SCA':
                 await user.remove_roles(role, reason='Member is no longer part of VATSCA')
+
+        mydb.close()
 
 def setup(bot):
     bot.add_cog(TasksCog(bot))
