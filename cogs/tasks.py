@@ -38,19 +38,24 @@ class TasksCog(commands.Cog):
                 continue
 
             cid = re.findall('\d+', user.nick)
+
+            try:
             
-            statment = "SELECT subdivision FROM users WHERE id = %s"
+                statment = "SELECT subdivision FROM users WHERE id = %s"
 
-            cursor.execute(statment, cid)
+                cursor.execute(statment, cid)
 
-            result = cursor.fetchone()
+                result = cursor.fetchone()
 
-            role = discord.utils.get(guild.roles, id=VATSCA_MEMBER_ROLE)
+                role = discord.utils.get(guild.roles, id=VATSCA_MEMBER_ROLE)
 
-            if role not in user.roles and result[0] == 'SCA':
-                await user.add_roles(role, reason='Member is now part of VATSCA')
-            elif role in user.roles and result[0] != 'SCA':
-                await user.remove_roles(role, reason='Member is no longer part of VATSCA')
+                if role not in user.roles and result[0] == 'SCA':
+                    await user.add_roles(role, reason='Member is now part of VATSCA')
+                elif role in user.roles and result[0] != 'SCA':
+                    await user.remove_roles(role, reason='Member is no longer part of VATSCA')
+
+            except:
+                continue
 
         mydb.close()
 
