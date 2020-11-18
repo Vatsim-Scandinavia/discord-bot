@@ -39,7 +39,7 @@ class TasksCog(commands.Cog):
         for user in users:
             if vatsim_member not in user.roles:
                 if vatsca_member in user.roles:
-                    await user.remove_roles(vatsca_member)
+                    await user.remove_roles(vatsca_member, reason='User did not authenticate via the Community Website')
 
                 continue
 
@@ -64,7 +64,7 @@ class TasksCog(commands.Cog):
 
             except ValueError as e:
                 if vatsca_member in user.roles:
-                    await user.remove_roles(vatsca_member)
+                    await user.remove_roles(vatsca_member, reason='User does not have a VATSIM ID in his name even though he joined via Community Website')
 
             except Exception as e:
                 continue

@@ -34,7 +34,7 @@ class AnnouncementCog(commands.Cog):
             message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
 
             if len(message.channel_mentions) < 1:
-                await ctx.send('Announcement cancled.')
+                await ctx.send('Announcement canceled.')
                 raise ValueError
 
             return message.channel_mentions
