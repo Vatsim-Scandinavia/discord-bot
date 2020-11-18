@@ -33,28 +33,40 @@ class TasksCog(commands.Cog):
 
         cursor = mydb.cursor()
 
+        vatsca_member = discord.utils.get(guild.roles, id=VATSCA_MEMBER_ROLE)
+        vatsim_member = discord.utils.get(guild.roles, name=VATSIM_MEMBER_ROLE)
+
         for user in users:
-            if discord.utils.get(guild.roles, name=VATSIM_MEMBER_ROLE) not in user.roles:
+            if vatsim_member not in user.roles:
+                if vatsca_member in user.roles:
+                    await user.remove_roles(vatsca_member)
+
                 continue
 
-            cid = re.findall('\d+', user.nick)
 
             try:
+
+                cid = re.findall('\d+', user.nick)
+
+                if len(cid) < 1:
+                    raise ValueError
             
                 statment = "SELECT subdivision FROM users WHERE id = %s"
 
-                cursor.execute(statment, cid)
+                cursor.execute(statment, cid[0])
 
                 result = cursor.fetchone()
 
-                role = discord.utils.get(guild.roles, id=VATSCA_MEMBER_ROLE)
+                if vatsca_member not in user.roles and result[0] == 'SCA':
+                    await user.add_roles(vatsca_member, reason='Member is now part of VATSCA')
+                elif vatsca_member in user.roles and result[0] != 'SCA':
+                    await user.remove_roles(vatsca_member, reason='Member is no longer part of VATSCA')
 
-                if role not in user.roles and result[0] == 'SCA':
-                    await user.add_roles(role, reason='Member is now part of VATSCA')
-                elif role in user.roles and result[0] != 'SCA':
-                    await user.remove_roles(role, reason='Member is no longer part of VATSCA')
+            except ValueError as e:
+                if vatsca_member in user.roles:
+                    await user.remove_roles(vatsca_member)
 
-            except:
+            except Exception as e:
                 continue
 
         mydb.close()
