@@ -58,6 +58,7 @@ class AdminCog(commands.Cog):
     @commands.command(name='say')
     @commands.has_any_role('web team', 'admin')
     async def say(self, ctx, *, content: str) -> None:
+        await ctx.message.delete()
         await ctx.send(content)
 
     @commands.command(name='delete', aliases=['purge'])
