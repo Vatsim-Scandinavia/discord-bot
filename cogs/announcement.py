@@ -1,5 +1,5 @@
 from discord.ext import commands
-from asyncio import sleep
+from helpers.message import  roles
 
 class AnnouncementCog(commands.Cog):
 
@@ -7,7 +7,7 @@ class AnnouncementCog(commands.Cog):
         self.bot = bot
 
     @commands.command(name="announce")
-    @commands.has_any_role('web team', 'admin')
+    @commands.has_any_role(*roles())
     async def announce(self, ctx) -> None:
         
         channels = await self._get_channels(ctx)

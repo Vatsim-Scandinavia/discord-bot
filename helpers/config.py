@@ -21,6 +21,11 @@ CHECK_MEMBERS_INTERVAL = 86400
 
 VATSCA_MEMBER_ROLE = 778356499335479338
 
+ADMIN_ROLES = [
+    'web team',
+    'admin',
+]
+
 def prefix() -> list:
     return PREFIXES
 

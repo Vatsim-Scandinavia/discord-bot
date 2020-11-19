@@ -1,5 +1,5 @@
 from discord.ext import commands
-from asyncio import sleep
+from helpers.message import roles
 
 class AdminCog(commands.Cog):
 
@@ -8,7 +8,7 @@ class AdminCog(commands.Cog):
     
     # Hidden means it won't show up on the default help.
     @commands.command(name='load', hidden=True)
-    @commands.has_any_role('web team', 'admin')
+    @commands.has_any_role(*roles())
     async def load(self, ctx, *, cog: str):
         """
             Command which Loads a Module.
@@ -22,7 +22,7 @@ class AdminCog(commands.Cog):
             await ctx.send('**`SUCCESS`**')
 
     @commands.command(name='unload', hidden=True)
-    @commands.has_any_role('web team', 'admin')
+    @commands.has_any_role(*roles())
     async def unload(self, ctx, *, cog: str):
         """
             Command which Unloads a Module.
@@ -36,7 +36,7 @@ class AdminCog(commands.Cog):
             await ctx.send('**`SUCCESS`**')
 
     @commands.command(name='reload', hidden=True)
-    @commands.has_any_role('web team', 'admin')
+    @commands.has_any_role(*roles())
     async def reload(self, ctx, *, cog: str):
         """
             Command which Reloads a Module.
@@ -51,18 +51,18 @@ class AdminCog(commands.Cog):
             await ctx.send('**`SUCCESS`**')
 
     @commands.command(name='ping')
-    @commands.has_any_role('web team', 'admin')
+    @commands.has_any_role(*roles())
     async def ping(self, ctx):
         await ctx.send('Pong')
 
     @commands.command(name='say')
-    @commands.has_any_role('web team', 'admin')
+    @commands.has_any_role(*roles())
     async def say(self, ctx, *, content: str) -> None:
         await ctx.message.delete()
         await ctx.send(content)
 
     @commands.command(name='delete', aliases=['purge'])
-    @commands.has_any_role('web team', 'admin')
+    @commands.has_any_role(*roles())
     async def delete(self, ctx, *, number: int = 0):
         try:
             msg_delete = []

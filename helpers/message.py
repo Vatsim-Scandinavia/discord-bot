@@ -1,4 +1,5 @@
 import discord
+from helpers.config import ADMIN_ROLES
 
 def embed(title: str, description: str, colour = None, author: dict = None, image: str = None, footer: dict = None, fields: list = None) -> discord.Embed:
 
@@ -25,3 +26,7 @@ def embed(title: str, description: str, colour = None, author: dict = None, imag
         embed.set_footer(text=footer['text'], icon_url=footer['icon'])
 
     return embed
+
+def roles() -> str:
+    admin_roles = tuple(ADMIN_ROLES)
+    return admin_roles
