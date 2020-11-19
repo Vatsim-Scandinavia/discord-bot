@@ -1,5 +1,6 @@
 from discord.ext import commands
 from helpers.message import roles
+import os
 
 
 class AdminCog(commands.Cog):
@@ -83,14 +84,17 @@ class AdminCog(commands.Cog):
         :return None:
         :raise Exception:
         """
-        try:
-            msg_delete = []
-            async for msg in ctx.channel.history(limit=number):
-                msg_delete.append(msg)
+        if os.getenv('DEBUG') == 'True':
+            try:
+                msg_delete = []
+                async for msg in ctx.channel.history(limit=number):
+                    msg_delete.append(msg)
 
-            await ctx.message.channel.delete_messages(msg_delete)
-        except Exception as exception:
-            await ctx.send(exception)
+                await ctx.message.channel.delete_messages(msg_delete)
+            except Exception as exception:
+                await ctx.send(exception)
+        else:
+            await ctx.send('Command is disabled because debug is not enabled.')
 
 
 def setup(bot):
