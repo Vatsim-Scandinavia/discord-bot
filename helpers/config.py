@@ -26,14 +26,18 @@ ADMIN_ROLES = [
     'admin',
 ]
 
+
 def prefix() -> list:
     return PREFIXES
+
 
 def activity() -> discord.Activity:
     return discord.Activity(type=discord.ActivityType.watching, name=PRESENCE_TEXT)
 
+
 def status() -> discord.Status:
     return discord.Status.online
+
 
 def load_cogs(bot: discord.ext.commands.Bot) -> None:
     for cog in COGS:

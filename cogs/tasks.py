@@ -8,6 +8,7 @@ import os
 
 load_dotenv('.env')
 
+
 class TasksCog(commands.Cog):
 
     def __init__(self, bot):
@@ -43,7 +44,6 @@ class TasksCog(commands.Cog):
 
                 continue
 
-
             try:
 
                 cid = re.findall('\d+', user.nick)
@@ -70,6 +70,7 @@ class TasksCog(commands.Cog):
                 continue
 
         mydb.close()
+
 
 def setup(bot):
     bot.add_cog(TasksCog(bot))

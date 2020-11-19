@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from helpers.message import embed
 
+
 class MemberCog(commands.Cog):
 
     def __init__(self, bot):
@@ -14,6 +15,7 @@ class MemberCog(commands.Cog):
         message = embed(title='test', description='test')
         
         await ctx.send(embed=message)
+
 
 def setup(bot):
     bot.add_cog(MemberCog(bot))

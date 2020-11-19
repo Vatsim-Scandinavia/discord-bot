@@ -1,6 +1,7 @@
 from discord.ext import commands
 from helpers.message import roles
 
+
 class AdminCog(commands.Cog):
 
     def __init__(self, bot):
@@ -53,17 +54,35 @@ class AdminCog(commands.Cog):
     @commands.command(name='ping')
     @commands.has_any_role(*roles())
     async def ping(self, ctx):
+        """
+        Function sends pong if member has any of the admin roles
+        :param ctx:
+        :return None:
+        """
         await ctx.send('Pong')
 
     @commands.command(name='say')
     @commands.has_any_role(*roles())
     async def say(self, ctx, *, content: str) -> None:
+        """
+        Bot sends a specific message sent by user
+        :param ctx:
+        :param content:
+        :return None:
+        """
         await ctx.message.delete()
         await ctx.send(content)
 
     @commands.command(name='delete', aliases=['purge'])
     @commands.has_any_role(*roles())
     async def delete(self, ctx, *, number: int = 0):
+        """
+        Function deletes specific amount of messages
+        :param ctx:
+        :param number:
+        :return None:
+        :raise Exception:
+        """
         try:
             msg_delete = []
             async for msg in ctx.channel.history(limit=number):
@@ -72,5 +91,7 @@ class AdminCog(commands.Cog):
             await ctx.message.channel.delete_messages(msg_delete)
         except Exception as exception:
             await ctx.send(exception)
+
+
 def setup(bot):
     bot.add_cog(AdminCog(bot))
