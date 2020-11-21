@@ -1,7 +1,7 @@
 from discord.ext import commands, tasks
 from xml.dom import minidom
 import aiohttp
-from helpers.config import POST_EVENTS_INTERVAL
+from helpers.config import POST_EVENTS_INTERVAL, EVENTS_CHANNEL
 import os
 from datetime import datetime
 from helpers.message import embed, event_description, get_image
@@ -31,8 +31,13 @@ class EventsCog(commands.Cog):
         events = await self._get_events()
 
         for event in events['results']:
-            msg = embed(title=event['title'], description=event_description(event['title'], event['url']), image=get_image(event['description']))
-            await self.bot.get_channel(776110954437148675).send(embed=msg)
+            author = {
+                'name': self.bot.user.name,
+                'url': event['url'],
+                'icon': self.bot.user.avatar_url,
+            }
+            msg = embed(author=author, title=event['title'], description=event_description(event['description']), image=get_image(event['description']))
+            await self.bot.get_channel(EVENTS_CHANNEL).send(embed=msg)
 
     async def _get_events(self) -> str:
         async with aiohttp.ClientSession() as session:

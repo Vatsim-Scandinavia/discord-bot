@@ -33,6 +33,10 @@ ADMIN_ROLES = [
     'admin',
 ]
 
+EVENTS_CHANNEL = 776110954437148675
+
+VATSCA_BLUE = 0x43c6e7
+
 
 def prefix() -> list:
     return PREFIXES

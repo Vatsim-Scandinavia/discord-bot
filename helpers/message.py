@@ -1,5 +1,5 @@
 import discord
-from helpers.config import ADMIN_ROLES
+from helpers.config import ADMIN_ROLES, VATSCA_BLUE
 import html2markdown
 import bs4
 
@@ -7,7 +7,7 @@ import bs4
 def embed(title: str, description: str, colour = None, author: dict = None, image: str = None, footer: dict = None, fields: list = None) -> discord.Embed:
 
     if colour is None:
-        colour = 0x43c6e7
+        colour = VATSCA_BLUE
 
     embed = discord.Embed(title=title,
                               description=description,
@@ -36,8 +36,9 @@ def roles() -> str:
     return admin_roles
 
 
-def event_description(title: str, url: str)-> str:
-    return html2markdown.convert(f'<a href="{url}">{title}</a>')
+def event_description(description: str) -> str:
+    soup = bs4.BeautifulSoup(description, features='html.parser')
+    return html2markdown.convert(f'{soup.get_text()}')
 
 
 def get_image(text: str) -> str:
