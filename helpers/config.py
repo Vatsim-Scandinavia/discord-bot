@@ -13,11 +13,14 @@ COGS = [
     'cogs.member',
     'cogs.announcement',
     'cogs.tasks',
+    'cogs.events',
 ]
 
 VATSIM_MEMBER_ROLE = "Vatsim Member"
 
 CHECK_MEMBERS_INTERVAL = 86400
+
+POST_EVENTS_INTERVAL = 60
 
 VATSCA_MEMBER_ROLE = 778356499335479338
 
