@@ -4,6 +4,7 @@ import aiohttp
 from helpers.config import POST_EVENTS_INTERVAL
 import os
 from datetime import datetime
+from helpers.message import embed, event_description, get_image
 
 
 class EventsCog(commands.Cog):
@@ -12,6 +13,7 @@ class EventsCog(commands.Cog):
         'rangeStart': datetime.now().strftime('%Y-%m-%d'),
         'perPage': 50,
         'hidden': 0,
+        'calendars': 1,  # Community calendar only!
     }
 
     def __init__(self, bot):
@@ -29,7 +31,8 @@ class EventsCog(commands.Cog):
         events = await self._get_events()
 
         for event in events['results']:
-            print(event['title'])
+            msg = embed(title=event['title'], description=event_description(event['title'], event['url']), image=get_image(event['description']))
+            await self.bot.get_channel(776110954437148675).send(embed=msg)
 
     async def _get_events(self) -> str:
         async with aiohttp.ClientSession() as session:
