@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 import mysql.connector
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import aiohttp
 from discord.ext import commands, tasks
@@ -19,8 +19,16 @@ class EventsCog(commands.Cog):
         'calendars': 1,  # Community calendar only!
     }
 
+    ID = 0
+    NAME = 1
+    IMG = 2
+    URL =  3
+    DESCRIPTION = 4
+    START = 5
+
     def __init__(self, bot):
         self.bot = bot
+        self.channel = self.bot.get_channel(EVENTS_CHANNEL)
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -41,14 +49,14 @@ class EventsCog(commands.Cog):
         events = await self._get_events()
         await self._save_events(events, mydb)
 
-        """for event in events['results']:
-            author = {
-                'name': self.bot.user.name,
-                'url': event['url'],
-                'icon': self.bot.user.avatar_url,
-            }
-            msg = embed(author=author, title=event['title'], description=, image=)
-            await self.bot.get_channel(EVENTS_CHANNEL).send(embed=msg)"""
+        events = await self._fetch_events(mydb)
+
+        for event in events:
+            if self._should_be_published(event[self.START]):
+                msg = embed(title=event[self.NAME], description=event[self.DESCRIPTION], image=event[self.IMG])
+                self.channel.send(embed=msg)
+                await self._mark_as_published(event[self.ID], mydb)
+
 
     async def _get_events(self) -> str:
         async with aiohttp.ClientSession() as session:
@@ -59,6 +67,9 @@ class EventsCog(commands.Cog):
     async def _save_events(self, events, mydb):
         cursor = mydb.cursor()
         for event in events['results']:
+            if self._convert_time(event.get('start')) < datetime.utcnow():
+                continue
+
             cursor.execute(f"SELECT * FROM events WHERE event_id = {event.get('id')}")
 
             result = cursor.fetchone()
@@ -76,6 +87,23 @@ class EventsCog(commands.Cog):
 
     def _convert_time(self, time: str) -> datetime:
         return datetime.strptime(time, "%Y-%m-%dT%H:%M:%SZ")
+
+    async def _fetch_events(self, mydb) -> list:
+        cursor = mydb.cursor()
+
+        cursor.execute("SELECT * FROM events WHERE published = FALSE")
+
+        return cursor.fetchall()
+
+    def _should_be_published(self, start:datetime):
+        return start - timedelta(hours=1, minutes=30) <= datetime.utcnow()
+
+    async def _mark_as_published(self, ID: int, mydb):
+        cursor = mydb.cursor()
+
+        cursor.execute(f'UPDATE events SET published = TRUE WHERE id = {ID}')
+
+        mydb.commit()
 
 
 def setup(bot):

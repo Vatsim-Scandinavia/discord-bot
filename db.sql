@@ -5,5 +5,6 @@ CREATE TABLE IF NOT EXISTS `vatsca_bot` . `events` (
     url varchar(600) NOT NULL,
     description TEXT NOT NULL,
     start_time DATETIME NOT NULL,
+    published BOOLEAN DEFAULT FALSE,
     event_id int UNIQUE NOT NULL
 );
