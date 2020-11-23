@@ -41,6 +41,7 @@ ROLE_REASONS = {
     'vatsca_add': 'Member is now part of VATSCA',
     'vatsca_remove': 'Member is no longer part of VATSCA',
     'no_cid': 'User does not have a VATSIM ID in his/her nickname.',
+    'no_auth': 'User did not authenticate via the Community Website',
 }
 
 

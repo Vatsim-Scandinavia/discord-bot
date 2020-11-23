@@ -14,6 +14,7 @@ class TasksCog(commands.Cog):
     VATSCA_ROLE_ADD_REASON = ROLE_REASONS['vatsca_add']
     VATSCA_ROLE_REMOVE_REASON = ROLE_REASONS['vatsca_remove']
     NO_CID_REMOVE_REASON = ROLE_REASONS['no_cid']
+    NO_AUTH_REMOVE_REASON = ROLE_REASONS['no_auth']
 
     def __init__(self, bot):
         self.bot = bot
@@ -44,7 +45,7 @@ class TasksCog(commands.Cog):
         for user in users:
             if vatsim_member not in user.roles:
                 if vatsca_member in user.roles:
-                    await user.remove_roles(vatsca_member, reason='User did not authenticate via the Community Website')
+                    await user.remove_roles(vatsca_member, reason=self.NO_AUTH_REMOVE_REASON)
                 continue
 
             try:
