@@ -1,10 +1,12 @@
-from discord.ext import commands, tasks
-import discord
-from helpers.config import VATSIM_MEMBER_ROLE, CHECK_MEMBERS_INTERVAL, VATSCA_MEMBER_ROLE, ROLE_REASONS
-import re
-import mysql.connector
-from dotenv import load_dotenv
 import os
+import re
+
+import discord
+import mysql.connector
+from discord.ext import commands, tasks
+from dotenv import load_dotenv
+
+from helpers.config import VATSIM_MEMBER_ROLE, CHECK_MEMBERS_INTERVAL, VATSCA_MEMBER_ROLE, ROLE_REASONS
 
 load_dotenv('.env')
 
@@ -26,7 +28,7 @@ class TasksCog(commands.Cog):
     def cog_unload(self):
         self.checkMembers.cancel()
 
-    @tasks.loop(seconds=5)
+    @tasks.loop(seconds=CHECK_MEMBERS_INTERVAL)
     async def checkMembers(self):
         guild = self.bot.get_guild(776110954437148672)
         users = guild.members

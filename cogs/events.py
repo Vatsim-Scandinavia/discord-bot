@@ -1,9 +1,10 @@
-from discord.ext import commands, tasks
-from xml.dom import minidom
-import aiohttp
-from helpers.config import POST_EVENTS_INTERVAL, EVENTS_CHANNEL
 import os
 from datetime import datetime
+
+import aiohttp
+from discord.ext import commands, tasks
+
+from helpers.config import POST_EVENTS_INTERVAL, EVENTS_CHANNEL
 from helpers.message import embed, event_description, get_image
 
 

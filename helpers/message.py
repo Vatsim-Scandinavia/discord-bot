@@ -1,7 +1,8 @@
-import discord
-from helpers.config import ADMIN_ROLES, VATSCA_BLUE
-import html2markdown
 import bs4
+import discord
+import html2markdown
+
+from helpers.config import ADMIN_ROLES, VATSCA_BLUE
 
 
 def embed(title: str, description: str, colour = None, author: dict = None, image: str = None, footer: dict = None, fields: list = None) -> discord.Embed:
