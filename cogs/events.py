@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 
 import aiohttp
 from discord.ext import commands, tasks
+import discord
 
 from helpers.config import POST_EVENTS_INTERVAL, EVENTS_CHANNEL
 from helpers.message import embed, event_description, get_image
@@ -28,7 +29,6 @@ class EventsCog(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.channel = self.bot.get_channel(EVENTS_CHANNEL)
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -39,6 +39,7 @@ class EventsCog(commands.Cog):
 
     @tasks.loop(seconds=POST_EVENTS_INTERVAL)
     async def events(self):
+        channel = self.bot.get_channel(EVENTS_CHANNEL)
         mydb = mysql.connector.connect(
             host="localhost",
             user=os.getenv('BOT_DB_USER'),
@@ -54,8 +55,12 @@ class EventsCog(commands.Cog):
         for event in events:
             if self._should_be_published(event[self.START]):
                 msg = embed(title=event[self.NAME], description=event[self.DESCRIPTION], image=event[self.IMG])
-                self.channel.send(embed=msg)
-                await self._mark_as_published(event[self.ID], mydb)
+                try:
+                    await channel.send(embed=msg)
+                    await self._mark_as_published(event[self.ID], mydb)
+                except Exception as e:
+                    await channel.send(embed=msg)
+                    await self._mark_as_published(event[self.ID], mydb)
 
 
     async def _get_events(self) -> str:
