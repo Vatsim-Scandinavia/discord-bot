@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS `vatsca_bot` . `events` (
+    id int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    name varchar(255) NOT NULL,
+    img varchar(255) NOT NULL,
+    url varchar(600) NOT NULL,
+    description TEXT NOT NULL,
+    start_time DATETIME NOT NULL,
+    event_id int UNIQUE NOT NULL
+);
