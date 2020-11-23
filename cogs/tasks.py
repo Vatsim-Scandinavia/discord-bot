@@ -12,7 +12,6 @@ load_dotenv('.env')
 
 
 class TasksCog(commands.Cog):
-
     VATSCA_ROLE_ADD_REASON = ROLE_REASONS['vatsca_add']
     VATSCA_ROLE_REMOVE_REASON = ROLE_REASONS['vatsca_remove']
     NO_CID_REMOVE_REASON = ROLE_REASONS['no_cid']

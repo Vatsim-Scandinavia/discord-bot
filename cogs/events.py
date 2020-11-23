@@ -1,11 +1,9 @@
 import os
-from datetime import datetime
-import mysql.connector
 from datetime import datetime, timedelta
 
 import aiohttp
+import mysql.connector
 from discord.ext import commands, tasks
-import discord
 
 from helpers.config import POST_EVENTS_INTERVAL, EVENTS_CHANNEL
 from helpers.message import embed, event_description, get_image
@@ -23,7 +21,7 @@ class EventsCog(commands.Cog):
     ID = 0
     NAME = 1
     IMG = 2
-    URL =  3
+    URL = 3
     DESCRIPTION = 4
     START = 5
 
@@ -62,7 +60,6 @@ class EventsCog(commands.Cog):
                     await channel.send(embed=msg)
                     await self._mark_as_published(event[self.ID], mydb)
 
-
     async def _get_events(self) -> str:
         async with aiohttp.ClientSession() as session:
             auth = aiohttp.BasicAuth(os.getenv('API_TOKEN'), '')
@@ -80,14 +77,17 @@ class EventsCog(commands.Cog):
             result = cursor.fetchone()
 
             if result != None:
-                cursor.execute("UPDATE events SET name = %s, url = %s, img = %s, description = %s, start_time = %s WHERE event_id = '%s'",
-                               (event.get('title'), event.get('url'), get_image(event.get('description')),
-                               event_description(event.get('description')), self._convert_time(event.get('start')),
-                               event.get('id')))
+                cursor.execute(
+                    "UPDATE events SET name = %s, url = %s, img = %s, description = %s, start_time = %s WHERE event_id = '%s'",
+                    (event.get('title'), event.get('url'), get_image(event.get('description')),
+                     event_description(event.get('description')), self._convert_time(event.get('start')),
+                     event.get('id')))
             else:
-                cursor.execute("INSERT INTO events (name, url, img, description, start_time, event_id) VALUES (%s, %s, %s, %s, %s, %s)",
-                               (event.get('title'), event.get('url'), get_image(event.get('description')),
-                               event_description(event.get('description')), self._convert_time(event.get('start')), event.get('id')))
+                cursor.execute(
+                    "INSERT INTO events (name, url, img, description, start_time, event_id) VALUES (%s, %s, %s, %s, %s, %s)",
+                    (event.get('title'), event.get('url'), get_image(event.get('description')),
+                     event_description(event.get('description')), self._convert_time(event.get('start')),
+                     event.get('id')))
         mydb.commit()
 
     def _convert_time(self, time: str) -> datetime:
@@ -100,7 +100,7 @@ class EventsCog(commands.Cog):
 
         return cursor.fetchall()
 
-    def _should_be_published(self, start:datetime):
+    def _should_be_published(self, start: datetime):
         return start - timedelta(hours=1, minutes=30) <= datetime.utcnow()
 
     async def _mark_as_published(self, ID: int, mydb):

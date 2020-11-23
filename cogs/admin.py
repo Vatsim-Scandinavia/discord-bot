@@ -9,7 +9,7 @@ class AdminCog(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-    
+
     # Hidden means it won't show up on the default help.
     @commands.command(name='load', hidden=True)
     @commands.has_any_role(*roles())

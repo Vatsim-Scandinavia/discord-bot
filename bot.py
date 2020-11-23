@@ -24,7 +24,6 @@ config.load_cogs(bot)
 
 @bot.event
 async def on_ready() -> None:
-
     print(f'Bot started. \nUsername: {bot.user.name}. \nID: {bot.user.id}')
 
     try:
@@ -33,6 +32,7 @@ async def on_ready() -> None:
         print('Presence changed.')
     except InvalidArgument as e:
         print(f'Error changing presence. Exception - {e}')
+
 
 if __name__ == "__main__":
     bot.run(BOT_TOKEN)

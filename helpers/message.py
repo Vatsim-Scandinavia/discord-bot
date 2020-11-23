@@ -5,14 +5,14 @@ import html2markdown
 from helpers.config import ADMIN_ROLES, VATSCA_BLUE
 
 
-def embed(title: str, description: str, colour = None, author: dict = None, image: str = None, footer: dict = None, fields: list = None) -> discord.Embed:
-
+def embed(title: str, description: str, colour=None, author: dict = None, image: str = None, footer: dict = None,
+          fields: list = None) -> discord.Embed:
     if colour is None:
         colour = VATSCA_BLUE
 
     embed = discord.Embed(title=title,
-                              description=description,
-                              colour=colour)
+                          description=description,
+                          colour=colour)
 
     if author:
         embed.set_author(name=author['name'],

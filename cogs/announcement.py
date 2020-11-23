@@ -11,7 +11,7 @@ class AnnouncementCog(commands.Cog):
     @commands.command(name="announce")
     @commands.has_any_role(*roles())
     async def announce(self, ctx) -> None:
-        
+
         channels = await self._get_channels(ctx)
         roles = await self._get_roles(ctx)
         message = await self._get_message(ctx)
@@ -33,7 +33,8 @@ class AnnouncementCog(commands.Cog):
         try:
             await ctx.send('Awesome! Where would you like to post the announcement?')
 
-            message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
+            message = await self.bot.wait_for('message', timeout=60, check=lambda
+                message: message.author == ctx.author and ctx.channel == message.channel)
 
             if len(message.channel_mentions) < 1:
                 await ctx.send('Announcement canceled.')
@@ -47,8 +48,9 @@ class AnnouncementCog(commands.Cog):
     async def _get_roles(self, ctx):
         try:
             await ctx.send('Which roles should be tagged?')
-            
-            message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
+
+            message = await self.bot.wait_for('message', timeout=60, check=lambda
+                message: message.author == ctx.author and ctx.channel == message.channel)
 
             return message.role_mentions
         except Exception as exception:
@@ -58,7 +60,8 @@ class AnnouncementCog(commands.Cog):
     async def _get_message(self, ctx):
         try:
             await ctx.send('Message?')
-            message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
+            message = await self.bot.wait_for('message', timeout=60, check=lambda
+                message: message.author == ctx.author and ctx.channel == message.channel)
 
             if len(message.content) < 1:
                 await ctx.send('Announcement cancelled. No message was provided.')
