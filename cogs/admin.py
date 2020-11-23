@@ -1,6 +1,8 @@
-from discord.ext import commands
-from helpers.message import roles
 import os
+
+from discord.ext import commands
+
+from helpers.message import roles
 
 
 class AdminCog(commands.Cog):
@@ -94,7 +96,8 @@ class AdminCog(commands.Cog):
             except Exception as exception:
                 await ctx.send(exception)
         else:
-            await ctx.send('Command is disabled because debug is not enabled.')
+            await ctx.message.delete()
+            await ctx.author.send('Command is disabled because debug is not enabled.')
 
 
 def setup(bot):

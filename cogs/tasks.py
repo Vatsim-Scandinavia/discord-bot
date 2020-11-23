@@ -1,15 +1,22 @@
-from discord.ext import commands, tasks
-import discord
-from helpers.config import VATSIM_MEMBER_ROLE, CHECK_MEMBERS_INTERVAL, VATSCA_MEMBER_ROLE
-import re
-import mysql.connector
-from dotenv import load_dotenv
 import os
+import re
+
+import discord
+import mysql.connector
+from discord.ext import commands, tasks
+from dotenv import load_dotenv
+
+from helpers.config import VATSIM_MEMBER_ROLE, CHECK_MEMBERS_INTERVAL, VATSCA_MEMBER_ROLE, ROLE_REASONS
 
 load_dotenv('.env')
 
 
 class TasksCog(commands.Cog):
+
+    VATSCA_ROLE_ADD_REASON = ROLE_REASONS['vatsca_add']
+    VATSCA_ROLE_REMOVE_REASON = ROLE_REASONS['vatsca_remove']
+    NO_CID_REMOVE_REASON = ROLE_REASONS['no_cid']
+    NO_AUTH_REMOVE_REASON = ROLE_REASONS['no_auth']
 
     def __init__(self, bot):
         self.bot = bot
@@ -40,8 +47,7 @@ class TasksCog(commands.Cog):
         for user in users:
             if vatsim_member not in user.roles:
                 if vatsca_member in user.roles:
-                    await user.remove_roles(vatsca_member, reason='User did not authenticate via the Community Website')
-
+                    await user.remove_roles(vatsca_member, reason=self.NO_AUTH_REMOVE_REASON)
                 continue
 
             try:
@@ -50,23 +56,24 @@ class TasksCog(commands.Cog):
 
                 if len(cid) < 1:
                     raise ValueError
-            
-                statment = "SELECT subdivision FROM users WHERE id = %s"
 
-                cursor.execute(statment, cid[0])
+                statement = "SELECT subdivision FROM users WHERE id = %s"
+
+                cursor.execute(statement, cid)
 
                 result = cursor.fetchone()
 
                 if vatsca_member not in user.roles and result[0] == 'SCA':
-                    await user.add_roles(vatsca_member, reason='Member is now part of VATSCA')
+                    await user.add_roles(vatsca_member, reason=self.VATSCA_ROLE_ADD_REASON)
                 elif vatsca_member in user.roles and result[0] != 'SCA':
-                    await user.remove_roles(vatsca_member, reason='Member is no longer part of VATSCA')
+                    await user.remove_roles(vatsca_member, reason=self.VATSCA_ROLE_REMOVE_REASON)
 
             except ValueError as e:
                 if vatsca_member in user.roles:
-                    await user.remove_roles(vatsca_member, reason='User does not have a VATSIM ID in his name even though he joined via Community Website')
+                    await user.remove_roles(vatsca_member, reason=self.NO_CID_REMOVE_REASON)
 
             except Exception as e:
+                print(e)
                 continue
 
         mydb.close()

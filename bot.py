@@ -1,8 +1,11 @@
-from discord.ext import commands, tasks
-from helpers import config
 import os
-from dotenv import load_dotenv
+
 import discord
+from discord import InvalidArgument
+from discord.ext import commands
+from dotenv import load_dotenv
+
+from helpers import config
 
 load_dotenv('.env')
 
@@ -17,14 +20,19 @@ config.load_cogs(bot)
 """
     Bot event that sets bots rich presence in Discord profile
 """
+
+
 @bot.event
 async def on_ready() -> None:
 
     print(f'Bot started. \nUsername: {bot.user.name}. \nID: {bot.user.id}')
 
-    await bot.change_presence(activity=config.activity(), status=config.status())
+    try:
+        await bot.change_presence(activity=config.activity(), status=config.status())
 
-    print('Presence changed.')
+        print('Presence changed.')
+    except InvalidArgument as e:
+        print(f'Error changing presence. Exception - {e}')
 
 if __name__ == "__main__":
     bot.run(BOT_TOKEN)
