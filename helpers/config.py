@@ -37,6 +37,12 @@ EVENTS_CHANNEL = 776110954437148675
 
 VATSCA_BLUE = 0x43c6e7
 
+ROLE_REASONS = {
+    'vatsca_add': 'Member is now part of VATSCA',
+    'vatsca_remove': 'Member is no longer part of VATSCA',
+    'no_cid': 'User does not have a VATSIM ID in his/her nickname.',
+}
+
 
 def prefix() -> list:
     return PREFIXES
