@@ -5,7 +5,7 @@ import aiohttp
 import mysql.connector
 from discord.ext import commands, tasks
 
-from helpers.config import POST_EVENTS_INTERVAL, EVENTS_CHANNEL
+from helpers.config import POST_EVENTS_INTERVAL, EVENTS_CHANNEL, EVENTS_ROLE
 from helpers.message import embed, event_description, get_image
 
 
@@ -38,6 +38,7 @@ class EventsCog(commands.Cog):
     @tasks.loop(seconds=POST_EVENTS_INTERVAL)
     async def events(self):
         channel = self.bot.get_channel(EVENTS_CHANNEL)
+        role = channel.guild.get_role(EVENTS_ROLE)
         mydb = mysql.connector.connect(
             host="localhost",
             user=os.getenv('BOT_DB_USER'),
@@ -54,10 +55,10 @@ class EventsCog(commands.Cog):
             if self._should_be_published(event[self.START]):
                 msg = embed(title=event[self.NAME], description=event[self.DESCRIPTION], image=event[self.IMG])
                 try:
-                    await channel.send(embed=msg)
+                    await channel.send(role.mention, embed=msg)
                     await self._mark_as_published(event[self.ID], mydb)
                 except Exception as e:
-                    await channel.send(embed=msg)
+                    await channel.send(role.mention, embed=msg)
                     await self._mark_as_published(event[self.ID], mydb)
 
     async def _get_events(self) -> str:
