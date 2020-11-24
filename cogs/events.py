@@ -53,7 +53,18 @@ class EventsCog(commands.Cog):
 
         for event in events:
             if self._should_be_published(event[self.START]):
-                msg = embed(title=event[self.NAME], description=event[self.DESCRIPTION], image=event[self.IMG])
+                author = {
+                    'name': self.bot.user.name,
+                    'url': event[self.URL],
+                    'icon': self.bot.user.avatar_url,
+                }
+
+                footer = {
+                    'text': 'Starting time',
+                    'icon': '',
+                }
+
+                msg = embed(title=event[self.NAME], description=event[self.DESCRIPTION], image=event[self.IMG], author=author, timestamp=event[self.START], footer=footer)
                 try:
                     await channel.send(role.mention, embed=msg)
                     await self._mark_as_published(event[self.ID], mydb)

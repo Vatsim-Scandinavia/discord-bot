@@ -6,13 +6,19 @@ from helpers.config import ADMIN_ROLES, VATSCA_BLUE
 
 
 def embed(title: str, description: str, colour=None, author: dict = None, image: str = None, footer: dict = None,
-          fields: list = None) -> discord.Embed:
+          fields: list = None, timestamp=None) -> discord.Embed:
     if colour is None:
         colour = VATSCA_BLUE
 
-    embed = discord.Embed(title=title,
-                          description=description,
-                          colour=colour)
+    if timestamp:
+        embed = discord.Embed(title=title,
+                              description=description,
+                              colour=colour,
+                              timestamp=timestamp)
+    else:
+        embed = discord.Embed(title=title,
+                              description=description,
+                              colour=colour)
 
     if author:
         embed.set_author(name=author['name'],
