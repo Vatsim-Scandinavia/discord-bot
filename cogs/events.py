@@ -25,6 +25,11 @@ class EventsCog(commands.Cog):
     DESCRIPTION = 4
     START = 5
 
+    FOOTER = {
+        'text': 'Starting time',
+        'icon': '',
+    }
+
     def __init__(self, bot):
         self.bot = bot
 
@@ -59,12 +64,7 @@ class EventsCog(commands.Cog):
                     'icon': self.bot.user.avatar_url,
                 }
 
-                footer = {
-                    'text': 'Starting time',
-                    'icon': '',
-                }
-
-                msg = embed(title=event[self.NAME], description=event[self.DESCRIPTION], image=event[self.IMG], author=author, timestamp=event[self.START], footer=footer)
+                msg = embed(title=event[self.NAME], description=event[self.DESCRIPTION], image=event[self.IMG], author=author, timestamp=event[self.START], footer=self.FOOTER)
                 try:
                     await channel.send(role.mention, embed=msg)
                     await self._mark_as_published(event[self.ID], mydb)
@@ -80,6 +80,8 @@ class EventsCog(commands.Cog):
 
     async def _save_events(self, events, mydb):
         cursor = mydb.cursor()
+        channel = self.bot.get_channel(EVENTS_CHANNEL)
+        role = channel.guild.get_role(EVENTS_ROLE)
         for event in events['results']:
             if self._convert_time(event.get('start')) < datetime.utcnow():
                 continue
@@ -87,6 +89,12 @@ class EventsCog(commands.Cog):
             cursor.execute(f"SELECT * FROM events WHERE event_id = {event.get('id')}")
 
             result = cursor.fetchone()
+
+            author = {
+                'name': self.bot.user.name,
+                'url': event.get('url'),
+                'icon': self.bot.user.avatar_url,
+            }
 
             if result != None:
                 cursor.execute(
@@ -100,6 +108,9 @@ class EventsCog(commands.Cog):
                     (event.get('title'), event.get('url'), get_image(event.get('description')),
                      event_description(event.get('description')), self._convert_time(event.get('start')),
                      event.get('id')))
+                msg = embed(title=event.get('title'), description=event_description(event.get('description')), image=get_image(event.get('description')),
+                            author=author, timestamp=self._convert_time(event.get('start')), footer=self.FOOTER)
+                await channel.send(embed=msg)
         mydb.commit()
 
     def _convert_time(self, time: str) -> datetime:
