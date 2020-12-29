@@ -46,6 +46,10 @@ ROLE_REASONS = {
     'no_auth': 'User did not authenticate via the Community Website',
 }
 
+RULES_CHANNEL = 793280382837325854
+
+CHECK_RULES_INTERVAL = 60
+
 
 def prefix() -> list:
     return PREFIXES
