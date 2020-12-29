@@ -17,6 +17,7 @@ COGS = [
     'cogs.announcement',
     'cogs.tasks',
     'cogs.events',
+    'cogs.update_message',
 ]
 
 VATSIM_MEMBER_ROLE = "Vatsim Member"
