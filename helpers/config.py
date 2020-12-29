@@ -17,6 +17,7 @@ COGS = [
     'cogs.announcement',
     'cogs.tasks',
     'cogs.events',
+    'cogs.update_message',
 ]
 
 VATSIM_MEMBER_ROLE = "Vatsim Member"
@@ -44,6 +45,10 @@ ROLE_REASONS = {
     'no_cid': 'User does not have a VATSIM ID in his/her nickname.',
     'no_auth': 'User did not authenticate via the Community Website',
 }
+
+RULES_CHANNEL = 793280382837325854
+
+CHECK_RULES_INTERVAL = 60
 
 
 def prefix() -> list:

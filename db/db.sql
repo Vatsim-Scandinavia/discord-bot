@@ -8,3 +8,8 @@ CREATE TABLE IF NOT EXISTS `vatsca_bot` . `events` (
     published BOOLEAN DEFAULT FALSE,
     event_id int UNIQUE NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS `vatsca_bot` . `message_updates` (
+    id int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    last_update_time VARCHAR(255) NOT NULL
+);
