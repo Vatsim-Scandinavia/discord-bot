@@ -25,6 +25,7 @@ class UpdateMessageCog(commands.Cog):
             }
             if message_id is None:
                 try:
+                    await ctx.message.delete()
                     text = self._read_file()
                     msg = embed(title='Rules', description=text, author=author)
                     await channel.send(embed=msg)
