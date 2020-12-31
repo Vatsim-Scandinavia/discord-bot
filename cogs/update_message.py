@@ -1,10 +1,8 @@
-import os
-
-from discord.ext import commands
 import discord
+from discord.ext import commands
+
 from helpers.config import RULES_CHANNEL
 from helpers.message import embed
-
 from helpers.message import roles
 
 
@@ -16,6 +14,12 @@ class UpdateMessageCog(commands.Cog):
     @commands.command(name='update_message')
     @commands.has_any_role(*roles())
     async def update(self, ctx, *, message_id: int = None):
+        """
+        Function posts updated welcome and rules message
+        :param ctx:
+        :param message_id:
+        :return:
+        """
         channel = discord.utils.get(ctx.message.guild.channels, id=RULES_CHANNEL)
         if channel:
             author = {
@@ -44,6 +48,10 @@ class UpdateMessageCog(commands.Cog):
                         print(e)
 
     def _read_file(self) -> str:
+        """
+        Function reads and returns welcome and rules message stored in welcome_rules.md
+        :return:
+        """
         file = open('welcome_rules.md', mode='r')
         data = file.read()
         file.close()

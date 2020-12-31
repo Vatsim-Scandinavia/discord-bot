@@ -42,6 +42,10 @@ class EventsCog(commands.Cog):
 
     @tasks.loop(seconds=POST_EVENTS_INTERVAL)
     async def events(self):
+        """
+        Task looks up all events and posts ones that take place in next 1 and a half hour
+        :return:
+        """
         channel = self.bot.get_channel(EVENTS_CHANNEL)
         role = channel.guild.get_role(EVENTS_ROLE)
         mydb = mysql.connector.connect(
@@ -64,7 +68,8 @@ class EventsCog(commands.Cog):
                     'icon': self.bot.user.avatar_url,
                 }
 
-                msg = embed(title=event[self.NAME], description=event[self.DESCRIPTION], image=event[self.IMG], author=author, timestamp=event[self.START], footer=self.FOOTER)
+                msg = embed(title=event[self.NAME], description=event[self.DESCRIPTION], image=event[self.IMG],
+                            author=author, timestamp=event[self.START], footer=self.FOOTER)
                 try:
                     await channel.send(role.mention, embed=msg)
                     await self._mark_as_published(event[self.ID], mydb)
@@ -73,12 +78,22 @@ class EventsCog(commands.Cog):
                     await self._mark_as_published(event[self.ID], mydb)
 
     async def _get_events(self) -> str:
+        """
+        Function gets all events from the API
+        :return:
+        """
         async with aiohttp.ClientSession() as session:
             auth = aiohttp.BasicAuth(os.getenv('API_TOKEN'), '')
             async with session.get(self.RSS_FEED_URL, auth=auth, params=self.PARAMS) as resp:
                 return await resp.json()
 
     async def _save_events(self, events, mydb):
+        """
+        Function stores events that weren't saved already
+        :param events:
+        :param mydb:
+        :return:
+        """
         cursor = mydb.cursor()
         channel = self.bot.get_channel(EVENTS_CHANNEL)
         role = channel.guild.get_role(EVENTS_ROLE)
@@ -108,15 +123,26 @@ class EventsCog(commands.Cog):
                     (event.get('title'), event.get('url'), get_image(event.get('description')),
                      event_description(event.get('description')), self._convert_time(event.get('start')),
                      event.get('id')))
-                msg = embed(title=event.get('title'), description=event_description(event.get('description')), image=get_image(event.get('description')),
+                msg = embed(title=event.get('title'), description=event_description(event.get('description')),
+                            image=get_image(event.get('description')),
                             author=author, timestamp=self._convert_time(event.get('start')), footer=self.FOOTER)
                 await channel.send(embed=msg)
         mydb.commit()
 
     def _convert_time(self, time: str) -> datetime:
+        """
+        Function converts time to SQL time
+        :param time:
+        :return:
+        """
         return datetime.strptime(time, "%Y-%m-%dT%H:%M:%SZ")
 
     async def _fetch_events(self, mydb) -> list:
+        """
+        Function fetches events stored in database
+        :param mydb:
+        :return:
+        """
         cursor = mydb.cursor()
 
         cursor.execute("SELECT * FROM events WHERE published = FALSE")
@@ -124,9 +150,20 @@ class EventsCog(commands.Cog):
         return cursor.fetchall()
 
     def _should_be_published(self, start: datetime):
+        """
+        Function checks should event be posted
+        :param start:
+        :return:
+        """
         return start - timedelta(hours=1, minutes=30) <= datetime.utcnow()
 
     async def _mark_as_published(self, ID: int, mydb):
+        """
+        Function updates events and sets it as published in the database
+        :param ID:
+        :param mydb:
+        :return:
+        """
         cursor = mydb.cursor()
 
         cursor.execute(f'UPDATE events SET published = TRUE WHERE id = {ID}')
