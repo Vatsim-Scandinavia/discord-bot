@@ -1,10 +1,8 @@
-import os
-
-from discord.ext import commands
 import discord
+from discord.ext import commands
+
 from helpers.config import RULES_CHANNEL
 from helpers.message import embed
-
 from helpers.message import roles
 
 

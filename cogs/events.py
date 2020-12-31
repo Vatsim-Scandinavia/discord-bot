@@ -64,7 +64,8 @@ class EventsCog(commands.Cog):
                     'icon': self.bot.user.avatar_url,
                 }
 
-                msg = embed(title=event[self.NAME], description=event[self.DESCRIPTION], image=event[self.IMG], author=author, timestamp=event[self.START], footer=self.FOOTER)
+                msg = embed(title=event[self.NAME], description=event[self.DESCRIPTION], image=event[self.IMG],
+                            author=author, timestamp=event[self.START], footer=self.FOOTER)
                 try:
                     await channel.send(role.mention, embed=msg)
                     await self._mark_as_published(event[self.ID], mydb)
@@ -108,7 +109,8 @@ class EventsCog(commands.Cog):
                     (event.get('title'), event.get('url'), get_image(event.get('description')),
                      event_description(event.get('description')), self._convert_time(event.get('start')),
                      event.get('id')))
-                msg = embed(title=event.get('title'), description=event_description(event.get('description')), image=get_image(event.get('description')),
+                msg = embed(title=event.get('title'), description=event_description(event.get('description')),
+                            image=get_image(event.get('description')),
                             author=author, timestamp=self._convert_time(event.get('start')), footer=self.FOOTER)
                 await channel.send(embed=msg)
         mydb.commit()
