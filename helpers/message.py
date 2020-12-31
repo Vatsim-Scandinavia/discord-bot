@@ -7,6 +7,18 @@ from helpers.config import ADMIN_ROLES, VATSCA_BLUE
 
 def embed(title: str, description: str, colour=None, author: dict = None, image: str = None, footer: dict = None,
           fields: list = None, timestamp=None) -> discord.Embed:
+    """
+    Function returns embeded styled message
+    :param title:
+    :param description:
+    :param colour:
+    :param author:
+    :param image:
+    :param footer:
+    :param fields:
+    :param timestamp:
+    :return:
+    """
     if colour is None:
         colour = VATSCA_BLUE
 
@@ -39,16 +51,30 @@ def embed(title: str, description: str, colour=None, author: dict = None, image:
 
 
 def roles() -> str:
+    """
+    Function returns tuple of admin roles
+    :return:
+    """
     admin_roles = tuple(ADMIN_ROLES)
     return admin_roles
 
 
 def event_description(description: str) -> str:
+    """
+    Function converts html to markdown message
+    :param description:
+    :return:
+    """
     soup = bs4.BeautifulSoup(description, features='html.parser')
     return html2markdown.convert(f'{soup.get_text()}')
 
 
 def get_image(text: str) -> str:
+    """
+    Function gets images from given description
+    :param text:
+    :return:
+    """
     soup = bs4.BeautifulSoup(text, features='html.parser')
     img = soup.find_all('img')
     return img[0]['src']

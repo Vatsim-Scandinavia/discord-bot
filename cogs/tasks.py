@@ -29,6 +29,10 @@ class TasksCog(commands.Cog):
 
     @tasks.loop(seconds=CHECK_MEMBERS_INTERVAL)
     async def checkMembers(self):
+        """
+        Task checks guild members and assigns roles according to the data we've stored in our system
+        :return:
+        """
         guild = self.bot.get_guild(776110954437148672)
         users = guild.members
         mydb = mysql.connector.connect(

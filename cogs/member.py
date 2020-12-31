@@ -11,6 +11,11 @@ class MemberCog(commands.Cog):
     @commands.command(name='embeds', aliases=['test'])
     @commands.guild_only()
     async def example_embed(self, ctx):
+        """
+        Function sends example embed
+        :param ctx:
+        :return:
+        """
         message = embed(title='test', description='test')
 
         await ctx.send(embed=message)
