@@ -18,6 +18,7 @@ COGS = [
     'cogs.tasks',
     'cogs.events',
     'cogs.update_welcome_message',
+    'cogs.update_countries_message',
 ]
 
 VATSIM_MEMBER_ROLE = "Vatsim Member"
@@ -49,6 +50,8 @@ ROLE_REASONS = {
 RULES_CHANNEL = 793280382837325854
 
 CHECK_RULES_INTERVAL = 60
+
+ROLES_CHANNEL = 794675093439381575
 
 
 def prefix() -> list:

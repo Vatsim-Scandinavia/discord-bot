@@ -5,7 +5,7 @@ import html2markdown
 from helpers.config import ADMIN_ROLES, VATSCA_BLUE
 
 
-def embed(title: str, description: str, colour=None, author: dict = None, image: str = None, footer: dict = None,
+def embed(description: str, colour=None, title: str = None, author: dict = None, image: str = None, footer: dict = None,
           fields: list = None, timestamp=None) -> discord.Embed:
     """
     Function returns embeded styled message
