@@ -11,7 +11,7 @@ class UpdateMessageCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name='update_message', hidden=True)
+    @commands.command(name='update_welcome_rules', hidden=True)
     @commands.has_any_role(*roles())
     async def update(self, ctx, *, message_id: int = None):
         """
@@ -52,7 +52,7 @@ class UpdateMessageCog(commands.Cog):
         Function reads and returns welcome and rules message stored in welcome_rules.md
         :return:
         """
-        file = open('welcome_rules.md', mode='r')
+        file = open('messages/welcome_rules.md', mode='r')
         data = file.read()
         file.close()
         return data
