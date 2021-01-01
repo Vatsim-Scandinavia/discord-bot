@@ -143,7 +143,7 @@ class EventsCog(commands.Cog):
         :param start:
         :return:
         """
-        return start - timedelta(hours=1, minutes=30) <= datetime.utcnow()
+        return start - timedelta(hours=2) <= datetime.utcnow()
 
     async def _mark_as_published(self, ID: int, mydb):
         """
