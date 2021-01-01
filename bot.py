@@ -35,4 +35,8 @@ async def on_ready() -> None:
 
 
 if __name__ == "__main__":
-    bot.run(BOT_TOKEN)
+    try:
+        bot.remove_command("help")
+        bot.run(BOT_TOKEN)
+    except Exception as e:
+        print(f'Error starting the bot. Exception - {e}')
