@@ -62,14 +62,8 @@ class EventsCog(commands.Cog):
 
         for event in events:
             if self._should_be_published(event[self.START]):
-                author = {
-                    'name': self.bot.user.name,
-                    'url': event[self.URL],
-                    'icon': self.bot.user.avatar_url,
-                }
-
                 msg = embed(title=event[self.NAME], description=event[self.DESCRIPTION], image=event[self.IMG],
-                            author=author, timestamp=event[self.START], footer=self.FOOTER)
+                            timestamp=event[self.START], footer=self.FOOTER)
                 try:
                     await channel.send(role.mention, embed=msg)
                     await self._mark_as_published(event[self.ID], mydb)
@@ -105,12 +99,6 @@ class EventsCog(commands.Cog):
 
             result = cursor.fetchone()
 
-            author = {
-                'name': self.bot.user.name,
-                'url': event.get('url'),
-                'icon': self.bot.user.avatar_url,
-            }
-
             if result != None:
                 cursor.execute(
                     "UPDATE events SET name = %s, url = %s, img = %s, description = %s, start_time = %s WHERE event_id = '%s'",
@@ -125,7 +113,7 @@ class EventsCog(commands.Cog):
                      event.get('id')))
                 msg = embed(title=event.get('title'), description=event_description(event.get('description')),
                             image=get_image(event.get('description')),
-                            author=author, timestamp=self._convert_time(event.get('start')), footer=self.FOOTER)
+                            timestamp=self._convert_time(event.get('start')), footer=self.FOOTER)
                 await channel.send(embed=msg)
         mydb.commit()
 

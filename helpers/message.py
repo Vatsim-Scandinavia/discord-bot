@@ -66,6 +66,7 @@ def event_description(description: str) -> str:
     :return:
     """
     soup = bs4.BeautifulSoup(description, features='html.parser')
+    soup.prettify(formatter=lambda s: s.replace(u'\xa0', ' '))
     return html2markdown.convert(f'{soup.get_text()}')
 
 
