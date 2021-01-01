@@ -54,7 +54,7 @@ class AdminCog(commands.Cog):
         else:
             await ctx.send('**`SUCCESS`**')
 
-    @commands.command(name='ping')
+    @commands.command(name='ping', hidden=True)
     @commands.has_any_role(*roles())
     async def ping(self, ctx):
         """
@@ -64,7 +64,7 @@ class AdminCog(commands.Cog):
         """
         await ctx.send('Pong')
 
-    @commands.command(name='say')
+    @commands.command(name='say', hidden=True)
     @commands.has_any_role(*roles())
     async def say(self, ctx, *, content: str) -> None:
         """
@@ -76,7 +76,7 @@ class AdminCog(commands.Cog):
         await ctx.message.delete()
         await ctx.send(content)
 
-    @commands.command(name='delete', aliases=['purge'])
+    @commands.command(name='delete', aliases=['purge'], hidden=True)
     @commands.has_any_role(*roles())
     async def delete(self, ctx, *, number: int = 0):
         """

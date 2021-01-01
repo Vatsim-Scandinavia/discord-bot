@@ -11,7 +11,7 @@ class UpdateMessageCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name='update_message')
+    @commands.command(name='update_message', hidden=True)
     @commands.has_any_role(*roles())
     async def update(self, ctx, *, message_id: int = None):
         """
