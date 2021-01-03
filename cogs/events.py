@@ -64,11 +64,12 @@ class EventsCog(commands.Cog):
             if self._should_be_published(event[self.START]):
                 msg = embed(title=event[self.NAME], description=event[self.DESCRIPTION], image=event[self.IMG],
                             timestamp=event[self.START], footer=self.FOOTER)
+                text = f'{role.mention}\n:clock2: **This event starts in two hours!**'
                 try:
-                    await channel.send(role.mention, embed=msg)
+                    await channel.send(text, embed=msg)
                     await self._mark_as_published(event[self.ID], mydb)
                 except Exception as e:
-                    await channel.send(role.mention, embed=msg)
+                    await channel.send(text, embed=msg)
                     await self._mark_as_published(event[self.ID], mydb)
 
     async def _get_events(self) -> str:
