@@ -19,16 +19,13 @@ class TasksCog(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-
-    @commands.Cog.listener()
-    async def on_ready(self):
-        self.checkMembers.start()
+        self.check_members.start()
 
     def cog_unload(self):
-        self.checkMembers.cancel()
+        self.check_members.cancel()
 
     @tasks.loop(seconds=CHECK_MEMBERS_INTERVAL)
-    async def checkMembers(self):
+    async def check_members(self):
         """
         Task checks guild members and assigns roles according to the data we've stored in our system
         :return:
