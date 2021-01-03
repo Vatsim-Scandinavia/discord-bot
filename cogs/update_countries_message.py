@@ -11,7 +11,7 @@ class UpdateCountryMessage(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name='update_countries', hidden=True)
+    @commands.command(name='update_countries', hidden=True, description='Function posts updated countries message.')
     @commands.has_any_role(*roles())
     async def update(self, ctx, *, message_id: int = None):
         """

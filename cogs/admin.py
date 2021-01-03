@@ -12,7 +12,7 @@ class AdminCog(commands.Cog):
         self.bot = bot
 
     # Hidden means it won't show up on the default help.
-    @commands.command(name='load', hidden=True)
+    @commands.command(name='load', hidden=True, brief='Command which Loads a Module.')
     @commands.has_any_role(*roles())
     async def load(self, ctx, *, cog: str):
         """
@@ -26,7 +26,7 @@ class AdminCog(commands.Cog):
         else:
             await ctx.send('**`SUCCESS`**')
 
-    @commands.command(name='unload', hidden=True)
+    @commands.command(name='unload', hidden=True, brief='Command which Unloads a Module.')
     @commands.has_any_role(*roles())
     async def unload(self, ctx, *, cog: str):
         """
@@ -40,7 +40,7 @@ class AdminCog(commands.Cog):
         else:
             await ctx.send('**`SUCCESS`**')
 
-    @commands.command(name='reload', hidden=True)
+    @commands.command(name='reload', hidden=True, brief='Command which Reloads a Module.')
     @commands.has_any_role(*roles())
     async def reload(self, ctx, *, cog: str):
         """
@@ -55,11 +55,11 @@ class AdminCog(commands.Cog):
         else:
             await ctx.send('**`SUCCESS`**')
 
-    @commands.command(name='cogs', hidden=True)
+    @commands.command(name='cogs', hidden=True, brief='Command which sends a message with all available cogs.')
     @commands.has_any_role(*roles())
     async def cogs(self, ctx):
         """
-            Command which Reloads a Module.
+            Command which sends a message with all available cogs.
         """
 
         fields = []
@@ -71,7 +71,23 @@ class AdminCog(commands.Cog):
 
         await ctx.send(embed=msg)
 
-    @commands.command(name='ping', hidden=True)
+    @commands.command(name='help', aliases=['commands'], hidden=True, brief='Command which sends a message with all available commands.')
+    @commands.has_any_role(*roles())
+    async def help(self, ctx):
+        """
+            Command which sends a message with all available commands.
+        """
+
+        fields = []
+
+        for command in self.bot.commands:
+            fields.append({'name': command, 'value': command.short_doc})
+
+        msg = embed(fields=fields, title='Available Commands')
+        await ctx.message.delete()
+        await ctx.author.send(embed=msg)
+
+    @commands.command(name='ping', hidden=True, brief='Function sends pong if member has any of the admin roles.')
     @commands.has_any_role(*roles())
     async def ping(self, ctx):
         """
@@ -81,7 +97,7 @@ class AdminCog(commands.Cog):
         """
         await ctx.send('Pong')
 
-    @commands.command(name='say', hidden=True)
+    @commands.command(name='say', hidden=True, brief='Bot sends a specific message sent by user.')
     @commands.has_any_role(*roles())
     async def say(self, ctx, *, content: str) -> None:
         """
@@ -93,7 +109,7 @@ class AdminCog(commands.Cog):
         await ctx.message.delete()
         await ctx.send(content)
 
-    @commands.command(name='delete', aliases=['purge'], hidden=True)
+    @commands.command(name='delete', aliases=['purge'], hidden=True, brief='Function deletes specific amount of messages.')
     @commands.has_any_role(*roles())
     async def delete(self, ctx, *, number: int = 0):
         """

@@ -8,7 +8,7 @@ class MemberCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name='embeds', aliases=['test'])
+    @commands.command(name='embeds', aliases=['test'], brief='Function sends example embed.')
     @commands.guild_only()
     async def example_embed(self, ctx):
         """

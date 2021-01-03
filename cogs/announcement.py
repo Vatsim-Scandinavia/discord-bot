@@ -8,7 +8,7 @@ class AnnouncementCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="announce", hidden=True)
+    @commands.command(name="announce", hidden=True, brief='Function sends announcement message in specific channel.')
     @commands.has_any_role(*roles())
     async def announce(self, ctx) -> None:
 

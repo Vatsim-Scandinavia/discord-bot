@@ -13,7 +13,7 @@ BOT_TOKEN = str(os.getenv('BOT_TOKEN'))
 
 intents = discord.Intents.all()
 
-bot = commands.Bot(command_prefix=config.PREFIXES, description=config.DESCRIPTION, intents=intents)
+bot = commands.Bot(command_prefix=config.PREFIXES, description=config.DESCRIPTION, intents=intents, help_command=None)
 
 config.load_cogs(bot)
 
@@ -36,7 +36,6 @@ async def on_ready() -> None:
 
 if __name__ == "__main__":
     try:
-        bot.remove_command("help")
         bot.run(BOT_TOKEN)
     except Exception as e:
         print(f'Error starting the bot. Exception - {e}')
