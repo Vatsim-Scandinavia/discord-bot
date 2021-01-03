@@ -22,6 +22,17 @@ COGS = [
     'cogs.update_notification_message',
 ]
 
+COGS_LOAD = {
+    'admin': 'cogs.admin',
+    'member': 'cogs.member',
+    'announcement': 'cogs.announcement',
+    'check_members': 'cogs.tasks',
+    'events': 'cogs.events',
+    'welcome': 'cogs.update_welcome_message',
+    'countries': 'cogs.update_countries_message',
+    'notification': 'cogs.update_notification_message',
+}
+
 VATSIM_MEMBER_ROLE = "Vatsim Member"
 
 CHECK_MEMBERS_INTERVAL = 86400

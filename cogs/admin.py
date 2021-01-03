@@ -2,7 +2,8 @@ import os
 
 from discord.ext import commands
 
-from helpers.message import roles
+from helpers.message import roles, embed
+from helpers.config import COGS_LOAD
 
 
 class AdminCog(commands.Cog):
@@ -19,7 +20,7 @@ class AdminCog(commands.Cog):
         """
 
         try:
-            self.bot.load_extension(cog)
+            self.bot.load_extension(COGS_LOAD[cog])
         except Exception as e:
             await ctx.send(f'**`ERROR:`** {type(e).__name__} - {e}')
         else:
@@ -33,7 +34,7 @@ class AdminCog(commands.Cog):
         """
 
         try:
-            self.bot.unload_extension(cog)
+            self.bot.unload_extension(COGS_LOAD[cog])
         except Exception as e:
             await ctx.send(f'**`ERROR:`** {type(e).__name__} - {e}')
         else:
@@ -47,12 +48,28 @@ class AdminCog(commands.Cog):
         """
 
         try:
-            self.bot.unload_extension(cog)
-            self.bot.load_extension(cog)
+            self.bot.unload_extension(COGS_LOAD[cog])
+            self.bot.load_extension(COGS_LOAD[cog])
         except Exception as e:
             await ctx.send(f'**`ERROR:`** {type(e).__name__} - {e}')
         else:
             await ctx.send('**`SUCCESS`**')
+
+    @commands.command(name='cogs', hidden=True)
+    @commands.has_any_role(*roles())
+    async def cogs(self, ctx):
+        """
+            Command which Reloads a Module.
+        """
+
+        fields = []
+
+        for key in COGS_LOAD:
+            fields.append({'name': key, 'value': COGS_LOAD[key]})
+
+        msg = embed(fields=fields)
+
+        await ctx.send(embed=msg)
 
     @commands.command(name='ping', hidden=True)
     @commands.has_any_role(*roles())
