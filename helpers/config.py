@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv('.env')
 
 PREFIXES = [
-    '!', '.', '?',
+    '!', '.', '?', '#',
 ]
 
 DESCRIPTION = 'This is a new VATSCA Discord Bot'
@@ -20,6 +20,7 @@ COGS = [
     'cogs.update_welcome_message',
     'cogs.update_countries_message',
     'cogs.update_notification_message',
+    'cogs.vtc',
 ]
 
 COGS_LOAD = {
@@ -31,6 +32,7 @@ COGS_LOAD = {
     'welcome': 'cogs.update_welcome_message',
     'countries': 'cogs.update_countries_message',
     'notification': 'cogs.update_notification_message',
+    'vtc': 'cogs.vtc',
 }
 
 VATSIM_MEMBER_ROLE = "Vatsim Member"
@@ -49,6 +51,18 @@ ADMIN_ROLES = [
 ]
 
 EVENTS_CHANNEL = 776110954437148675
+
+VTC_CHANNEL = 803298341823316040
+
+VTC_STAFFING_MSG = 811591288990072842
+
+S1 = 759791336978907136
+
+S2 = 759788985458360370
+
+S3 = 759789037107675136
+
+C1 = 759789034263412736
 
 VATSCA_BLUE = 0x43c6e7
 

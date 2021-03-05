@@ -8,3 +8,9 @@ CREATE TABLE IF NOT EXISTS `vatsca_bot` . `events` (
     published BOOLEAN DEFAULT FALSE,
     event_id int UNIQUE NOT NULL
 )
+
+CREATE TABLE IF NOT EXISTS `vtc` (
+    id int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    position varchar(255) NOT NULL,
+    name varchar(255) NOT NULL
+) 
