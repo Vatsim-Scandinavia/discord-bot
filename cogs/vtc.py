@@ -2,10 +2,12 @@ import os
 
 import discord
 from discord.ext import commands, tasks
+from discord_slash import cog_ext, SlashContext
 import datetime
 import asyncio
 import mysql.connector
-from helpers.config import S1, S2, S3, C1, VTC_CHANNEL, VTC_STAFFING_MSG
+from helpers.config import S1, S2, S3, C1, VTC_CHANNEL, VTC_STAFFING_MSG, GUILD_ID
+from helpers.message import roles
 
 today = datetime.date.today()
 next_monday = today + datetime.timedelta(days=-today.weekday(), weeks=1)
@@ -18,6 +20,12 @@ mydb = mysql.connector.connect(
     database=os.getenv('BOT_DB_NAME')
     )
 
+guild_ids = [GUILD_ID]
+
+guild = GUILD_ID
+
+
+
 class VTCcog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -26,8 +34,24 @@ class VTCcog(commands.Cog):
     def cog_unload(self):
         self.autoreset.cancel()
 
-    @commands.command(name="setupvtc", hidden=True, brief='Bot sends VTC staffing message')
-    async def setupvtc(self, ctx) -> None:
+    @cog_ext.cog_slash(name="setupvtc", guild_ids=guild_ids, description="Bot sends VTC staffing message")
+    @commands.has_any_role(*roles())
+    async def setupvtc(self, ctx: SlashContext):
+        username = ctx.author.id
+        if ctx.channel.id == VTC_CHANNEL:
+        
+            if ctx.author.id == 263767489895333889 or 332493772934086656 or 414877211238334474 or 207885223159922688:
+                msg = await ctx.send("Vectors to Copenhagen staffing message is being generated")
+                await msg.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                await ctx.send("Vectors to Copenhagen staffing thread for the next event on Monday " + str(date_formatted) + " Main positions should be staffed first.\n\nSign up for your position by writing #requested position (E.G. #EKCH_TWR). The position is automatically booked\nShould you need to cancel write '#Cancel' and your booking will be removed. Please DO NOT do this at the last minute. If you cancel a main position please make arrangement to make sure it is covered by someone else!\n\nMain Positions: \nEKDK_CTR: \nEKCH_APP: \nEKCH_TWR: \nEKCH_GND:\n\nSecondary Positions:\nEKCH_DEL: \nEKDK_V_CTR: \nEKDK_D_CTR: \nEKCH_F_APP: \nEKCH_DEP: \nEKCH_C_TWR: \nEKCH_D_TWR: \n\nRegional Positions:\nEKBI_APP: \nEKBI_TWR: \nEKYT_APP: \nEKYT_TWR: \nEKKA_TWR: \nEKKA_APP: \nEKAH_APP: \nEKAH_TWR: ")
+            else:
+                await ctx.send("<@" + str(username) + "> You are not allowed to use this command!")
+        else: 
+            await ctx.send("<@" + str(username) + "> Please use the <#" + str(VTC_CHANNEL) + "> channel")
+        
+
+    """@commands.command(name="setupvtc", hidden=True, brief='Bot sends VTC staffing message')
+    async def setupvtc(self, ctx):
         username = ctx.message.author.id
         if ctx.channel.id == VTC_CHANNEL:
         
@@ -37,7 +61,7 @@ class VTCcog(commands.Cog):
             else:
                 await ctx.send("<@" + str(username) + "> You are not allowed to use this command!")
         else: 
-            await ctx.send("<@" + str(username) + "> Please use the <#" + str(VTC_CHANNEL) + "> channel")
+            await ctx.send("<@" + str(username) + "> Please use the <#" + str(VTC_CHANNEL) + "> channel")"""
 
 
     @commands.command(name="manreset", hidden=True, brief='Bot manually resets the chat.')
@@ -59,100 +83,42 @@ class VTCcog(commands.Cog):
         else:
             await ctx.send("<@" + str(username) + "> Please use the <#" + str(VTC_CHANNEL) + "> channel")
 
-    @commands.command(name="EKCH_DEL", hidden=True, brief='Function to signup for EKCH_DEL.')
+    @cog_ext.cog_slash(name="EKCH_DEL", guild_ids=guild_ids, description="Function to signup for EKCH_DEL.")
     async def ekch_del(self, ctx) -> None:
-        
+        usernick = ctx.author.id
 
         S1_rating = discord.utils.get(ctx.guild.roles, id=S1)
         S2_rating = discord.utils.get(ctx.guild.roles, id=S2)
         S3_rating = discord.utils.get(ctx.guild.roles, id=S3)
         C1_rating = discord.utils.get(ctx.guild.roles, id=C1)
 
-        usernick = ctx.message.author.id
-
         if ctx.channel.id == VTC_CHANNEL:
-            if S1_rating in ctx.author.roles:
-
-                S1cursor = mydb.cursor()
-            
-                S1cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S1_sql = S1cursor.fetchone()
-
-                if S1_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='1'"
-
-                    S1cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_DEL!")   
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)            
+            bookedcursor = mydb.cursor()
+            bookedcursor.execute("SELECT name FROM vtc WHERE name='' and id='1'")
+            booked_sql = bookedcursor.fetchone()
+            if booked_sql == None:
+                await ctx.send("<@" + str(usernick) + "> This position has already been booked!")
+                await asyncio.sleep(1)
+                await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+            else:
+                if S1_rating in ctx.author.roles or S2_rating in ctx.author.roles or S3_rating in ctx.author.roles or C1_rating in ctx.author.roles:
+                    Delcursor = mydb.cursor()
+                    Delcursor.execute("SELECT name FROM vtc WHERE name = '<@" + str(usernick) + ">'")
+                    Del_sql = Delcursor.fetchone()
+                    if Del_sql == None:
+                        sql = "UPDATE vtc SET name = '<@" + str(usernick) + ">' WHERE id ='1'"
+                        Delcursor.execute(sql)
+                        mydb.commit()
+                        await self.updatepositions(ctx)
+                        await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_DEL!")    
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                
+                    else:
+                        await ctx.send("<@" + str(usernick) + "> You already have a booking!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
                 else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif S2_rating in ctx.author.roles:
-                S2cursor = mydb.cursor()
-            
-                S2cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S2_sql = S2cursor.fetchone()
-
-                if S2_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='1'"
-
-                    S2cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_DEL!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                   
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif S3_rating in ctx.author.roles:
-                S3cursor = mydb.cursor()
-            
-                S3cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S3_sql = S3cursor.fetchone()
-
-                if S3_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='1'"
-
-                    S3cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_DEL!") 
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                   
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif C1_rating in ctx.author.roles:
-                C1cursor = mydb.cursor()
-            
-                C1cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                C1_sql = C1cursor.fetchone()
-
-                if C1_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='1'"
-
-                    C1cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_DEL!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                 
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
+                    await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
                     await asyncio.sleep(1)
                     await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
         else: 
@@ -160,8 +126,6 @@ class VTCcog(commands.Cog):
 
     @commands.command(name="EKCH_GND", hidden=True, brief='Function to signup for EKCH_GND.')
     async def ekch_gnd(self, ctx) -> None:
-        
-
         S1_rating = discord.utils.get(ctx.guild.roles, id=S1)
         S2_rating = discord.utils.get(ctx.guild.roles, id=S2)
         S3_rating = discord.utils.get(ctx.guild.roles, id=S3)
@@ -170,98 +134,47 @@ class VTCcog(commands.Cog):
         usernick = ctx.message.author.id
 
         if ctx.channel.id == VTC_CHANNEL:
-            if S1_rating in ctx.author.roles:
 
-                S1cursor = mydb.cursor()
+            bookedcursor = mydb.cursor()
             
-                S1cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S1_sql = S1cursor.fetchone()
+            bookedcursor.execute("SELECT name FROM vtc WHERE name='' and id='2'")
+            booked_sql = bookedcursor.fetchone()
 
-                if S1_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='2'"
-
-                    S1cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_GND!")    
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif S2_rating in ctx.author.roles:
-                S2cursor = mydb.cursor()
-            
-                S2cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S2_sql = S2cursor.fetchone()
-
-                if S2_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='2'"
-
-                    S2cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_GND!")      
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-                else:
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif S3_rating in ctx.author.roles:
-                S3cursor = mydb.cursor()
-            
-                S3cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S3_sql = S3cursor.fetchone()
-
-                if S3_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='2'"
-
-                    S3cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_GND!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                 
-                else:
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif C1_rating in ctx.author.roles:
-                C1cursor = mydb.cursor()
-            
-                C1cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                C1_sql = C1cursor.fetchone()
-
-                if C1_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='2'"
-
-                    C1cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_GND!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                
-                else:
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-            else:
-                await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+            if booked_sql == None:
+                await ctx.send("<@" + str(usernick) + "> This position has already been booked!")
                 await asyncio.sleep(1)
                 await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                
+            else:
+                if S1_rating in ctx.author.roles or S2_rating in ctx.author.roles or S3_rating in ctx.author.roles or C1_rating in ctx.author.roles:
+
+                    Delcursor = mydb.cursor()
+            
+                    Delcursor.execute("SELECT name FROM vtc WHERE name = '<@" + str(usernick) + ">'")
+                    Del_sql = Delcursor.fetchone()
+
+                    if Del_sql == None:
+                        sql = "UPDATE vtc SET name = '<@" + str(usernick) + ">' WHERE id ='2'"
+
+                        Delcursor.execute(sql)
+                        mydb.commit()
+                        await self.updatepositions(ctx)
+                        await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_GND!")    
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                
+                    else:
+                        await ctx.send("<@" + str(usernick) + "> You already have a booking!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                else:
+                    await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+                    await asyncio.sleep(1)
+                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
         else: 
             await ctx.send("Please use the <#" + str(VTC_CHANNEL) + "> channel")
 
     @commands.command(name="EKCH_TWR", hidden=True, brief='Function to signup for EKCH_TWR.')
     async def ekch_twr(self, ctx) -> None:
-        
-
         S1_rating = discord.utils.get(ctx.guild.roles, id=S1)
         S2_rating = discord.utils.get(ctx.guild.roles, id=S2)
         S3_rating = discord.utils.get(ctx.guild.roles, id=S3)
@@ -270,100 +183,46 @@ class VTCcog(commands.Cog):
         usernick = ctx.message.author.id
 
         if ctx.channel.id == VTC_CHANNEL:
-            if S1_rating in ctx.author.roles:
-
-                S1cursor = mydb.cursor()
+            bookedcursor = mydb.cursor()
             
-                S1cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S1_sql = S1cursor.fetchone()
+            bookedcursor.execute("SELECT name FROM vtc WHERE name='' and id='3'")
+            booked_sql = bookedcursor.fetchone()
 
-                if S1_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='3'"
-
-                    S1cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_TWR!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif S2_rating in ctx.author.roles:
-                S2cursor = mydb.cursor()
-            
-                S2cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S2_sql = S2cursor.fetchone()
-
-                if S2_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='3'"
-
-                    S2cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_TWR!")   
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                 
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif S3_rating in ctx.author.roles:
-                S3cursor = mydb.cursor()
-            
-                S3cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S3_sql = S3cursor.fetchone()
-
-                if S3_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='3'"
-
-                    S3cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_TWR!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                  
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif C1_rating in ctx.author.roles:
-                C1cursor = mydb.cursor()
-            
-                C1cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                C1_sql = C1cursor.fetchone()
-
-                if C1_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='3'"
-
-                    C1cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_TWR!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                
-                else:
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-            else:
-                await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+            if booked_sql == None:
+                await ctx.send("<@" + str(usernick) + "> This position has already been booked!")
                 await asyncio.sleep(1)
                 await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                
+            else:
+                if S1_rating in ctx.author.roles or S2_rating in ctx.author.roles or S3_rating in ctx.author.roles or C1_rating in ctx.author.roles:
+                    Twrcursor = mydb.cursor()
+            
+                    Twrcursor.execute("SELECT name FROM vtc WHERE name = '<@" + str(usernick) + ">'")
+                    Twr_sql = Twrcursor.fetchone()
+
+                    if Twr_sql == None:
+                        sql = "UPDATE vtc SET name = '<@" + str(usernick) + ">' WHERE id ='3'"
+
+                        Twrcursor.execute(sql)
+                        mydb.commit()
+                        await self.updatepositions(ctx)
+                        await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_TWR!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                    else:
+                        await ctx.send("<@" + str(usernick) + "> You already have a booking!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                else:
+                    await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+                    await asyncio.sleep(1)
+                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
         else: 
             await ctx.send("Please use the <#" + str(VTC_CHANNEL) + "> channel")
 
     @commands.command(name="EKCH_C_TWR", hidden=True, brief='Function to signup for EKCH_C_TWR.')
     async def ekch_c_twr(self, ctx) -> None:
         
-
         S1_rating = discord.utils.get(ctx.guild.roles, id=S1)
         S2_rating = discord.utils.get(ctx.guild.roles, id=S2)
         S3_rating = discord.utils.get(ctx.guild.roles, id=S3)
@@ -372,100 +231,46 @@ class VTCcog(commands.Cog):
         usernick = ctx.message.author.id
 
         if ctx.channel.id == VTC_CHANNEL:
-            if S1_rating in ctx.author.roles:
-
-                S1cursor = mydb.cursor()
+            bookedcursor = mydb.cursor()
             
-                S1cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S1_sql = S1cursor.fetchone()
+            bookedcursor.execute("SELECT name FROM vtc WHERE name='' and id='4'")
+            booked_sql = bookedcursor.fetchone()
 
-                if S1_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='4'"
-
-                    S1cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_C_TWR!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                 
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif S2_rating in ctx.author.roles:
-                S2cursor = mydb.cursor()
-            
-                S2cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S2_sql = S2cursor.fetchone()
-
-                if S2_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='4'"
-
-                    S2cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_C_TWR!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif S3_rating in ctx.author.roles:
-                S3cursor = mydb.cursor()
-            
-                S3cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S3_sql = S3cursor.fetchone()
-
-                if S3_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='4'"
-
-                    S3cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_C_TWR!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif C1_rating in ctx.author.roles:
-                C1cursor = mydb.cursor()
-            
-                C1cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                C1_sql = C1cursor.fetchone()
-
-                if C1_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='4'"
-
-                    C1cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_C_TWR!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)              
-                else:
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-            else:
-                await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+            if booked_sql == None:
+                await ctx.send("<@" + str(usernick) + "> This position has already been booked!")
                 await asyncio.sleep(1)
                 await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                
+            else:
+                if S1_rating in ctx.author.roles or S2_rating in ctx.author.roles or S3_rating in ctx.author.roles or C1_rating in ctx.author.roles:
+
+                    CTwrcursor = mydb.cursor()
+            
+                    CTwrcursor.execute("SELECT name FROM vtc WHERE name = '<@" + str(usernick) + ">'")
+                    CTwr_sql = CTwrcursor.fetchone()
+
+                    if CTwr_sql == None:
+                        sql = "UPDATE vtc SET name = '<@" + str(usernick) + ">' WHERE id ='4'"
+
+                        CTwrcursor.execute(sql)
+                        mydb.commit()
+                        await self.updatepositions(ctx)
+                        await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_C_TWR!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                 
+                    else:
+                        await ctx.send("<@" + str(usernick) + "> You already have a booking!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                else:
+                    await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+                    await asyncio.sleep(1)
+                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
         else: 
             await ctx.send("Please use the <#" + str(VTC_CHANNEL) + "> channel")
 
     @commands.command(name="EKCH_D_TWR", hidden=True, brief='Function to signup for EKCH_D_TWR.')
     async def ekch_d_twr(self, ctx) -> None:
-        
-
         S1_rating = discord.utils.get(ctx.guild.roles, id=S1)
         S2_rating = discord.utils.get(ctx.guild.roles, id=S2)
         S3_rating = discord.utils.get(ctx.guild.roles, id=S3)
@@ -474,98 +279,46 @@ class VTCcog(commands.Cog):
         usernick = ctx.message.author.id
 
         if ctx.channel.id == VTC_CHANNEL:
-            if S1_rating in ctx.author.roles:
-
-                S1cursor = mydb.cursor()
+            bookedcursor = mydb.cursor()
             
-                S1cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S1_sql = S1cursor.fetchone()
+            bookedcursor.execute("SELECT name FROM vtc WHERE name='' and id='5'")
+            booked_sql = bookedcursor.fetchone()
 
-                if S1_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='5'"
-
-                    S1cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_D_TWR!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                 
-                else:
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif S2_rating in ctx.author.roles:
-                S2cursor = mydb.cursor()
-            
-                S2cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S2_sql = S2cursor.fetchone()
-
-                if S2_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='5'"
-
-                    S2cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_D_TWR!") 
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                   
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif S3_rating in ctx.author.roles:
-                S3cursor = mydb.cursor()
-            
-                S3cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S3_sql = S3cursor.fetchone()
-
-                if S3_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='5'"
-
-                    S3cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_D_TWR!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                
-                else:
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif C1_rating in ctx.author.roles:
-                C1cursor = mydb.cursor()
-            
-                C1cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                C1_sql = C1cursor.fetchone()
-
-                if C1_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='5'"
-
-                    C1cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_D_TWR!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                
-                else:
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-            else:
-                await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+            if booked_sql == None:
+                await ctx.send("<@" + str(usernick) + "> This position has already been booked!")
                 await asyncio.sleep(1)
                 await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                
+            else:
+                if S1_rating in ctx.author.roles or S2_rating in ctx.author.roles or S3_rating in ctx.author.roles or C1_rating in ctx.author.roles:
+
+                    DTwrcursor = mydb.cursor()
+            
+                    DTwrcursor.execute("SELECT name FROM vtc WHERE name = '<@" + str(usernick) + ">'")
+                    DTwr_sql = DTwrcursor.fetchone()
+
+                    if DTwr_sql == None:
+                        sql = "UPDATE vtc SET name = '<@" + str(usernick) + ">' WHERE id ='5'"
+
+                        DTwrcursor.execute(sql)
+                        mydb.commit()
+                        await self.updatepositions(ctx)
+                        await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_D_TWR!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                 
+                    else:
+                        await ctx.send("<@" + str(usernick) + "> You already have a booking!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                else:
+                    await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+                    await asyncio.sleep(1)
+                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
         else: 
             await ctx.send("Please use the <#" + str(VTC_CHANNEL) + "> channel")
 
     @commands.command(name="EKCH_DEP", hidden=True, brief='Function to signup for EKCH_DEP.')
     async def ekch_dep(self, ctx) -> None:
-        
-
         S2_rating = discord.utils.get(ctx.guild.roles, id=S2)
         S3_rating = discord.utils.get(ctx.guild.roles, id=S3)
         C1_rating = discord.utils.get(ctx.guild.roles, id=C1)
@@ -573,78 +326,45 @@ class VTCcog(commands.Cog):
         usernick = ctx.message.author.id
 
         if ctx.channel.id == VTC_CHANNEL:
-            if S2_rating in ctx.author.roles:
-                S2cursor = mydb.cursor()
+            bookedcursor = mydb.cursor()
             
-                S2cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S2_sql = S2cursor.fetchone()
+            bookedcursor.execute("SELECT name FROM vtc WHERE name='' and id='6'")
+            booked_sql = bookedcursor.fetchone()
 
-                if S2_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='6'"
-
-                    S2cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_DEP!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                 
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif S3_rating in ctx.author.roles:
-                S3cursor = mydb.cursor()
-            
-                S3cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S3_sql = S3cursor.fetchone()
-
-                if S3_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='6'"
-
-                    S3cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_DEP!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                   
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif C1_rating in ctx.author.roles:
-                C1cursor = mydb.cursor()
-            
-                C1cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                C1_sql = C1cursor.fetchone()
-
-                if C1_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='6'"
-
-                    C1cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_DEP!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                  
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-            else:
-                await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+            if booked_sql == None:
+                await ctx.send("<@" + str(usernick) + "> This position has already been booked!")
                 await asyncio.sleep(1)
                 await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                
+            else:
+                if S2_rating in ctx.author.roles or S3_rating in ctx.author.roles or C1_rating in ctx.author.roles:
+                    Depcursor = mydb.cursor()
+            
+                    Depcursor.execute("SELECT name FROM vtc WHERE name = '<@" + str(usernick) + ">'")
+                    Dep_sql = Depcursor.fetchone()
+
+                    if Dep_sql == None:
+                        sql = "UPDATE vtc SET name = '<@" + str(usernick) + ">' WHERE id ='6'"
+
+                        Depcursor.execute(sql)
+                        mydb.commit()
+                        await self.updatepositions(ctx)
+                        await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_DEP!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                 
+                    else:
+                        await ctx.send("<@" + str(usernick) + "> You already have a booking!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                else:
+                    await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+                    await asyncio.sleep(1)
+                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
         else: 
             await ctx.send("Please use the <#" + str(VTC_CHANNEL) + "> channel")
 
     @commands.command(name="EKCH_APP", hidden=True, brief='Function to signup for EKCH_APP.')
     async def ekch_app(self, ctx) -> None:
-        
         S2_rating = discord.utils.get(ctx.guild.roles, id=S2)
         S3_rating = discord.utils.get(ctx.guild.roles, id=S3)
         C1_rating = discord.utils.get(ctx.guild.roles, id=C1)
@@ -652,72 +372,40 @@ class VTCcog(commands.Cog):
         usernick = ctx.message.author.id
 
         if ctx.channel.id == VTC_CHANNEL:
-            if S2_rating in ctx.author.roles:
-                S2cursor = mydb.cursor()
+            bookedcursor = mydb.cursor()
             
-                S2cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S2_sql = S2cursor.fetchone()
+            bookedcursor.execute("SELECT name FROM vtc WHERE name='' and id='7'")
+            booked_sql = bookedcursor.fetchone()
 
-                if S2_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='7'"
-
-                    S2cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_APP!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                  
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif S3_rating in ctx.author.roles:
-                S3cursor = mydb.cursor()
-            
-                S3cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S3_sql = S3cursor.fetchone()
-
-                if S3_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='7'"
-
-                    S3cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_APP!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif C1_rating in ctx.author.roles:
-                C1cursor = mydb.cursor()
-            
-                C1cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                C1_sql = C1cursor.fetchone()
-
-                if C1_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='7'"
-
-                    C1cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_APP!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                    
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-            else:
-                await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+            if booked_sql == None:
+                await ctx.send("<@" + str(usernick) + "> This position has already been booked!")
                 await asyncio.sleep(1)
                 await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                
+            else:
+                if S2_rating in ctx.author.roles or S3_rating in ctx.author.roles or C1_rating in ctx.author.roles:
+                    Appcursor = mydb.cursor()
+        
+                    Appcursor.execute("SELECT name FROM vtc WHERE name = '<@" + str(usernick) + ">'")
+                    App_sql = Appcursor.fetchone()
+
+                    if App_sql == None:
+                        sql = "UPDATE vtc SET name = '<@" + str(usernick) + ">' WHERE id ='7'"
+
+                        Appcursor.execute(sql)
+                        mydb.commit()
+                        await self.updatepositions(ctx)
+                        await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_APP!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                  
+                    else:
+                        await ctx.send("<@" + str(usernick) + "> You already have a booking!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                else:
+                    await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+                    await asyncio.sleep(1)
+                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
         else: 
             await ctx.send("Please use the <#" + str(VTC_CHANNEL) + "> channel")
 
@@ -731,72 +419,41 @@ class VTCcog(commands.Cog):
         usernick = ctx.message.author.id
 
         if ctx.channel.id == VTC_CHANNEL:
-            if S2_rating in ctx.author.roles:
-                S2cursor = mydb.cursor()
+
+            bookedcursor = mydb.cursor()
             
-                S2cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S2_sql = S2cursor.fetchone()
+            bookedcursor.execute("SELECT name FROM vtc WHERE name='' and id='8'")
+            booked_sql = bookedcursor.fetchone()
 
-                if S2_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='8'"
+            if booked_sql == None:
 
-                    S2cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_F_APP!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                  
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif S3_rating in ctx.author.roles:
-                S3cursor = mydb.cursor()
-            
-                S3cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S3_sql = S3cursor.fetchone()
-
-                if S3_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='8'"
-
-                    S3cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_F_APP!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif C1_rating in ctx.author.roles:
-                C1cursor = mydb.cursor()
-            
-                C1cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                C1_sql = C1cursor.fetchone()
-
-                if C1_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='8'"
-
-                    C1cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_F_APP!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)               
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-            else:
-                await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+                await ctx.send("<@" + str(usernick) + "> This position has already been booked!")
                 await asyncio.sleep(1)
                 await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                
+            else:
+                if S2_rating in ctx.author.roles or S3_rating in ctx.author.roles or C1_rating in ctx.author.roles:
+                    FAppcursor = mydb.cursor()
+                    FAppcursor.execute("SELECT name FROM vtc WHERE name = '<@" + str(usernick) + ">'")
+                    FApp_sql = FAppcursor.fetchone()
+
+                    if FApp_sql == None:
+                        sql = "UPDATE vtc SET name = '<@" + str(usernick) + ">' WHERE id ='8'"
+
+                        FAppcursor.execute(sql)
+                        mydb.commit()
+                        await self.updatepositions(ctx)
+                        await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKCH_F_APP!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                  
+                    else:
+                        await ctx.send("<@" + str(usernick) + "> You already have a booking!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                else:
+                    await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+                    await asyncio.sleep(1)
+                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
         else: 
             await ctx.send("Please use the <#" + str(VTC_CHANNEL) + "> channel")
 
@@ -810,72 +467,40 @@ class VTCcog(commands.Cog):
         usernick = ctx.message.author.id
 
         if ctx.channel.id == VTC_CHANNEL:
-            if S2_rating in ctx.author.roles:
-                S2cursor = mydb.cursor()
+            bookedcursor = mydb.cursor()
             
-                S2cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S2_sql = S2cursor.fetchone()
+            bookedcursor.execute("SELECT name FROM vtc WHERE name='' and id='9'")
+            booked_sql = bookedcursor.fetchone()
 
-                if S2_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='9'"
-
-                    S2cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKBI_APP!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                 
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif S3_rating in ctx.author.roles:
-                S3cursor = mydb.cursor()
-            
-                S3cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S3_sql = S3cursor.fetchone()
-
-                if S3_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='9'"
-
-                    S3cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKBI_APP!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)           
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif C1_rating in ctx.author.roles:
-                C1cursor = mydb.cursor()
-            
-                C1cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                C1_sql = C1cursor.fetchone()
-
-                if C1_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='9'"
-
-                    C1cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKBI_APP!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)               
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-            else:
-                await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+            if booked_sql == None:
+                await ctx.send("<@" + str(usernick) + "> This position has already been booked!")
                 await asyncio.sleep(1)
                 await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                
+            else:
+                if S2_rating in ctx.author.roles or S3_rating in ctx.author.roles or C1_rating in ctx.author.roles:
+                    BIAppcursor = mydb.cursor()
+            
+                    BIAppcursor.execute("SELECT name FROM vtc WHERE name = '<@" + str(usernick) + ">'")
+                    BIApp_sql = BIAppcursor.fetchone()
+
+                    if BIApp_sql == None:
+                        sql = "UPDATE vtc SET name = '<@" + str(usernick) + ">' WHERE id ='9'"
+
+                        BIAppcursor.execute(sql)
+                        mydb.commit()
+                        await self.updatepositions(ctx)
+                        await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKBI_APP!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                 
+                    else:
+                        await ctx.send("<@" + str(usernick) + "> You already have a booking!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                else:
+                    await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+                    await asyncio.sleep(1)
+                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
         else: 
             await ctx.send("Please use the <#" + str(VTC_CHANNEL) + "> channel")
 
@@ -890,94 +515,42 @@ class VTCcog(commands.Cog):
         usernick = ctx.message.author.id
 
         if ctx.channel.id == VTC_CHANNEL:
-            if S1_rating in ctx.author.roles:
 
-                S1cursor = mydb.cursor()
+            bookedcursor = mydb.cursor()
             
-                S1cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S1_sql = S1cursor.fetchone()
+            bookedcursor.execute("SELECT name FROM vtc WHERE name='' and id='10'")
+            booked_sql = bookedcursor.fetchone()
 
-                if S1_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='10'"
-
-                    S1cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKBI_TWR!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)             
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif S2_rating in ctx.author.roles:
-                S2cursor = mydb.cursor()
-            
-                S2cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S2_sql = S2cursor.fetchone()
-
-                if S2_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='10'"
-
-                    S2cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKBI_TWR!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)            
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif S3_rating in ctx.author.roles:
-                S3cursor = mydb.cursor()
-            
-                S3cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S3_sql = S3cursor.fetchone()
-
-                if S3_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='10'"
-
-                    S3cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKBI_TWR!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)             
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif C1_rating in ctx.author.roles:
-                C1cursor = mydb.cursor()
-            
-                C1cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                C1_sql = C1cursor.fetchone()
-
-                if C1_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='10'"
-
-                    C1cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKBI_TWR!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)           
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-            else:
-                await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+            if booked_sql == None:
+                await ctx.send("<@" + str(usernick) + "> This position has already been booked!")
                 await asyncio.sleep(1)
                 await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                
+            else:
+                if S1_rating in ctx.author.roles or S2_rating in ctx.author.roles or S3_rating in ctx.author.roles or C1_rating in ctx.author.roles:
+
+                    BIAppcursor = mydb.cursor()
+            
+                    BIAppcursor.execute("SELECT name FROM vtc WHERE name = '<@" + str(usernick) + ">'")
+                    BIApp_sql = BIAppcursor.fetchone()
+
+                    if BIApp_sql == None:
+                        sql = "UPDATE vtc SET name = '<@" + str(usernick) + ">' WHERE id ='10'"
+
+                        BIAppcursor.execute(sql)
+                        mydb.commit()
+                        await self.updatepositions(ctx)
+                        await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKBI_TWR!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)             
+                    else:
+                        await ctx.send("<@" + str(usernick) + "> You already have a booking!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                else:
+                    await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+                    await asyncio.sleep(1)
+                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
         else: 
             await ctx.send("Please use the <#" + str(VTC_CHANNEL) + "> channel")
 
@@ -991,72 +564,41 @@ class VTCcog(commands.Cog):
         usernick = ctx.message.author.id
 
         if ctx.channel.id == VTC_CHANNEL:
-            if S2_rating in ctx.author.roles:
-                S2cursor = mydb.cursor()
+
+            bookedcursor = mydb.cursor()
             
-                S2cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S2_sql = S2cursor.fetchone()
+            bookedcursor.execute("SELECT name FROM vtc WHERE name='' and id='11'")
+            booked_sql = bookedcursor.fetchone()
 
-                if S2_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='11'"
-
-                    S2cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKYT_APP!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif S3_rating in ctx.author.roles:
-                S3cursor = mydb.cursor()
-            
-                S3cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S3_sql = S3cursor.fetchone()
-
-                if S3_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='11'"
-
-                    S3cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKYT_APP!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)             
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif C1_rating in ctx.author.roles:
-                C1cursor = mydb.cursor()
-            
-                C1cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                C1_sql = C1cursor.fetchone()
-
-                if C1_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='11'"
-
-                    C1cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKYT_APP!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-            else:
-                await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+            if booked_sql == None:
+                await ctx.send("<@" + str(usernick) + "> This position has already been booked!")
                 await asyncio.sleep(1)
                 await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                
+            else:
+                if S2_rating in ctx.author.roles or S3_rating in ctx.author.roles or C1_rating in ctx.author.roles:
+                    AALAppcursor = mydb.cursor()
+            
+                    AALAppcursor.execute("SELECT name FROM vtc WHERE name = '<@" + str(usernick) + ">'")
+                    AALApp_sql = AALAppcursor.fetchone()
+
+                    if AALApp_sql == None:
+                        sql = "UPDATE vtc SET name = '<@" + str(usernick) + ">' WHERE id ='11'"
+
+                        AALAppcursor.execute(sql)
+                        mydb.commit()
+                        await self.updatepositions(ctx)
+                        await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKYT_APP!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                
+                    else:
+                        await ctx.send("<@" + str(usernick) + "> You already have a booking!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                else:
+                    await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+                    await asyncio.sleep(1)
+                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
         else: 
             await ctx.send("Please use the <#" + str(VTC_CHANNEL) + "> channel")
 
@@ -1071,94 +613,39 @@ class VTCcog(commands.Cog):
         usernick = ctx.message.author.id
 
         if ctx.channel.id == VTC_CHANNEL:
-            if S1_rating in ctx.author.roles:
-
-                S1cursor = mydb.cursor()
+            bookedcursor = mydb.cursor()
             
-                S1cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S1_sql = S1cursor.fetchone()
+            bookedcursor.execute("SELECT name FROM vtc WHERE name='' and id='12'")
+            booked_sql = bookedcursor.fetchone()
 
-                if S1_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='12'"
-
-                    S1cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKYT_TWR!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)               
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif S2_rating in ctx.author.roles:
-                S2cursor = mydb.cursor()
-            
-                S2cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S2_sql = S2cursor.fetchone()
-
-                if S2_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='12'"
-
-                    S2cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKYT_TWR!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)          
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif S3_rating in ctx.author.roles:
-                S3cursor = mydb.cursor()
-            
-                S3cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S3_sql = S3cursor.fetchone()
-
-                if S3_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='12'"
-
-                    S3cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKYT_TWR!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)               
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif C1_rating in ctx.author.roles:
-                C1cursor = mydb.cursor()
-            
-                C1cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                C1_sql = C1cursor.fetchone()
-
-                if C1_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='12'"
-
-                    C1cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKYT_TWR!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                 
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-            else:
-                await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+            if booked_sql == None:
+                await ctx.send("<@" + str(usernick) + "> This position has already been booked!")
                 await asyncio.sleep(1)
                 await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                
+            else:
+                if S1_rating in ctx.author.roles or S2_rating in ctx.author.roles or S3_rating in ctx.author.roles or C1_rating in ctx.author.roles:
+                    AALTwrcursor = mydb.cursor()
+                    AALTwrcursor.execute("SELECT name FROM vtc WHERE name = '<@" + str(usernick) + ">'")
+                    AALTwr_sql = AALTwrcursor.fetchone()
+
+                    if AALTwr_sql == None:
+                        sql = "UPDATE vtc SET name = '<@" + str(usernick) + ">' WHERE id ='12'"
+
+                        AALTwrcursor.execute(sql)
+                        mydb.commit()
+                        await self.updatepositions(ctx)
+                        await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKYT_TWR!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)               
+                    else:
+                        await ctx.send("<@" + str(usernick) + "> You already have a booking!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                else:
+                    await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+                    await asyncio.sleep(1)
+                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
         else: 
             await ctx.send("Please use the <#" + str(VTC_CHANNEL) + "> channel")
 
@@ -1173,94 +660,42 @@ class VTCcog(commands.Cog):
         usernick = ctx.message.author.id
 
         if ctx.channel.id == VTC_CHANNEL:
-            if S1_rating in ctx.author.roles:
-
-                S1cursor = mydb.cursor()
+            bookedcursor = mydb.cursor()
             
-                S1cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S1_sql = S1cursor.fetchone()
+            bookedcursor.execute("SELECT name FROM vtc WHERE name='' and id='13'")
+            booked_sql = bookedcursor.fetchone()
 
-                if S1_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='13'"
+            if booked_sql == None:
 
-                    S1cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKKA_TWR!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)              
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif S2_rating in ctx.author.roles:
-                S2cursor = mydb.cursor()
-            
-                S2cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S2_sql = S2cursor.fetchone()
-
-                if S2_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='13'"
-
-                    S2cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKKA_TWR!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)             
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif S3_rating in ctx.author.roles:
-                S3cursor = mydb.cursor()
-            
-                S3cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S3_sql = S3cursor.fetchone()
-
-                if S3_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='13'"
-
-                    S3cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKKA_TWR!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)               
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif C1_rating in ctx.author.roles:
-                C1cursor = mydb.cursor()
-            
-                C1cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                C1_sql = C1cursor.fetchone()
-
-                if C1_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='13'"
-
-                    C1cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKKA_TWR!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)             
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-            else:
-                await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+                await ctx.send("<@" + str(usernick) + "> This position has already been booked!")
                 await asyncio.sleep(1)
                 await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                
+            else:
+
+                if S1_rating in ctx.author.roles or S2_rating in ctx.author.roles or S3_rating in ctx.author.roles or C1_rating in ctx.author.roles:
+                    KRPTwrcursor = mydb.cursor()
+            
+                    KRPTwrcursor.execute("SELECT name FROM vtc WHERE name = '<@" + str(usernick) + ">'")
+                    KRPTwr_sql = KRPTwrcursor.fetchone()
+
+                    if KRPTwr_sql == None:
+                        sql = "UPDATE vtc SET name = '<@" + str(usernick) + ">' WHERE id ='13'"
+
+                        KRPTwrcursor.execute(sql)
+                        mydb.commit()
+                        await self.updatepositions(ctx)
+                        await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKKA_TWR!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)              
+                    else:
+                        await ctx.send("<@" + str(usernick) + "> You already have a booking!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                else:
+                    await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+                    await asyncio.sleep(1)
+                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
         else: 
             await ctx.send("Please use the <#" + str(VTC_CHANNEL) + "> channel")
 
@@ -1274,72 +709,40 @@ class VTCcog(commands.Cog):
         usernick = ctx.message.author.id
 
         if ctx.channel.id == VTC_CHANNEL:
-            if S2_rating in ctx.author.roles:
-                S2cursor = mydb.cursor()
+            bookedcursor = mydb.cursor()
             
-                S2cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S2_sql = S2cursor.fetchone()
+            bookedcursor.execute("SELECT name FROM vtc WHERE name='' and id='14'")
+            booked_sql = bookedcursor.fetchone()
 
-                if S2_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='14'"
-
-                    S2cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKKA_APP!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)           
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif S3_rating in ctx.author.roles:
-                S3cursor = mydb.cursor()
-            
-                S3cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S3_sql = S3cursor.fetchone()
-
-                if S3_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='14'"
-
-                    S3cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKKA_APP!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)               
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif C1_rating in ctx.author.roles:
-                C1cursor = mydb.cursor()
-            
-                C1cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                C1_sql = C1cursor.fetchone()
-
-                if C1_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='14'"
-
-                    C1cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKKA_APP!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                 
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-            else:
-                await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+            if booked_sql == None:
+                await ctx.send("<@" + str(usernick) + "> This position has already been booked!")
                 await asyncio.sleep(1)
                 await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                
+            else:
+                if S2_rating in ctx.author.roles or S3_rating in ctx.author.roles or C1_rating in ctx.author.roles:
+                    KRPAppcursor = mydb.cursor()
+            
+                    KRPAppcursor.execute("SELECT name FROM vtc WHERE name = '<@" + str(usernick) + ">'")
+                    KRPApp_sql = KRPAppcursor.fetchone()
+
+                    if KRPApp_sql == None:
+                        sql = "UPDATE vtc SET name = '<@" + str(usernick) + ">' WHERE id ='14'"
+
+                        KRPAppcursor.execute(sql)
+                        mydb.commit()
+                        await self.updatepositions(ctx)
+                        await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKKA_APP!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)           
+                    else:
+                        await ctx.send("<@" + str(usernick) + "> You already have a booking!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                else:
+                    await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+                    await asyncio.sleep(1)
+                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
         else: 
             await ctx.send("Please use the <#" + str(VTC_CHANNEL) + "> channel")
 
@@ -1353,72 +756,41 @@ class VTCcog(commands.Cog):
         usernick = ctx.message.author.id
 
         if ctx.channel.id == VTC_CHANNEL:
-            if S2_rating in ctx.author.roles:
-                S2cursor = mydb.cursor()
+            bookedcursor = mydb.cursor()
             
-                S2cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S2_sql = S2cursor.fetchone()
+            bookedcursor.execute("SELECT name FROM vtc WHERE name='' and id='15'")
+            booked_sql = bookedcursor.fetchone()
 
-                if S2_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='15'"
-
-                    S2cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKAH_APP!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                 
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif S3_rating in ctx.author.roles:
-                S3cursor = mydb.cursor()
-            
-                S3cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S3_sql = S3cursor.fetchone()
-
-                if S3_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='15'"
-
-                    S3cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKAH_APP!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                 
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif C1_rating in ctx.author.roles:
-                C1cursor = mydb.cursor()
-            
-                C1cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                C1_sql = C1cursor.fetchone()
-
-                if C1_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='15'"
-
-                    C1cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKAH_APP!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-            else:
-                await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+            if booked_sql == None:
+                await ctx.send("<@" + str(usernick) + "> This position has already been booked!")
                 await asyncio.sleep(1)
                 await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                
+            else:
+
+                if S2_rating in ctx.author.roles or S3_rating in ctx.author.roles or C1_rating in ctx.author.roles:
+                    AARAppcursor = mydb.cursor()
+            
+                    AARAppcursor.execute("SELECT name FROM vtc WHERE name = '<@" + str(usernick) + ">'")
+                    AARApp_sql = AARAppcursor.fetchone()
+
+                    if AARApp_sql == None:
+                        sql = "UPDATE vtc SET name = '<@" + str(usernick) + ">' WHERE id ='15'"
+
+                        AARAppcursor.execute(sql)
+                        mydb.commit()
+                        await self.updatepositions(ctx)
+                        await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKAH_APP!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                 
+                    else:
+                        await ctx.send("<@" + str(usernick) + "> You already have a booking!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                else:
+                    await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+                    await asyncio.sleep(1)
+                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
         else: 
             await ctx.send("Please use the <#" + str(VTC_CHANNEL) + "> channel")
 
@@ -1433,94 +805,41 @@ class VTCcog(commands.Cog):
         usernick = ctx.message.author.id
 
         if ctx.channel.id == VTC_CHANNEL:
-            if S1_rating in ctx.author.roles:
-
-                S1cursor = mydb.cursor()
+            bookedcursor = mydb.cursor()
             
-                S1cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S1_sql = S1cursor.fetchone()
+            bookedcursor.execute("SELECT name FROM vtc WHERE name='' and id='16'")
+            booked_sql = bookedcursor.fetchone()
 
-                if S1_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='16'"
-
-                    S1cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKAH_TWR!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                  
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif S2_rating in ctx.author.roles:
-                S2cursor = mydb.cursor()
-            
-                S2cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S2_sql = S2cursor.fetchone()
-
-                if S2_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='16'"
-
-                    S2cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKAH_TWR!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif S3_rating in ctx.author.roles:
-                S3cursor = mydb.cursor()
-            
-                S3cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S3_sql = S3cursor.fetchone()
-
-                if S3_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='16'"
-
-                    S3cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKAH_TWR!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)               
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif C1_rating in ctx.author.roles:
-                C1cursor = mydb.cursor()
-            
-                C1cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                C1_sql = C1cursor.fetchone()
-
-                if C1_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='16'"
-
-                    C1cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKAH_TWR!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                  
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-            else:
-                await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+            if booked_sql == None:
+                await ctx.send("<@" + str(usernick) + "> This position has already been booked!")
                 await asyncio.sleep(1)
                 await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                
+            else:
+                if S1_rating in ctx.author.roles or S2_rating in ctx.author.roles or S3_rating in ctx.author.roles or C1_rating in ctx.author.roles:
+
+                    AARTwrcursor = mydb.cursor()
+            
+                    AARTwrcursor.execute("SELECT name FROM vtc WHERE name = '<@" + str(usernick) + ">'")
+                    AARTwr_sql = AARTwrcursor.fetchone()
+
+                    if AARTwr_sql == None:
+                        sql = "UPDATE vtc SET name = '<@" + str(usernick) + ">' WHERE id ='16'"
+
+                        AARTwrcursor.execute(sql)
+                        mydb.commit()
+                        await self.updatepositions(ctx)
+                        await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKAH_TWR!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                  
+                    else:
+                        await ctx.send("<@" + str(usernick) + "> You already have a booking!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                else:
+                    await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+                    await asyncio.sleep(1)
+                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
         else: 
             await ctx.send("Please use the <#" + str(VTC_CHANNEL) + "> channel")
 
@@ -1533,51 +852,40 @@ class VTCcog(commands.Cog):
         usernick = ctx.message.author.id
 
         if ctx.channel.id == VTC_CHANNEL:
-            if S3_rating in ctx.author.roles:
-                S3cursor = mydb.cursor()
+            bookedcursor = mydb.cursor()
             
-                S3cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S3_sql = S3cursor.fetchone()
+            bookedcursor.execute("SELECT name FROM vtc WHERE name='' and id='17'")
+            booked_sql = bookedcursor.fetchone()
 
-                if S3_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='17'"
-
-                    S3cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKDK_CTR!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif C1_rating in ctx.author.roles:
-                C1cursor = mydb.cursor()
-            
-                C1cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                C1_sql = C1cursor.fetchone()
-
-                if C1_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='17'"
-
-                    C1cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKDK_CTR!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)           
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-            else:
-                await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+            if booked_sql == None:
+                await ctx.send("<@" + str(usernick) + "> This position has already been booked!")
                 await asyncio.sleep(1)
                 await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                
+            else:
+
+                if S3_rating in ctx.author.roles or C1_rating in ctx.author.roles:
+                    EKDKCtrcursor = mydb.cursor()
+                    EKDKCtrcursor.execute("SELECT name FROM vtc WHERE name = '<@" + str(usernick) + ">'")
+                    EKDKCtr_sql = EKDKCtrcursor.fetchone()
+
+                    if EKDKCtr_sql == None:
+                        sql = "UPDATE vtc SET name = '<@" + str(usernick) + ">' WHERE id ='17'"
+
+                        EKDKCtrcursor.execute(sql)
+                        mydb.commit()
+                        await self.updatepositions(ctx)
+                        await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKDK_CTR!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                
+                    else:
+                        await ctx.send("<@" + str(usernick) + "> You already have a booking!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                else:
+                    await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+                    await asyncio.sleep(1)
+                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
         else: 
             await ctx.send("Please use the <#" + str(VTC_CHANNEL) + "> channel")
 
@@ -1590,51 +898,39 @@ class VTCcog(commands.Cog):
         usernick = ctx.message.author.id
 
         if ctx.channel.id == VTC_CHANNEL:
-            if S3_rating in ctx.author.roles:
-                S3cursor = mydb.cursor()
+            bookedcursor = mydb.cursor()
             
-                S3cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S3_sql = S3cursor.fetchone()
+            bookedcursor.execute("SELECT name FROM vtc WHERE name='' and id='18'")
+            booked_sql = bookedcursor.fetchone()
 
-                if S3_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='18'"
-
-                    S3cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKDK_V_CTR!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)             
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif C1_rating in ctx.author.roles:
-                C1cursor = mydb.cursor()
-            
-                C1cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                C1_sql = C1cursor.fetchone()
-
-                if C1_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='18'"
-
-                    C1cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKDK_V_CTR!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)              
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-            else:
-                await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+            if booked_sql == None:
+                await ctx.send("<@" + str(usernick) + "> This position has already been booked!")
                 await asyncio.sleep(1)
                 await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                
+            else:
+                if S3_rating in ctx.author.roles or C1_rating in ctx.author.roles:
+                    EKDKvCtrcursor = mydb.cursor()
+                    EKDKvCtrcursor.execute("SELECT name FROM vtc WHERE name = '<@" + str(usernick) + ">'")
+                    EKDKvCtr_sql = EKDKvCtrcursor.fetchone()
+
+                    if EKDKvCtr_sql == None:
+                        sql = "UPDATE vtc SET name = '<@" + str(usernick) + ">' WHERE id ='18'"
+
+                        EKDKvCtrcursor.execute(sql)
+                        mydb.commit()
+                        await self.updatepositions(ctx)
+                        await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKDK_V_CTR!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)             
+                    else:
+                        await ctx.send("<@" + str(usernick) + "> You already have a booking!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                else:
+                    await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+                    await asyncio.sleep(1)
+                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
         else: 
             await ctx.send("Please use the <#" + str(VTC_CHANNEL) + "> channel")
 
@@ -1647,57 +943,44 @@ class VTCcog(commands.Cog):
         usernick = ctx.message.author.id
 
         if ctx.channel.id == VTC_CHANNEL:
-            if S3_rating in ctx.author.roles:
-                S3cursor = mydb.cursor()
+            bookedcursor = mydb.cursor()
             
-                S3cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                S3_sql = S3cursor.fetchone()
+            bookedcursor.execute("SELECT name FROM vtc WHERE name='' and id='19'")
+            booked_sql = bookedcursor.fetchone()
 
-                if S3_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='19'"
-
-                    S3cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKDK_D_CTR!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-            elif C1_rating in ctx.author.roles:
-                C1cursor = mydb.cursor()
-            
-                C1cursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
-                C1_sql = C1cursor.fetchone()
-
-                if C1_sql == None:
-                    sql = "UPDATE vtc SET name = '" + str(usernick) + "' WHERE id ='19'"
-
-                    C1cursor.execute(sql)
-                    mydb.commit()
-                    await self.updatepositions(ctx)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKDK_D_CTR!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)               
-                else:
-
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                    await asyncio.sleep(1)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-            else:
-                await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+            if booked_sql == None:
+                await ctx.send("<@" + str(usernick) + "> This position has already been booked!")
                 await asyncio.sleep(1)
                 await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                
+            else:
+                if S3_rating in ctx.author.roles or C1_rating in ctx.author.roles:
+                    EKDKdCtrcursor = mydb.cursor()
+            
+                    EKDKdCtrcursor.execute("SELECT name FROM vtc WHERE name = '<@" + str(usernick) + ">'")
+                    EKDKdCtr_sql = EKDKdCtrcursor.fetchone()
+
+                    if EKDKdCtr_sql == None:
+                        sql = "UPDATE vtc SET name = '<@" + str(usernick) + ">' WHERE id ='19'"
+
+                        EKDKdCtrcursor.execute(sql)
+                        mydb.commit()
+                        await self.updatepositions(ctx)
+                        await ctx.send("<@" + str(usernick) + "> Confirmed booking for EKDK_D_CTR!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)                
+                    else:
+                        await ctx.send("<@" + str(usernick) + "> You already have a booking!")
+                        await asyncio.sleep(1)
+                        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                else:
+                    await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+                    await asyncio.sleep(1)
+                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
         else: 
             await ctx.send("Please use the <#" + str(VTC_CHANNEL) + "> channel")
 
-    async def updatepositions(self, ctx) -> None:
-
-        
+    async def updatepositions(self, ctx) -> None:      
         #Delivery
         delCursor = mydb.cursor()
         delCursor.execute("SELECT name FROM vtc WHERE id = '1'")
@@ -1788,13 +1071,13 @@ class VTCcog(commands.Cog):
         EKDKvCursor.execute("SELECT name FROM vtc WHERE id = '18'")
         ekdk_v_ctr_sql = EKDKvCursor.fetchone()
 
-        #EKDK d CTR
+        #EKDK D CTR
         EKDKdCursor = mydb.cursor()
         EKDKdCursor.execute("SELECT name FROM vtc WHERE id = '19'")
         ekdk_d_ctr_sql = EKDKdCursor.fetchone()
 
         message = await ctx.fetch_message(VTC_STAFFING_MSG)
-        await message.edit(content="Vectors to Copenhagen staffing thread for the next event on Monday " + str(date_formatted) + ". Main positions should be staffed first.\n\nSign up for your position by writing #requested position (E.G. #EKCH_TWR). The position is automatically booked\nShould you need to cancel write '#Cancel' and your booking will be removed. Please DO NOT do this at the last minute. If you cancel a main position please make arrangement to make sure it is covered by someone else!\n\nMain Positions: \nEKDK_CTR: <@" + str(ekdk_ctr_sql[0]) + "> \nEKCH_APP: <@" + str(ekch_app_sql[0]) + "> \nEKCH_TWR: <@" + str(ekch_twr_sql[0]) + "> \nEKCH_GND: <@" + str(ekch_gnd_sql[0]) + "> \n\nSecondary Positions:\nEKCH_DEL: <@" + str(ekch_del_sql[0]) + "> \nEKDK_V_CTR: <@" + str(ekdk_v_ctr_sql[0]) + "> \nEKDK_D_CTR: <@" + str(ekdk_d_ctr_sql[0]) + "> \nEKCH_F_APP: <@" + str(ekch_f_app_sql[0]) + "> \nEKCH_DEP: <@" + str(ekch_dep_sql[0]) + "> \nEKCH_C_TWR: <@" + str(ekch_c_twr_sql[0]) + "> \nEKCH_D_TWR: <@" + str(ekch_d_twr_sql[0]) + "> \n\nRegional Positions:\nEKBI_APP: <@" + str(ekbi_app_sql[0]) + "> \nEKBI_TWR: <@" + str(ekbi_twr_sql[0]) + "> \nEKYT_APP: <@" + str(ekyt_app_sql[0]) + "> \nEKYT_TWR: <@" + str(ekyt_twr_sql[0]) + "> \nEKKA_TWR: <@" + str(ekka_twr_sql[0]) + "> \nEKKA_APP: <@" + str(ekka_app_sql[0]) + "> \nEKAH_APP: <@" + str(ekah_app_sql[0]) + "> \nEKAH_TWR: <@" + str(ekah_twr_sql[0]) + "> ")
+        await message.edit(content="Vectors to Copenhagen staffing thread for the next event on Monday " + str(date_formatted) + ". Main positions should be staffed first.\n\nSign up for your position by writing #requested position (E.G. #EKCH_TWR). The position is automatically booked\nShould you need to cancel write '#Cancel' and your booking will be removed. Please DO NOT do this at the last minute. If you cancel a main position please make arrangement to make sure it is covered by someone else!\n\nMain Positions: \nEKDK_CTR:" + str(ekdk_ctr_sql[0]) + " \nEKCH_APP: " + str(ekch_app_sql[0]) + " \nEKCH_TWR: " + str(ekch_twr_sql[0]) + " \nEKCH_GND: " + str(ekch_gnd_sql[0]) + " \n\nSecondary Positions:\nEKCH_DEL: " + str(ekch_del_sql[0]) + " \nEKDK_V_CTR: " + str(ekdk_v_ctr_sql[0]) + " \nEKDK_D_CTR: " + str(ekdk_d_ctr_sql[0]) + " \nEKCH_F_APP: " + str(ekch_f_app_sql[0]) + " \nEKCH_DEP: " + str(ekch_dep_sql[0]) + " \nEKCH_C_TWR: " + str(ekch_c_twr_sql[0]) + " \nEKCH_D_TWR: " + str(ekch_d_twr_sql[0]) + " \n\nRegional Positions:\nEKBI_APP: " + str(ekbi_app_sql[0]) + " \nEKBI_TWR: " + str(ekbi_twr_sql[0]) + " \nEKYT_APP: " + str(ekyt_app_sql[0]) + " \nEKYT_TWR: " + str(ekyt_twr_sql[0]) + " \nEKKA_TWR: " + str(ekka_twr_sql[0]) + " \nEKKA_APP: " + str(ekka_app_sql[0]) + " \nEKAH_APP: " + str(ekah_app_sql[0]) + " \nEKAH_TWR: " + str(ekah_twr_sql[0]) + " ")
         
 
     @commands.command(name="Cancel", hidden=True, brief='Function to cancel your requested position.')
@@ -1804,7 +1087,7 @@ class VTCcog(commands.Cog):
         if ctx.channel.id == VTC_CHANNEL:
             Cancelcursor = mydb.cursor()
             
-            Cancelcursor.execute("SELECT name FROM vtc WHERE name = '" + str(usernick) + "'")
+            Cancelcursor.execute("SELECT name FROM vtc WHERE name = '<@" + str(usernick) + ">'")
             cancel_sql = Cancelcursor.fetchone()
             
             if cancel_sql == None:
@@ -1812,7 +1095,7 @@ class VTCcog(commands.Cog):
                 await asyncio.sleep(1)
                 await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
             else:
-                sql = "UPDATE vtc SET name = '' WHERE name = '" + str(usernick) + "'"
+                sql = "UPDATE vtc SET name = '' WHERE name = '<@" + str(usernick) + ">'"
 
                 Cancelcursor.execute(sql)
                 mydb.commit()
@@ -1823,7 +1106,6 @@ class VTCcog(commands.Cog):
             
         else:
             await ctx.send("<@" + str(usernick) + "> Please use the <#" + str(VTC_CHANNEL) + "> channel")
-
 
     @tasks.loop(seconds=60)
     async def autoreset(self) -> None:
@@ -1844,9 +1126,3 @@ class VTCcog(commands.Cog):
 
 def setup(bot):
     bot.add_cog(VTCcog(bot))
-
-    
-
-
-
-

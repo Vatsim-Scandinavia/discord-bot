@@ -3,3 +3,4 @@
 :flag_is: Access to Iceland's channels
 :flag_no: Access to Norway's channels
 :flag_se: Access to Sweden's channels
+:microphone2: Access to all FIR voice channels only

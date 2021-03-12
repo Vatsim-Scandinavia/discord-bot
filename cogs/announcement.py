@@ -1,14 +1,16 @@
 from discord.ext import commands
-
+from discord_slash import cog_ext, SlashContext
 from helpers.message import roles
-
+from helpers.config import GUILD_ID
 
 class AnnouncementCog(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="announce", hidden=True, brief='Function sends announcement message in specific channel.')
+    guild_ids = [GUILD_ID]
+
+    @cog_ext.cog_slash(name="announce", guild_ids=guild_ids, description="Function sends announcement message in specific channel.")
     @commands.has_any_role(*roles())
     async def announce(self, ctx) -> None:
 

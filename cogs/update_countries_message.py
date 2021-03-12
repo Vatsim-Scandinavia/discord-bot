@@ -1,7 +1,11 @@
+from contextlib import contextmanager
 import discord
+from discord import channel
+from discord import message
 from discord.ext import commands
+from discord_slash import cog_ext, SlashContext
 
-from helpers.config import ROLES_CHANNEL
+from helpers.config import ROLES_CHANNEL, GUILD_ID
 from helpers.message import embed
 from helpers.message import roles
 
@@ -11,16 +15,20 @@ class UpdateCountryMessage(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name='update_countries', hidden=True, description='Function posts updated countries message.')
+    guild_ids = [GUILD_ID]
+    
+
+    @cog_ext.cog_slash(name="update_countries", guild_ids=guild_ids, description="Function posts updated countries message.")
     @commands.has_any_role(*roles())
-    async def update(self, ctx, *, message_id: int = None):
+    async def update(self, ctx: SlashContext, *, message_id: int = None):
         """
         Function posts updated countries message
         :param ctx:
         :param message_id:
         :return:
         """
-        channel = discord.utils.get(ctx.message.guild.channels, id=ROLES_CHANNEL)
+        
+        channel = discord.utils.get(ctx.guild.channels, id=ROLES_CHANNEL)
         if channel:
             author = {
                 'name': self.bot.user.name,
@@ -29,18 +37,20 @@ class UpdateCountryMessage(commands.Cog):
             }
             if message_id is None:
                 try:
-                    await ctx.message.delete()
+                    msgs = await ctx.send("Message is being generated")
+                    await msgs.channel.purge(limit=2, check=lambda msg: not msg.pinned)
                     text = self._read_file()
                     msg = embed(description=text, author=author)
                     await channel.send(embed=msg)
                 except Exception as e:
                     print(e)
             else:
-                message = discord.utils.get(await channel.history(limit=100).flatten(), id=message_id)
+                message = discord.utils.get(await ctx.channel.history(limit=100).flatten(), id=message_id)
 
                 if message:
                     try:
-                        await ctx.message.delete()
+                        msgs = await ctx.send("Message is being generated")
+                        await msgs.channel.purge(limit=2, check=lambda msg: not msg.pinned)
                         text = self._read_file()
                         msg = embed(description=text, author=author)
                         await message.edit(embed=msg)

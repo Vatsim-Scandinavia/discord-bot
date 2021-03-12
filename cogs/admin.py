@@ -1,9 +1,9 @@
 import os
 
 from discord.ext import commands
-
+from discord_slash import cog_ext, SlashContext
 from helpers.message import roles, embed
-from helpers.config import COGS_LOAD
+from helpers.config import COGS_LOAD, GUILD_ID
 
 
 class AdminCog(commands.Cog):
@@ -11,10 +11,12 @@ class AdminCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    guild_ids = [GUILD_ID]
+
     # Hidden means it won't show up on the default help.
-    @commands.command(name='load', hidden=True, brief='Command which Loads a Module.')
+    @cog_ext.cog_slash(name="load", guild_ids=guild_ids, description="Command which Loads a Module.")
     @commands.has_any_role(*roles())
-    async def load(self, ctx, *, cog: str):
+    async def load(self, ctx: SlashContext, *, cog: str):
         """
             Command which Loads a Module.
         """
@@ -26,9 +28,9 @@ class AdminCog(commands.Cog):
         else:
             await ctx.send('**`SUCCESS`**')
 
-    @commands.command(name='unload', hidden=True, brief='Command which Unloads a Module.')
+    @cog_ext.cog_slash(name="unload", guild_ids=guild_ids, description="Command which Unloads a Module.")
     @commands.has_any_role(*roles())
-    async def unload(self, ctx, *, cog: str):
+    async def unload(self, ctx: SlashContext, *, cog: str):
         """
             Command which Unloads a Module.
         """
@@ -40,9 +42,9 @@ class AdminCog(commands.Cog):
         else:
             await ctx.send('**`SUCCESS`**')
 
-    @commands.command(name='reload', hidden=True, brief='Command which Reloads a Module.')
+    @cog_ext.cog_slash(name="reload", guild_ids=guild_ids, description="Command which Reloads a Module.")
     @commands.has_any_role(*roles())
-    async def reload(self, ctx, *, cog: str):
+    async def reload(self, ctx: SlashContext, *, cog: str):
         """
             Command which Reloads a Module.
         """
@@ -55,9 +57,9 @@ class AdminCog(commands.Cog):
         else:
             await ctx.send('**`SUCCESS`**')
 
-    @commands.command(name='cogs', hidden=True, brief='Command which sends a message with all available cogs.')
+    @cog_ext.cog_slash(name="cogs", guild_ids=guild_ids, description="Command which sends a message with all available cogs.")
     @commands.has_any_role(*roles())
-    async def cogs(self, ctx):
+    async def cogs(self, ctx: SlashContext):
         """
             Command which sends a message with all available cogs.
         """
@@ -67,11 +69,11 @@ class AdminCog(commands.Cog):
         for key in COGS_LOAD:
             fields.append({'name': key, 'value': COGS_LOAD[key]})
 
-        msg = embed(fields=fields)
+        msg = embed(title="List of Cogs", description="All available cogs", fields=fields)
 
         await ctx.send(embed=msg)
-
-    @commands.command(name='help', aliases=['commands'], hidden=True, brief='Command which sends a message with all available commands.')
+    
+    @cog_ext.cog_slash(name="help", guild_ids=guild_ids, description="Command which sends a message with all available commands.")
     @commands.has_any_role(*roles())
     async def help(self, ctx):
         """
@@ -84,12 +86,13 @@ class AdminCog(commands.Cog):
             fields.append({'name': command, 'value': command.short_doc})
 
         msg = embed(fields=fields, title='Available Commands')
-        await ctx.message.delete()
+        msg = await ctx.send("Message is being generated")
+        await msg.channel.purge(limit=2, check=lambda msg: not msg.pinned)
         await ctx.author.send(embed=msg)
 
     @commands.command(name='ping', hidden=True, brief='Function sends pong if member has any of the admin roles.')
     @commands.has_any_role(*roles())
-    async def ping(self, ctx):
+    async def ping(self, ctx): 
         """
         Function sends pong if member has any of the admin roles
         :param ctx:
@@ -97,16 +100,22 @@ class AdminCog(commands.Cog):
         """
         await ctx.send('Pong')
 
-    @commands.command(name='say', hidden=True, brief='Bot sends a specific message sent by user.')
+    @cog_ext.cog_slash(name="ping", guild_ids=guild_ids, description="Function sends pong if member has any of the admin roles.")
     @commands.has_any_role(*roles())
-    async def say(self, ctx, *, content: str) -> None:
+    async def run_ping(self, ctx: SlashContext):
+        await self.ping(ctx)
+
+    @cog_ext.cog_slash(name="say", guild_ids=guild_ids, description="Bot sends a specific message sent by user.")
+    @commands.has_any_role(*roles())
+    async def say(self, ctx: SlashContext, *, content: str) -> None:
         """
         Bot sends a specific message sent by user
         :param ctx:
         :param content:
         :return None:
         """
-        await ctx.message.delete()
+        msg = await ctx.send("Message is being generated")
+        await msg.channel.purge(limit=2, check=lambda msg: not msg.pinned)
         await ctx.send(content)
 
     @commands.command(name='delete', aliases=['purge'], hidden=True, brief='Function deletes specific amount of messages.')

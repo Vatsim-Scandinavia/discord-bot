@@ -4,9 +4,10 @@ import re
 import discord
 import mysql.connector
 from discord.ext import commands, tasks
+from discord_slash import cog_ext, SlashContext
 from dotenv import load_dotenv
 
-from helpers.config import VATSIM_MEMBER_ROLE, CHECK_MEMBERS_INTERVAL, VATSCA_MEMBER_ROLE, ROLE_REASONS
+from helpers.config import VATSIM_MEMBER_ROLE, CHECK_MEMBERS_INTERVAL, VATSCA_MEMBER_ROLE, ROLE_REASONS, GUILD_ID
 
 load_dotenv('.env')
 
@@ -19,22 +20,21 @@ class TasksCog(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.check_members.start()
+        self.check_members_loop.start()
 
     def cog_unload(self):
-        self.check_members.cancel()
+        self.check_members_loop.cancel()
 
-    @tasks.loop(seconds=CHECK_MEMBERS_INTERVAL)
     async def check_members(self):
         """
         Task checks guild members and assigns roles according to the data we've stored in our system
         :return:
         """
-        guild = self.bot.get_guild(776110954437148672)
+        guild = self.bot.get_guild(GUILD_ID)
         users = guild.members
         mydb = mysql.connector.connect(
             host="localhost",
-            user=os.getenv('USER'),
+            user=os.getenv('DBUSER'),
             password=os.getenv('PASSWORD'),
             database=os.getenv('DATABASE')
         )
@@ -52,7 +52,7 @@ class TasksCog(commands.Cog):
 
             try:
 
-                cid = re.findall('\d+', user.nick)
+                cid = re.findall('\d+', str(user.nick))
 
                 if len(cid) < 1:
                     raise ValueError
@@ -71,12 +71,29 @@ class TasksCog(commands.Cog):
             except ValueError as e:
                 if vatsca_member in user.roles:
                     await user.remove_roles(vatsca_member, reason=self.NO_CID_REMOVE_REASON)
+                """if vatsim_member in user.roles:
+                    await user.remove_roles(vatsim_member, reason=self.NO_CID_REMOVE_REASON)"""
 
             except Exception as e:
                 print(e)
                 continue
 
         mydb.close()
+
+    @tasks.loop(seconds=CHECK_MEMBERS_INTERVAL)
+    async def check_members_loop(self):
+        await self.check_members()
+
+    guild_ids = [GUILD_ID]
+
+    @cog_ext.cog_slash(name="user_check", guild_ids=guild_ids, description="Bot manually check members.")
+    async def run_user_check(self, ctx: SlashContext):
+        await self.user_check(ctx)
+    
+    @commands.command(name="user_check", hidden=True, brief='Bot manually check members.')
+    async def user_check(self, ctx):
+        await self.check_members()
+        await ctx.send("Checking members!")
 
 
 def setup(bot):
