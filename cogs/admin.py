@@ -73,37 +73,15 @@ class AdminCog(commands.Cog):
 
         await ctx.send(embed=msg)
     
-    @cog_ext.cog_slash(name="help", guild_ids=guild_ids, description="Command which sends a message with all available commands.")
+    @cog_ext.cog_slash(name="ping", guild_ids=guild_ids, description="Function sends pong if member has any of the admin roles.")
     @commands.has_any_role(*roles())
-    async def help(self, ctx):
-        """
-            Command which sends a message with all available commands.
-        """
-
-        fields = []
-
-        for command in self.bot.commands:
-            fields.append({'name': command, 'value': command.short_doc})
-
-        msg = embed(fields=fields, title='Available Commands')
-        msg = await ctx.send("Message is being generated")
-        await msg.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-        await ctx.author.send(embed=msg)
-
-    @commands.command(name='ping', hidden=True, brief='Function sends pong if member has any of the admin roles.')
-    @commands.has_any_role(*roles())
-    async def ping(self, ctx): 
+    async def ping(self, ctx: SlashContext): 
         """
         Function sends pong if member has any of the admin roles
         :param ctx:
         :return None:
         """
         await ctx.send('Pong')
-
-    @cog_ext.cog_slash(name="ping", guild_ids=guild_ids, description="Function sends pong if member has any of the admin roles.")
-    @commands.has_any_role(*roles())
-    async def run_ping(self, ctx: SlashContext):
-        await self.ping(ctx)
 
     @cog_ext.cog_slash(name="say", guild_ids=guild_ids, description="Bot sends a specific message sent by user.")
     @commands.has_any_role(*roles())
@@ -118,7 +96,7 @@ class AdminCog(commands.Cog):
         await msg.channel.purge(limit=2, check=lambda msg: not msg.pinned)
         await ctx.send(content)
 
-    @commands.command(name='delete', aliases=['purge'], hidden=True, brief='Function deletes specific amount of messages.')
+    @cog_ext.cog_slash(name="delete", guild_ids=guild_ids, description="Function deletes specific amount of messages.")
     @commands.has_any_role(*roles())
     async def delete(self, ctx, *, number: int = 0):
         """
@@ -134,11 +112,12 @@ class AdminCog(commands.Cog):
                 async for msg in ctx.channel.history(limit=number):
                     msg_delete.append(msg)
 
-                await ctx.message.channel.delete_messages(msg_delete)
+                """await ctx.message.channel.delete_messages(msg_delete)"""
+                msgs = await ctx.send("Deleting messages")
+                await msgs.channel.purge(limit=number)
             except Exception as exception:
                 await ctx.send(exception)
         else:
-            await ctx.message.delete()
             await ctx.author.send('Command is disabled because debug is not enabled.')
 
 

@@ -14,25 +14,43 @@ PRESENCE_TEXT = 'VATSCA Airspace'
 COGS = [
     'cogs.admin',
     'cogs.member',
-    'cogs.announcement',
+    #'cogs.announcement',
     'cogs.tasks',
     'cogs.events',
-    'cogs.update_welcome_message',
-    'cogs.update_countries_message',
-    'cogs.update_notification_message',
+    'cogs.update_messages',
     'cogs.vtc',
 ]
 
 COGS_LOAD = {
     'admin': 'cogs.admin',
     'member': 'cogs.member',
-    'announcement': 'cogs.announcement',
+    #'announcement': 'cogs.announcement',
     'check_members': 'cogs.tasks',
     'events': 'cogs.events',
-    'welcome': 'cogs.update_welcome_message',
-    'countries': 'cogs.update_countries_message',
-    'notification': 'cogs.update_notification_message',
+    'update': 'cogs.update_messages',
     'vtc': 'cogs.vtc',
+}
+
+VTC_POSITIONS = {
+    'EKCH_DEL', 'ekch_del',
+    'EKCH_GND', 'ekch_gnd',
+    'EKCH_TWR', 'ekch_twr',
+    'EKCH_D_TWR', 'ekch_d_twr',
+    'EKCH_C_TWR', 'ekch_c_twr',
+    'EKCH_APP', 'ekch_app',
+    'EKCH_F_APP', 'ekch_f_app',
+    'EKCH_DEP', 'ekch_dep',
+    'EKBI_APP', 'ekbi_app',
+    'EKBI_TWR', 'ekbi_twr',
+    'EKYT_APP', 'ekyt_app',
+    'EKYT_TWR', 'ekyt_twr',
+    'EKKA_APP', 'ekka_app',
+    'EKKA_TWR', 'ekka_twr',
+    'EKAH_TWR', 'ekah_twr',
+    'EKAH_APP', 'ekah_app',
+    'EKDK_CTR', 'ekdk_ctr',
+    'EKDK_D_CTR', 'ekdk_d_ctr',
+    'EKDK_V_CTR', 'ekdk_v_ctr',
 }
 
 VATSIM_MEMBER_ROLE = "Vatsim Member"
@@ -48,6 +66,12 @@ EVENTS_ROLE = 817310403469639750
 ADMIN_ROLES = [
     'web team',
     'admin',
+]
+
+STAFF_ROLES = [
+    'web team',
+    'admin',
+    'staff',
 ]
 
 EVENTS_CHANNEL = 817306386245484544
@@ -71,7 +95,7 @@ GUILD_ID = 817306248411742229
 
 VTC_CHANNEL = 817306917155504128
 
-VTC_STAFFING_MSG = 817335568937123860
+VTC_STAFFING_MSG = 820258974078599168
 
 S1 = 817310520948162560
 

@@ -6,6 +6,7 @@ import mysql.connector
 from discord.ext import commands, tasks
 from discord_slash import cog_ext, SlashContext
 from dotenv import load_dotenv
+from helpers.message import roles
 
 from helpers.config import VATSIM_MEMBER_ROLE, CHECK_MEMBERS_INTERVAL, VATSCA_MEMBER_ROLE, ROLE_REASONS, GUILD_ID
 
@@ -85,12 +86,9 @@ class TasksCog(commands.Cog):
         await self.check_members()
 
     guild_ids = [GUILD_ID]
-
-    @cog_ext.cog_slash(name="user_check", guild_ids=guild_ids, description="Bot manually check members.")
-    async def run_user_check(self, ctx: SlashContext):
-        await self.user_check(ctx)
     
-    @commands.command(name="user_check", hidden=True, brief='Bot manually check members.')
+    @cog_ext.cog_slash(name="usercheck", guild_ids=guild_ids, description="Bot manually check members.")
+    @commands.has_any_role(*roles())
     async def user_check(self, ctx):
         await self.check_members()
         await ctx.send("Checking members!")

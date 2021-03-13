@@ -1,8 +1,10 @@
 from helpers.config import GUILD_ID
 import discord
 from discord.ext import commands
-from discord_slash import cog_ext, SlashContext
+from discord_slash import cog_ext
 from helpers.message import embed
+
+import os
 
 
 class MemberCog(commands.Cog):
@@ -12,11 +14,8 @@ class MemberCog(commands.Cog):
 
     guild_ids = [GUILD_ID]
 
-    @cog_ext.cog_slash(name="test", guild_ids=guild_ids, description="Function sends example embed.")
-    async def run_example_embed(self, ctx: SlashContext):
-        await self.example_embed(ctx)
     
-    @commands.command(name='embeds', aliases=['test'], brief='Function sends example embed.')
+    @cog_ext.cog_slash(name="test", guild_ids=guild_ids, description="Function sends example embed.")
     @commands.guild_only()
     async def example_embed(self, ctx):
         """
@@ -24,9 +23,12 @@ class MemberCog(commands.Cog):
         :param ctx:
         :return:
         """
-        message = embed(title='test', description='test')
-
-        await ctx.send(embed=message)
+        if os.getenv('DEBUG') == 'True':
+            message = embed(title='test', description='test')
+            
+            await ctx.send(embed=message)
+        else:
+            await ctx.author.send('Command is disabled because debug is not enabled.')
 
 
 def setup(bot):

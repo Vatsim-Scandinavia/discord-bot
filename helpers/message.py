@@ -2,7 +2,7 @@ import bs4
 import discord
 import html2markdown
 
-from helpers.config import ADMIN_ROLES, VATSCA_BLUE
+from helpers.config import ADMIN_ROLES, STAFF_ROLES, VATSCA_BLUE
 
 
 def embed(description: str = None, colour=None, title: str = None, author: dict = None, image: str = None, footer: dict = None,
@@ -58,6 +58,13 @@ def roles() -> str:
     admin_roles = tuple(ADMIN_ROLES)
     return admin_roles
 
+def staff_roles() -> str:
+    """
+    Function returns tuple of staff roles
+    :return:
+    """
+    staff_roles = tuple(STAFF_ROLES)
+    return staff_roles
 
 def event_description(description: str) -> str:
     """
