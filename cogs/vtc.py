@@ -6,7 +6,7 @@ from discord_slash import cog_ext, SlashContext
 import datetime
 import asyncio
 import mysql.connector
-from helpers.config import S1, S2, S3, C1, VTC_CHANNEL, VTC_STAFFING_MSG, VTC_POSITIONS, GUILD_ID, COGS_LOAD
+from helpers.config import S1_ROLE, S2_ROLE, S3_ROLE, C1_ROLE, VTC_CHANNEL, VTC_STAFFING_MSG, VTC_POSITIONS, GUILD_ID, COGS_LOAD
 from helpers.message import staff_roles
 
 today = datetime.date.today()
@@ -63,10 +63,10 @@ class VTCcog(commands.Cog):
     async def book(self, ctx, position: str):
         usernick = ctx.author.id
 
-        S1_rating = discord.utils.get(ctx.guild.roles, id=S1)
-        S2_rating = discord.utils.get(ctx.guild.roles, id=S2)
-        S3_rating = discord.utils.get(ctx.guild.roles, id=S3)
-        C1_rating = discord.utils.get(ctx.guild.roles, id=C1)
+        S1_rating = discord.utils.get(ctx.guild.roles, id=S1_ROLE)
+        S2_rating = discord.utils.get(ctx.guild.roles, id=S2_ROLE)
+        S3_rating = discord.utils.get(ctx.guild.roles, id=S3_ROLE)
+        C1_rating = discord.utils.get(ctx.guild.roles, id=C1_ROLE)
 
         try:
             if ctx.channel.id == VTC_CHANNEL:

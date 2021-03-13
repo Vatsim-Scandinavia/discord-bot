@@ -1,14 +1,14 @@
 import os
 
 import discord
+import requests
+import re
+
 from discord import InvalidArgument
 from discord.ext import commands
 from discord_slash import SlashCommand
 from dotenv import load_dotenv
-import requests
-import re
 from helpers.config import VATSCA_MEMBER_ROLE, VATSIM_MEMBER_ROLE, GUILD_ID
-
 from helpers import config
 
 load_dotenv('.env')
@@ -46,7 +46,7 @@ async def on_member_update(before_update, user: discord.User):
     guild = bot.get_guild(GUILD_ID)
 
     vatsca_member = discord.utils.get(guild.roles, id=VATSCA_MEMBER_ROLE)
-    vatsim_member = discord.utils.get(guild.roles, name=VATSIM_MEMBER_ROLE)
+    vatsim_member = discord.utils.get(guild.roles, id=VATSIM_MEMBER_ROLE)
 
     if vatsim_member not in user.roles:
         if vatsca_member in user.roles:

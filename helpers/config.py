@@ -1,4 +1,5 @@
 import discord
+import os
 from dotenv import load_dotenv
 
 load_dotenv('.env')
@@ -8,8 +9,9 @@ PREFIXES = [
 ]
 
 DESCRIPTION = 'This is a new VATSCA Discord Bot'
-
 PRESENCE_TEXT = 'VATSCA Airspace'
+
+VATSCA_BLUE = 0x43c6e7
 
 COGS = [
     'cogs.admin',
@@ -53,16 +55,6 @@ VTC_POSITIONS = {
     'EKDK_V_CTR', 'ekdk_v_ctr',
 }
 
-VATSIM_MEMBER_ROLE = "Vatsim Member"
-
-CHECK_MEMBERS_INTERVAL = 86400
-
-POST_EVENTS_INTERVAL = 900
-
-VATSCA_MEMBER_ROLE = 820356788741734442
-
-EVENTS_ROLE = 759878484922335303
-
 ADMIN_ROLES = [
     'Web',
     'Discord Moderator',
@@ -76,10 +68,6 @@ STAFF_ROLES = [
     'Staff',
 ]
 
-EVENTS_CHANNEL = 779807386071203860
-
-VATSCA_BLUE = 0x43c6e7
-
 ROLE_REASONS = {
     'vatsca_add': 'Member is now part of VATSCA',
     'vatsca_remove': 'Member is no longer part of VATSCA',
@@ -87,25 +75,26 @@ ROLE_REASONS = {
     'no_auth': 'User did not authenticate via the Community Website',
 }
 
-RULES_CHANNEL = 331137975578525698
+# Environment variables
+VATSCA_MEMBER_ROLE = int(os.getenv('VATSCA_MEMBER_ROLE'))
+VATSIM_MEMBER_ROLE = int(os.getenv('VATSIM_MEMBER_ROLE'))
+EVENTS_ROLE = int(os.getenv('EVENTS_ROLE'))
+S1_ROLE = int(os.getenv('S1_ROLE'))
+S2_ROLE = int(os.getenv('S2_ROLE'))
+S3_ROLE = int(os.getenv('S3_ROLE'))
+C1_ROLE = int(os.getenv('C1_ROLE'))
 
-CHECK_RULES_INTERVAL = 60
+GUILD_ID = int(os.getenv('GUILD_ID'))
 
-ROLES_CHANNEL = 759785767199047690
+EVENTS_CHANNEL = int(os.getenv('EVENTS_CHANNEL'))
+RULES_CHANNEL = int(os.getenv('RULES_CHANNEL'))
+ROLES_CHANNEL = int(os.getenv('ROLES_CHANNEL'))
 
-GUILD_ID = 182554696559362048
+VTC_CHANNEL = int(os.getenv('VTC_CHANNEL'))
+VTC_STAFFING_MSG = int(os.getenv('VTC_STAFFING_MSG'))
 
-VTC_CHANNEL = 803298341823316040
-
-VTC_STAFFING_MSG = 820258974078599168
-
-S1 = 759791336978907136
-
-S2 = 759788985458360370
-
-S3 = 759789037107675136
-
-C1 = 759789034263412736
+CHECK_MEMBERS_INTERVAL = int(os.getenv('CHECK_MEMBERS_INTERVAL', 86400))
+POST_EVENTS_INTERVAL = int(os.getenv('POST_EVENTS_INTERVAL', 900))
 
 def prefix() -> list:
     return PREFIXES

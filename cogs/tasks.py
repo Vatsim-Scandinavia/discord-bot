@@ -36,7 +36,7 @@ class TasksCog(commands.Cog):
         users = guild.members
 
         vatsca_member = discord.utils.get(guild.roles, id=VATSCA_MEMBER_ROLE)
-        vatsim_member = discord.utils.get(guild.roles, name=VATSIM_MEMBER_ROLE)
+        vatsim_member = discord.utils.get(guild.roles, id=VATSIM_MEMBER_ROLE)
 
         for user in users:
             if vatsim_member not in user.roles:

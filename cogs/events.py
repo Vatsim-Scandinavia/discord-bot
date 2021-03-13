@@ -75,7 +75,7 @@ class EventsCog(commands.Cog):
         :return:
         """
         async with aiohttp.ClientSession() as session:
-            auth = aiohttp.BasicAuth(os.getenv('API_TOKEN'), '')
+            auth = aiohttp.BasicAuth(os.getenv('FORUM_API_TOKEN'), '')
             async with session.get(self.RSS_FEED_URL, auth=auth, params=self.PARAMS) as resp:
                 return await resp.json()
 
