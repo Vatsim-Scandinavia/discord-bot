@@ -55,7 +55,7 @@ async def on_member_update(before_update, user: discord.User):
 
         cid = re.findall('\d+', str(user.nick))
 
-        if len(cid[0]) < 6:
+        if len(cid) < 1:
             raise ValueError
 
         statement = "https://api.vatsim.net/api/ratings/" + str(cid[0])
@@ -70,6 +70,7 @@ async def on_member_update(before_update, user: discord.User):
                 await user.remove_roles(vatsca_member)
 
     except ValueError as e:
+        # This happens when a CID is not found, ignore it
         """if vatsca_member in user.roles:
             await user.remove_roles(vatsca_member)"""
         """if vatsim_member in user.roles:
