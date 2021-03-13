@@ -32,7 +32,7 @@ class VTCcog(commands.Cog):
 
     @cog_ext.cog_slash(name="setupvtc", guild_ids=guild_ids, description="Bot sends VTC staffing message")
     @commands.has_any_role(*staff_roles())
-    async def setupvtc(self, ctx: SlashContext):
+    async def setupvtc(self, ctx):
         username = ctx.author.id
         if ctx.channel.id == VTC_CHANNEL:
         
