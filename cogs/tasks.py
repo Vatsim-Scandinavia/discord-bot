@@ -3,6 +3,7 @@ import re
 
 import discord
 import mysql.connector
+import requests
 from discord.ext import commands, tasks
 from discord_slash import cog_ext, SlashContext
 from dotenv import load_dotenv
@@ -33,14 +34,6 @@ class TasksCog(commands.Cog):
         """
         guild = self.bot.get_guild(GUILD_ID)
         users = guild.members
-        mydb = mysql.connector.connect(
-            host="localhost",
-            user=os.getenv('DBUSER'),
-            password=os.getenv('PASSWORD'),
-            database=os.getenv('DATABASE')
-        )
-
-        cursor = mydb.cursor()
 
         vatsca_member = discord.utils.get(guild.roles, id=VATSCA_MEMBER_ROLE)
         vatsim_member = discord.utils.get(guild.roles, name=VATSIM_MEMBER_ROLE)
@@ -58,15 +51,17 @@ class TasksCog(commands.Cog):
                 if len(cid) < 1:
                     raise ValueError
 
-                statement = "SELECT subdivision FROM users WHERE id = %s"
+                statement = "https://api.vatsim.net/api/ratings/" + str(cid[0])
+                request = requests.get(statement)
+                if request.status_code == requests.codes.ok:
+                    request = request.json()
+                else:
+                    continue
 
-                cursor.execute(statement, cid)
 
-                result = cursor.fetchone()
-
-                if vatsca_member not in user.roles and result[0] == 'SCA':
+                if vatsca_member not in user.roles and request["subdivision"] == 'SCA':
                     await user.add_roles(vatsca_member, reason=self.VATSCA_ROLE_ADD_REASON)
-                elif vatsca_member in user.roles and result[0] != 'SCA':
+                elif vatsca_member in user.roles and request["subdivision"] != 'SCA':
                     await user.remove_roles(vatsca_member, reason=self.VATSCA_ROLE_REMOVE_REASON)
 
             except ValueError as e:
@@ -78,8 +73,6 @@ class TasksCog(commands.Cog):
             except Exception as e:
                 print(e)
                 continue
-
-        mydb.close()
 
     @tasks.loop(seconds=CHECK_MEMBERS_INTERVAL)
     async def check_members_loop(self):

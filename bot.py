@@ -5,8 +5,8 @@ from discord import InvalidArgument
 from discord.ext import commands
 from discord_slash import SlashCommand
 from dotenv import load_dotenv
+import requests
 import re
-import mysql.connector
 from helpers.config import VATSCA_MEMBER_ROLE, VATSIM_MEMBER_ROLE, GUILD_ID
 
 from helpers import config
@@ -43,15 +43,6 @@ async def on_member_update(before_update, user: discord.User):
     :param user:
     :return:
     """
-    mydb = mysql.connector.connect(
-        host="localhost",
-        user=os.getenv('DBUSER'),
-        password=os.getenv('PASSWORD'),
-        database=os.getenv('DATABASE')
-    )
-
-    cursor = mydb.cursor()
-
     guild = bot.get_guild(GUILD_ID)
 
     vatsca_member = discord.utils.get(guild.roles, id=VATSCA_MEMBER_ROLE)
@@ -64,23 +55,23 @@ async def on_member_update(before_update, user: discord.User):
 
         cid = re.findall('\d+', str(user.nick))
 
-        if len(cid) < 6:
+        if len(cid[0]) < 6:
             raise ValueError
 
-        statement = "SELECT subdivision FROM users WHERE id = %s"
+        statement = "https://api.vatsim.net/api/ratings/" + str(cid[0])
+        request = requests.get(statement)
+        if request.status_code == requests.codes.ok:
+            request = request.json()
+            
 
-        cursor.execute(statement, cid)
-
-        result = cursor.fetchone()
-
-        if vatsca_member not in user.roles and result[0] == 'SCA':
-            await user.add_roles(vatsca_member)
-        elif vatsca_member in user.roles and result[0] != 'SCA':
-            await user.remove_roles(vatsca_member)
+            if vatsca_member not in user.roles and request["subdivision"] == 'SCA':
+                await user.add_roles(vatsca_member)
+            elif vatsca_member in user.roles and request["subdivision"] != 'SCA':
+                await user.remove_roles(vatsca_member)
 
     except ValueError as e:
-        if vatsca_member in user.roles:
-            """await user.remove_roles(vatsca_member)"""
+        """if vatsca_member in user.roles:
+            await user.remove_roles(vatsca_member)"""
         """if vatsim_member in user.roles:
             await user.remove_roles(vatsim_member)"""
 
