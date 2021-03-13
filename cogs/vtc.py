@@ -240,6 +240,8 @@ class VTCcog(commands.Cog):
     @tasks.loop(seconds=60)
     async def autoreset(self) -> None:
 
+        await self.bot.wait_until_ready()
+
         now = datetime.datetime.now()
         if now.weekday() == 0 and now.hour == 23 and 00 <= now.minute <= 5:
             mancursor = mydb.cursor()

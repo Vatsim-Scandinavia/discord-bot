@@ -43,6 +43,8 @@ class EventsCog(commands.Cog):
         Task looks up all events and posts ones that take place in next 1 and a half hour
         :return:
         """
+        await self.bot.wait_until_ready()
+
         channel = self.bot.get_channel(EVENTS_CHANNEL)
         role = channel.guild.get_role(EVENTS_ROLE)
         mydb = mysql.connector.connect(
