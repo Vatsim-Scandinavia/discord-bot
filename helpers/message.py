@@ -84,4 +84,8 @@ def get_image(text: str) -> str:
     """
     soup = bs4.BeautifulSoup(text, features='html.parser')
     img = soup.find_all('img')
-    return img[0]['src']
+
+    if len(img) > 0:
+        return img[0]['src']
+    else:
+        return ''
