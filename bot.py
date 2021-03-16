@@ -43,41 +43,7 @@ async def on_member_update(before_update, user: discord.User):
     :param user:
     :return:
     """
-    guild = bot.get_guild(GUILD_ID)
-
-    vatsca_member = discord.utils.get(guild.roles, id=VATSCA_MEMBER_ROLE)
-    vatsim_member = discord.utils.get(guild.roles, id=VATSIM_MEMBER_ROLE)
-
-    if vatsim_member not in user.roles:
-        if vatsca_member in user.roles:
-            await user.remove_roles(vatsca_member)
-    try:
-
-        cid = re.findall('\d+', str(user.nick))
-
-        if len(cid) < 1:
-            raise ValueError
-
-        statement = "https://api.vatsim.net/api/ratings/" + str(cid[0])
-        request = requests.get(statement)
-        if request.status_code == requests.codes.ok:
-            request = request.json()
-            
-
-            if vatsca_member not in user.roles and request["subdivision"] == 'SCA':
-                await user.add_roles(vatsca_member)
-            elif vatsca_member in user.roles and request["subdivision"] != 'SCA':
-                await user.remove_roles(vatsca_member)
-
-    except ValueError as e:
-        # This happens when a CID is not found, ignore it
-        """if vatsca_member in user.roles:
-            await user.remove_roles(vatsca_member)"""
-        """if vatsim_member in user.roles:
-            await user.remove_roles(vatsim_member)"""
-
-    except Exception as e:
-        print(e)
+    # Nothing here for now, will put back when API is working again
 
     
 
