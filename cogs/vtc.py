@@ -44,7 +44,7 @@ class VTCcog(commands.Cog):
 
     @cog_ext.cog_slash(name="manreset", guild_ids=guild_ids, description="Bot manually resets the chat.")
     @commands.has_any_role(*staff_roles())
-    async def manreset(self, ctx: SlashContext) -> None:
+    async def manreset(self, ctx) -> None:
         username = ctx.author.id
         if ctx.channel.id == VTC_CHANNEL:
 
@@ -125,30 +125,31 @@ class VTCcog(commands.Cog):
         twrCursor.execute("SELECT name FROM vtc WHERE id = '3'")
         ekch_twr_sql = twrCursor.fetchone()
 
-        #Crossing Tower
-        CtwrCursor = mydb.cursor()
-        CtwrCursor.execute("SELECT name FROM vtc WHERE id = '4'")
-        ekch_c_twr_sql = CtwrCursor.fetchone()
-
         #Departure Tower
         DtwrCursor = mydb.cursor()
-        DtwrCursor.execute("SELECT name FROM vtc WHERE id = '5'")
+        DtwrCursor.execute("SELECT name FROM vtc WHERE id = '4'")
         ekch_d_twr_sql = DtwrCursor.fetchone()
 
-        #Departure
-        depCursor = mydb.cursor()
-        depCursor.execute("SELECT name FROM vtc WHERE id = '6'")
-        ekch_dep_sql = depCursor.fetchone()
+        #Crossing Tower
+        CtwrCursor = mydb.cursor()
+        CtwrCursor.execute("SELECT name FROM vtc WHERE id = '5'")
+        ekch_c_twr_sql = CtwrCursor.fetchone()
 
         #Approach
         appCursor = mydb.cursor()
-        appCursor.execute("SELECT name FROM vtc WHERE id = '7'")
+        appCursor.execute("SELECT name FROM vtc WHERE id = '6'")
         ekch_app_sql = appCursor.fetchone()
+
 
         #Final Approach
         fappCursor = mydb.cursor()
-        fappCursor.execute("SELECT name FROM vtc WHERE id = '8'")
+        fappCursor.execute("SELECT name FROM vtc WHERE id = '7'")
         ekch_f_app_sql = fappCursor.fetchone()
+
+        #Departure
+        depCursor = mydb.cursor()
+        depCursor.execute("SELECT name FROM vtc WHERE id = '8'")
+        ekch_dep_sql = depCursor.fetchone()
 
         #BLL Approach
         bappCursor = mydb.cursor()
@@ -170,25 +171,25 @@ class VTCcog(commands.Cog):
         AALtwrCursor.execute("SELECT name FROM vtc WHERE id = '12'")
         ekyt_twr_sql = AALtwrCursor.fetchone()
 
-        #KRP Tower
-        KRPtwrCursor = mydb.cursor()
-        KRPtwrCursor.execute("SELECT name FROM vtc WHERE id = '13'")
-        ekka_twr_sql = KRPtwrCursor.fetchone()
-
         #KRP Approach
         KRPappCursor = mydb.cursor()
-        KRPappCursor.execute("SELECT name FROM vtc WHERE id = '14'")
+        KRPappCursor.execute("SELECT name FROM vtc WHERE id = '13'")
         ekka_app_sql = KRPappCursor.fetchone()
 
-        #AAR Approach
-        AARappCursor = mydb.cursor()
-        AARappCursor.execute("SELECT name FROM vtc WHERE id = '15'")
-        ekah_app_sql = AARappCursor.fetchone()
+        #KRP Tower
+        KRPtwrCursor = mydb.cursor()
+        KRPtwrCursor.execute("SELECT name FROM vtc WHERE id = '14'")
+        ekka_twr_sql = KRPtwrCursor.fetchone()
 
         #AAR Tower
         AARtwrCursor = mydb.cursor()
-        AARtwrCursor.execute("SELECT name FROM vtc WHERE id = '16'")
+        AARtwrCursor.execute("SELECT name FROM vtc WHERE id = '15'")
         ekah_twr_sql = AARtwrCursor.fetchone()
+
+        #AAR Approach
+        AARappCursor = mydb.cursor()
+        AARappCursor.execute("SELECT name FROM vtc WHERE id = '16'")
+        ekah_app_sql = AARappCursor.fetchone()
 
         #EKDK CTR
         EKDKCursor = mydb.cursor()
