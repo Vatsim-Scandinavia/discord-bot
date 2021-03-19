@@ -4,6 +4,7 @@ import re
 import discord
 import mysql.connector
 import requests
+import datetime
 from discord.ext import commands, tasks
 from discord_slash import cog_ext, SlashContext
 from dotenv import load_dotenv
@@ -32,47 +33,50 @@ class TasksCog(commands.Cog):
         Task checks guild members and assigns roles according to the data we've stored in our system
         :return:
         """
+
+        await self.bot.wait_until_ready()
+        print("check_members started at " + str(datetime.datetime.now().isoformat()))
+
         guild = self.bot.get_guild(GUILD_ID)
         users = guild.members
 
         vatsca_member = discord.utils.get(guild.roles, id=VATSCA_MEMBER_ROLE)
         vatsim_member = discord.utils.get(guild.roles, id=VATSIM_MEMBER_ROLE)
 
-        for user in users:
-            if vatsim_member not in user.roles:
-                if vatsca_member in user.roles:
-                    await user.remove_roles(vatsca_member, reason=self.NO_AUTH_REMOVE_REASON)
-                continue
+        request = requests.get("https://api.vatsim.net/api/subdivisions/SCA/members/", headers={'Authorization': 'Token ' + os.getenv('VATSIM_API_TOKEN')})
+        if request.status_code == requests.codes.ok:
+            memberlist = request.json()
+            
+            for user in users:
+                if vatsim_member not in user.roles:
+                    if vatsca_member in user.roles:
+                        await user.remove_roles(vatsca_member, reason=self.NO_AUTH_REMOVE_REASON)
+                    continue
+                try:
+                    cid = re.findall('\d+', str(user.nick))
 
-            try:
+                    if len(cid) < 1:
+                        raise ValueError
 
-                cid = re.findall('\d+', str(user.nick))
+                    for entry in memberlist:
+                        if entry['id'] == cid[0]:
+                            if vatsca_member not in user.roles and entry["subdivision"] == 'SCA':
+                                await user.add_roles(vatsca_member, reason=self.VATSCA_ROLE_ADD_REASON)
+                            elif vatsca_member in user.roles and entry["subdivision"] != 'SCA':
+                                await user.remove_roles(vatsca_member, reason=self.VATSCA_ROLE_REMOVE_REASON)
+                            
+                            break
 
-                if len(cid) < 1:
-                    raise ValueError
+                except ValueError as e:
+                    if vatsca_member in user.roles:
+                        await user.remove_roles(vatsca_member, reason=self.NO_CID_REMOVE_REASON)
 
-                statement = "https://api.vatsim.net/api/ratings/" + str(cid[0])
-                request = requests.get(statement)
-                if request.status_code == requests.codes.ok:
-                    request = request.json()
-                else:
+                except Exception as e:
+                    print(e)
                     continue
 
+        print("check_members finished at " + str(datetime.datetime.now().isoformat()))
 
-                if vatsca_member not in user.roles and request["subdivision"] == 'SCA':
-                    await user.add_roles(vatsca_member, reason=self.VATSCA_ROLE_ADD_REASON)
-                elif vatsca_member in user.roles and request["subdivision"] != 'SCA':
-                    await user.remove_roles(vatsca_member, reason=self.VATSCA_ROLE_REMOVE_REASON)
-
-            except ValueError as e:
-                if vatsca_member in user.roles:
-                    await user.remove_roles(vatsca_member, reason=self.NO_CID_REMOVE_REASON)
-                """if vatsim_member in user.roles:
-                    await user.remove_roles(vatsim_member, reason=self.NO_CID_REMOVE_REASON)"""
-
-            except Exception as e:
-                print(e)
-                continue
 
     @tasks.loop(seconds=CHECK_MEMBERS_INTERVAL)
     async def check_members_loop(self):

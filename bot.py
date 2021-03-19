@@ -43,7 +43,45 @@ async def on_member_update(before_update, user: discord.User):
     :param user:
     :return:
     """
-    # Nothing here for now, will put back when API is working again
+
+    # Check if the nick has been changed as it's usually the only thing we care about
+    if(before_update.nick == user.nick):
+        return
+
+    guild = bot.get_guild(GUILD_ID)
+
+    vatsca_member = discord.utils.get(guild.roles, id=VATSCA_MEMBER_ROLE)
+    vatsim_member = discord.utils.get(guild.roles, id=VATSIM_MEMBER_ROLE)
+
+    if vatsim_member not in user.roles:
+        if vatsca_member in user.roles:
+            await user.remove_roles(vatsca_member)
+    try:
+
+        cid = re.findall('\d+', str(user.nick))
+
+        if len(cid) < 1:
+            raise ValueError
+
+        request = requests.get("https://api.vatsim.net/api/subdivisions/SCA/members/", headers={'Authorization': 'Token ' + os.getenv('VATSIM_API_TOKEN')})
+        if request.status_code == requests.codes.ok:
+            data = request.json()
+
+            for entry in data:
+                if entry['id'] == str(cid[0]):
+                    if vatsca_member not in user.roles and entry["subdivision"] == 'SCA':
+                        await user.add_roles(vatsca_member)
+                    elif vatsca_member in user.roles and entry["subdivision"] != 'SCA':
+                        await user.remove_roles(vatsca_member)
+                    
+                    break
+
+    except ValueError as e:
+        # This happens when a CID is not found, ignore it
+        print("Tried to find an ID but it threw a ValueError, not found")
+
+    except Exception as e:
+        print(e)
 
     
 
