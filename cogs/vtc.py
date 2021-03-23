@@ -5,7 +5,7 @@ from discord_slash import cog_ext
 import datetime
 import asyncio
 import mysql.connector
-from helpers.config import S1_ROLE, S2_ROLE, S3_ROLE, C1_ROLE, VTC_CHANNEL, VTC_STAFFING_MSG, GUILD_ID, VTC_C1_POSITIONS, VTC_S2_POSITIONS, VTC_S3_POSITIONS
+from helpers.config import VTC_CHANNEL, VTC_STAFFING_MSG, GUILD_ID, VTC_POSITIONS
 from helpers.message import staff_roles
 
 today = datetime.date.today()
@@ -59,10 +59,6 @@ class VTCcog(commands.Cog):
     @cog_ext.cog_slash(name="book", guild_ids=guild_ids, description="Function to book position")
     async def book(self, ctx, position: str):
         usernick = ctx.author.id
-        S1_rating = discord.utils.get(ctx.guild.roles, id=S1_ROLE)
-        S2_rating = discord.utils.get(ctx.guild.roles, id=S2_ROLE)
-        S3_rating = discord.utils.get(ctx.guild.roles, id=S3_ROLE)
-        C1_rating = discord.utils.get(ctx.guild.roles, id=C1_ROLE)
         try:
             if ctx.channel.id == VTC_CHANNEL:
                 bookedcursor = mydb.cursor()
@@ -73,49 +69,14 @@ class VTCcog(commands.Cog):
                     await asyncio.sleep(5)
                     await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
                 else:
-                    if position in VTC_S2_POSITIONS:
-                        if S1_rating in ctx.author.roles or S2_rating in ctx.author.roles or S3_rating in ctx.author.roles or C1_rating in ctx.author.roles:
-                            cursor = mydb.cursor()
-                            cursor.execute("SELECT name FROM vtc WHERE name = '<@" + str(usernick) + ">'")
-                            sql = cursor.fetchone()
-                            if sql == None:
-                                await self.bookposition(ctx, position, cursor)
-                            else:
-                                await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                                await asyncio.sleep(5)
-                                await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                    if position in VTC_POSITIONS:
+                        cursor = mydb.cursor()
+                        cursor.execute("SELECT name FROM vtc WHERE name = '<@" + str(usernick) + ">'")
+                        sql = cursor.fetchone()
+                        if sql == None:
+                            await self.bookposition(ctx, position, cursor)
                         else:
-                            await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
-                            await asyncio.sleep(5)
-                            await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-                    elif position in VTC_S3_POSITIONS:
-                        if S2_rating in ctx.author.roles or S3_rating in ctx.author.roles or C1_rating in ctx.author.roles:
-                            cursor = mydb.cursor()
-                            cursor.execute("SELECT name FROM vtc WHERE name = '<@" + str(usernick) + ">'")
-                            sql = cursor.fetchone()
-                            if sql == None:
-                                await self.bookposition(ctx, position, cursor)
-                            else:
-                                await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                                await asyncio.sleep(5)
-                                await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-                        else:
-                            await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
-                            await asyncio.sleep(5)
-                            await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-                    elif position in VTC_C1_POSITIONS:
-                        if S3_rating in ctx.author.roles or C1_rating in ctx.author.roles:
-                            cursor = mydb.cursor()
-                            cursor.execute("SELECT name FROM vtc WHERE name = '<@" + str(usernick) + ">'")
-                            sql = cursor.fetchone()
-                            if sql == None:
-                                await self.bookposition(ctx, position, cursor)
-                            else:
-                                await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                                await asyncio.sleep(5)
-                                await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-                        else:
-                            await ctx.send("<@" + str(usernick) + "> You are not allowed to book this position!")
+                            await ctx.send("<@" + str(usernick) + "> You already have a booking!")
                             await asyncio.sleep(5)
                             await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
             else:
