@@ -17,8 +17,8 @@ mydb = mysql.connector.connect(
     user=os.getenv('BOT_DB_USER'),
     password=os.getenv('BOT_DB_PASSWORD'),
     database=os.getenv('BOT_DB_NAME')
-    )
-
+)
+        
 guild_ids = [GUILD_ID]
 
 class VTCcog(commands.Cog):
@@ -40,11 +40,12 @@ class VTCcog(commands.Cog):
         else: 
             await ctx.send("<@" + str(username) + "> Please use the <#" + str(VTC_CHANNEL) + "> channel")
 
-    @cog_ext.cog_slash(name="manreset", guild_ids=guild_ids, description="Bot manually resets the chat.")
+    @cog_ext.cog_slash(name="manreset", guild_ids=guild_ids, description="Bot manually resets the chat and the staffing.")
     @commands.has_any_role(*staff_roles())
-    async def manreset(self, ctx) -> None:
+    async def manreset(self, ctx, mydb):
         username = ctx.author.id
         if ctx.channel.id == VTC_CHANNEL:
+            mydb.reconnect()
             mancursor = mydb.cursor()
             sql = "UPDATE vtc SET name = '' WHERE id < 19"
             mancursor.execute(sql)
@@ -61,6 +62,7 @@ class VTCcog(commands.Cog):
         usernick = ctx.author.id
         try:
             if ctx.channel.id == VTC_CHANNEL:
+                mydb.reconnect()
                 bookedcursor = mydb.cursor()
                 bookedcursor.execute("SELECT name FROM vtc WHERE name='' and position='" + position + "'")
                 booked_sql = bookedcursor.fetchone()
@@ -70,6 +72,7 @@ class VTCcog(commands.Cog):
                     await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
                 else:
                     if position in VTC_POSITIONS:
+                        mydb.reconnect()
                         cursor = mydb.cursor()
                         cursor.execute("SELECT name FROM vtc WHERE name = '<@" + str(usernick) + ">'")
                         sql = cursor.fetchone()
@@ -96,6 +99,8 @@ class VTCcog(commands.Cog):
         await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
         
     async def updatepositions(self, ctx) -> None:      
+        mydb.reconnect()
+
         #Delivery
         delCursor = mydb.cursor()
         delCursor.execute("SELECT name FROM vtc WHERE id = '1'")
@@ -200,6 +205,7 @@ class VTCcog(commands.Cog):
     async def cancel(self, ctx) -> None:
         usernick = ctx.author.id
         if ctx.channel.id == VTC_CHANNEL:
+            mydb.reconnect()
             Cancelcursor = mydb.cursor()
             Cancelcursor.execute("SELECT name FROM vtc WHERE name = '<@" + str(usernick) + ">'")
             cancel_sql = Cancelcursor.fetchone()
@@ -223,6 +229,7 @@ class VTCcog(commands.Cog):
         await self.bot.wait_until_ready()
         now = datetime.datetime.now()
         if now.weekday() == 0 and now.hour == 23 and 00 <= now.minute <= 5:
+            mydb.reconnect()
             mancursor = mydb.cursor()
             sql = "UPDATE vtc SET name = '' WHERE id < 19"
             mancursor.execute(sql)
