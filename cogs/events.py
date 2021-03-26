@@ -1,5 +1,6 @@
 import os
 from datetime import datetime, timedelta
+from discord_slash import cog_ext
 
 import aiohttp
 import mysql.connector
@@ -61,7 +62,7 @@ class EventsCog(commands.Cog):
 
         for event in events:
             if self._should_be_published(event[self.START]):
-                msg = embed(title=event[self.NAME], description=event[self.DESCRIPTION], image=event[self.IMG],
+                msg = embed(title=event[self.NAME], url=event[self.URL], description=event[self.DESCRIPTION], image=event[self.IMG],
                             timestamp=event[self.START], footer=self.FOOTER)
                 text = f'{role.mention}\n:clock2: **This event starts in two hours!**'
                 try:
@@ -111,7 +112,7 @@ class EventsCog(commands.Cog):
                     (event.get('title'), event.get('url'), get_image(event.get('description')),
                      event_description(event.get('description')), self._convert_time(event.get('start')),
                      event.get('id')))
-                msg = embed(title=event.get('title'), description=event_description(event.get('description')),
+                msg = embed(title=event.get('title'), url=event.get('url'), description=event_description(event.get('description')),
                             image=get_image(event.get('description')),
                             timestamp=self._convert_time(event.get('start')), footer=self.FOOTER)
                 await channel.send(embed=msg)
