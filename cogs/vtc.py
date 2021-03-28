@@ -187,15 +187,15 @@ class VTCcog(commands.Cog):
         EKDKCursor.execute("SELECT name FROM vtc WHERE id = '17'")
         ekdk_ctr_sql = EKDKCursor.fetchone()
 
-        #EKDK V CTR
-        EKDKvCursor = mydb.cursor()
-        EKDKvCursor.execute("SELECT name FROM vtc WHERE id = '18'")
-        ekdk_v_ctr_sql = EKDKvCursor.fetchone()
-
         #EKDK D CTR
         EKDKdCursor = mydb.cursor()
-        EKDKdCursor.execute("SELECT name FROM vtc WHERE id = '19'")
+        EKDKdCursor.execute("SELECT name FROM vtc WHERE id = '18'")
         ekdk_d_ctr_sql = EKDKdCursor.fetchone()
+
+        #EKDK V CTR
+        EKDKvCursor = mydb.cursor()
+        EKDKvCursor.execute("SELECT name FROM vtc WHERE id = '19'")
+        ekdk_v_ctr_sql = EKDKvCursor.fetchone()
 
         channel = self.bot.get_channel(int(VTC_CHANNEL))
         message = await channel.fetch_message(VTC_STAFFING_MSG)
