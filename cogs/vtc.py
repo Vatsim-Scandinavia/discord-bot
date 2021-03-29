@@ -228,7 +228,7 @@ class VTCcog(commands.Cog):
     async def autoreset(self) -> None:
         await self.bot.wait_until_ready()
         now = datetime.datetime.now()
-        if now.weekday() == 0 and now.hour == 23 and 00 <= now.minute <= 5:
+        if now.weekday() == 0 and now.hour == 23 and 00 <= now.minute <= 1:
             mydb.reconnect()
             mancursor = mydb.cursor()
             sql = "UPDATE vtc SET name = '' WHERE id < 19"
