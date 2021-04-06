@@ -39,6 +39,8 @@ VTC_POSITIONS = {
     'EKCH_TWR', 'ekch_twr',
     'EKCH_D_TWR', 'ekch_d_twr',
     'EKCH_C_TWR', 'ekch_c_twr',
+    'EKRK_TWR', 'ekrk_twr',
+    'EKRK_APP', 'ekrk_app',
     'EKBI_TWR', 'ekbi_twr',
     'EKYT_TWR', 'ekyt_twr',
     'EKKA_TWR', 'ekka_twr',
