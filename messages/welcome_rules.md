@@ -1,4 +1,4 @@
-Welcome to the Discord serer of VATSIM Scandinavia!
+Welcome to the Discord server of VATSIM Scandinavia!
 To gain access to this server, please follow the instructions sent by the Vatsim Bot or log in here: https://community.vatsim.net/
 
 :bell: If you want to be added to the notification list and access to country specific channels, visit #role-selection
