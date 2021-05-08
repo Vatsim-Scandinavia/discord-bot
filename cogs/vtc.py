@@ -8,10 +8,6 @@ import mysql.connector
 from helpers.config import VTC_CHANNEL, VTC_STAFFING_MSG, GUILD_ID, VTC_POSITIONS
 from helpers.message import staff_roles
 
-today = datetime.date.today()
-next_monday = today + datetime.timedelta(days=-today.weekday(), weeks=1)
-date_formatted = next_monday.strftime("%d/%m/%Y")
-
 mydb = mysql.connector.connect(
     host="localhost",
     user=os.getenv('BOT_DB_USER'),
@@ -33,10 +29,13 @@ class VTCcog(commands.Cog):
     @commands.has_any_role(*staff_roles())
     async def setupvtc(self, ctx):
         username = ctx.author.id
+        today = datetime.date.today()
+        next_monday = today + datetime.timedelta(days=-today.weekday(), weeks=1)
+        date_formatted = next_monday.strftime("%d/%m/%Y")  
         if ctx.channel.id == VTC_CHANNEL:
             msg = await ctx.send("Message is being generated")
             await msg.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-            await ctx.send("Vectors for Copenhagen staffing – Monday " + str(date_formatted) + "\n\nSchedules: https://vatsim-scandinavia.org/forums/topic/3745-vectors-to-copenhagen-schedules-2021/ \n\nWe want to encourage you to follow these guidelines to optimize the process.\n- Force Majeure is happening to all of us, but generally sign up, only when you firmly believe you are able to attend\n- If you had a position last week, consider giving other people a chance, before booking the same position again\n- Please do not forget to unbook if you are unable to participate, and advise a staff member or the Facebook group.\n\nInstructions:\n- To book a postion enter “/book [name of position]” (e.g. /book EKCH_APP)\n- If you need to cancel a position enter “/unbook [name of position] (e.g. /unbook EKCH_APP)\n- Booking in VATBOOK must be done SEPERATELY: https://cc.vatsim-scandinavia.org/vatbook \n- Main positions must be booked first\n\nMain Positions: \nEKDK_CTR: \nEKCH_APP: \nEKCH_TWR: \nEKCH_GND:\n\nSecondary Positions:\nEKCH_DEL: \nEKDK_V_CTR: \nEKDK_D_CTR: \nEKCH_F_APP: \nEKCH_DEP: \nEKCH_C_TWR: \nEKCH_D_TWR: \n\nRegional Positions:\nEKBI_APP: \nEKBI_TWR: \nEKYT_APP: \nEKYT_TWR: \nEKKA_TWR: \nEKKA_APP: \nEKAH_APP: \nEKAH_TWR: \nEKRK_TWR: \nEKRK_APP: ")
+            await ctx.send("Vectors for Copenhagen staffing – Monday " + str(date_formatted) + "\n\nSchedules: https://vatsim-scandinavia.org/forums/topic/3745-vectors-to-copenhagen-schedules-2021/ \n\nWe want to encourage you to follow these guidelines to optimize the process.\n- Force Majeure is happening to all of us, but generally sign up, only when you firmly believe you are able to attend\n- If you had a position last week, consider giving other people a chance, before booking the same position again\n- Please do not forget to unbook if you are unable to participate, and advise a staff member or the Facebook group.\n\nInstructions:\n- To book a postion enter “/book [name of position]” (e.g. /book EKCH_APP)\n- If you need to cancel a position enter “/unbook [name of position] (e.g. /unbook EKCH_APP)\n- Booking in VATBOOK must be done SEPERATELY: https://cc.vatsim-scandinavia.org/vatbook \n- Main positions must be booked first\n\nMain Positions: \nEKDK_CTR: \nEKCH_APP: \nEKCH_TWR: \nEKCH_GND:\nEKCH_DEL: \n\nSecondary Positions:\nEKDK_V_CTR: \nEKDK_D_CTR: \nEKCH_F_APP: \nEKCH_DEP: \nEKCH_C_TWR: \nEKCH_D_TWR: \n\nRegional Positions:\nEKBI_APP: \nEKBI_TWR: \nEKYT_APP: \nEKYT_TWR: \nEKKA_TWR: \nEKKA_APP: \nEKAH_APP: \nEKAH_TWR: \nEKRK_TWR: \nEKRK_APP: ")
         else: 
             await ctx.send("<@" + str(username) + "> Please use the <#" + str(VTC_CHANNEL) + "> channel")
 
@@ -207,9 +206,13 @@ class VTCcog(commands.Cog):
         EKRKappCursor.execute("SELECT name FROM vtc WHERE id = '21'")
         ekrk_app_sql = EKRKappCursor.fetchone()
 
+        today = datetime.date.today()
+        next_monday = today + datetime.timedelta(days=-today.weekday(), weeks=1)
+        date_formatted = next_monday.strftime("%d/%m/%Y")  
+
         channel = self.bot.get_channel(int(VTC_CHANNEL))
         message = await channel.fetch_message(VTC_STAFFING_MSG)
-        await message.edit(content="Vectors for Copenhagen staffing – Monday " + str(date_formatted) + "\n\nSchedules: https://vatsim-scandinavia.org/forums/topic/3745-vectors-to-copenhagen-schedules-2021/ \n\nWe want to encourage you to follow these guidelines to optimize the process.\n- Force Majeure is happening to all of us, but generally sign up, only when you firmly believe you are able to attend\n- If you had a position last week, consider giving other people a chance, before booking the same position again\n- Please do not forget to unbook if you are unable to participate, and advise a staff member or the Facebook group.\n\nInstructions:\n- To book a postion enter “/book [name of position]” (e.g. /book EKCH_APP)\n- If you need to cancel a position enter “/unbook [name of position] (e.g. /unbook EKCH_APP)\n- Booking in VATBOOK must be done SEPERATELY: https://cc.vatsim-scandinavia.org/vatbook \n- Main positions must be booked first\n\nMain Positions: \nEKDK_CTR: " + str(ekdk_ctr_sql[0]) + "\nEKCH_APP: " + str(ekch_app_sql[0]) + "\nEKCH_TWR: " + str(ekch_twr_sql[0]) + "\nEKCH_GND: " + str(ekch_gnd_sql[0]) + "\n\nSecondary Positions:\nEKCH_DEL: " + str(ekch_del_sql[0]) + "\nEKDK_V_CTR: " + str(ekdk_v_ctr_sql[0]) + "\nEKDK_D_CTR: " + str(ekdk_d_ctr_sql[0]) + "\nEKCH_F_APP: " + str(ekch_f_app_sql[0]) + "\nEKCH_DEP: " + str(ekch_dep_sql[0]) + "\nEKCH_C_TWR: " + str(ekch_c_twr_sql[0]) + "\nEKCH_D_TWR: " + str(ekch_d_twr_sql[0]) + "\n\nRegional Positions:\nEKBI_APP: " + str(ekbi_app_sql[0]) + "\nEKBI_TWR: " + str(ekbi_twr_sql[0]) + "\nEKYT_APP: " + str(ekyt_app_sql[0]) + "\nEKYT_TWR: " + str(ekyt_twr_sql[0]) + "\nEKKA_TWR: " + str(ekka_twr_sql[0]) + "\nEKKA_APP: " + str(ekka_app_sql[0]) + "\nEKAH_APP: " + str(ekah_app_sql[0]) + "\nEKAH_TWR: " + str(ekah_twr_sql[0]) + "\nEKRK_TWR: " + str(ekrk_twr_sql[0]) + "\nEKRK_APP: " + str(ekrk_app_sql[0]) + " ")
+        await message.edit(content="Vectors for Copenhagen staffing – Monday " + str(date_formatted) + "\n\nSchedules: https://vatsim-scandinavia.org/forums/topic/3745-vectors-to-copenhagen-schedules-2021/ \n\nWe want to encourage you to follow these guidelines to optimize the process.\n- Force Majeure is happening to all of us, but generally sign up, only when you firmly believe you are able to attend\n- If you had a position last week, consider giving other people a chance, before booking the same position again\n- Please do not forget to unbook if you are unable to participate, and advise a staff member or the Facebook group.\n\nInstructions:\n- To book a postion enter “/book [name of position]” (e.g. /book EKCH_APP)\n- If you need to cancel a position enter “/unbook [name of position] (e.g. /unbook EKCH_APP)\n- Booking in VATBOOK must be done SEPERATELY: https://cc.vatsim-scandinavia.org/vatbook \n- Main positions must be booked first\n\nMain Positions: \nEKDK_CTR: " + str(ekdk_ctr_sql[0]) + "\nEKCH_APP: " + str(ekch_app_sql[0]) + "\nEKCH_TWR: " + str(ekch_twr_sql[0]) + "\nEKCH_GND: " + str(ekch_gnd_sql[0]) + "\nEKCH_DEL: " + str(ekch_del_sql[0]) + "\n\nSecondary Positions:\nEKDK_V_CTR: " + str(ekdk_v_ctr_sql[0]) + "\nEKDK_D_CTR: " + str(ekdk_d_ctr_sql[0]) + "\nEKCH_F_APP: " + str(ekch_f_app_sql[0]) + "\nEKCH_DEP: " + str(ekch_dep_sql[0]) + "\nEKCH_C_TWR: " + str(ekch_c_twr_sql[0]) + "\nEKCH_D_TWR: " + str(ekch_d_twr_sql[0]) + "\n\nRegional Positions:\nEKBI_APP: " + str(ekbi_app_sql[0]) + "\nEKBI_TWR: " + str(ekbi_twr_sql[0]) + "\nEKYT_APP: " + str(ekyt_app_sql[0]) + "\nEKYT_TWR: " + str(ekyt_twr_sql[0]) + "\nEKKA_TWR: " + str(ekka_twr_sql[0]) + "\nEKKA_APP: " + str(ekka_app_sql[0]) + "\nEKAH_APP: " + str(ekah_app_sql[0]) + "\nEKAH_TWR: " + str(ekah_twr_sql[0]) + "\nEKRK_TWR: " + str(ekrk_twr_sql[0]) + "\nEKRK_APP: " + str(ekrk_app_sql[0]) + " ")
         
     @cog_ext.cog_slash(name="Unbook", guild_ids=guild_ids, description="Function to cancel your requested position.")
     async def cancel(self, ctx) -> None:
@@ -238,7 +241,7 @@ class VTCcog(commands.Cog):
     async def autoreset(self) -> None:
         await self.bot.wait_until_ready()
         now = datetime.datetime.now()
-        if now.weekday() == 0 and now.hour == 23 and 00 <= now.minute <= 1:
+        if now.weekday() == 0 and now.hour == 23 and 00 <= now.minute <= 00:
             mydb.reconnect()
             mancursor = mydb.cursor()
             sql = "UPDATE vtc SET name = '' WHERE id < 19"
@@ -247,7 +250,10 @@ class VTCcog(commands.Cog):
             await self.bot.wait_until_ready()
             channel = self.bot.get_channel(int(VTC_CHANNEL))
             msg = await channel.fetch_message(VTC_STAFFING_MSG)
-            await msg.edit(content="Vectors for Copenhagen staffing – Monday " + str(date_formatted) + "\n\nSchedules: https://vatsim-scandinavia.org/forums/topic/3745-vectors-to-copenhagen-schedules-2021/ \n\nWe want to encourage you to follow these guidelines to optimize the process.\n- Force Majeure is happening to all of us, but generally sign up, only when you firmly believe you are able to attend\n- If you had a position last week, consider giving other people a chance, before booking the same position again\n- Please do not forget to unbook if you are unable to participate, and advise a staff member or the Facebook group.\n\nInstructions:\n- To book a postion enter “/book [name of position]” (e.g. /book EKCH_APP)\n- If you need to cancel a position enter “/unbook [name of position] (e.g. /unbook EKCH_APP)\n- Booking in VATBOOK must be done SEPERATELY: https://cc.vatsim-scandinavia.org/vatbook \n- Main positions must be booked first\n\nMain Positions: \nEKDK_CTR: \nEKCH_APP: \nEKCH_TWR: \nEKCH_GND:\n\nSecondary Positions:\nEKCH_DEL: \nEKDK_V_CTR: \nEKDK_D_CTR: \nEKCH_F_APP: \nEKCH_DEP: \nEKCH_C_TWR: \nEKCH_D_TWR: \n\nRegional Positions:\nEKBI_APP: \nEKBI_TWR: \nEKYT_APP: \nEKYT_TWR: \nEKKA_TWR: \nEKKA_APP: \nEKAH_APP: \nEKAH_TWR: \nEKRK_TWR: \nEKRK_APP: ")
+            today = datetime.date.today()
+            next_monday = today + datetime.timedelta(days=-today.weekday(), weeks=1)
+            date_formatted = next_monday.strftime("%d/%m/%Y")  
+            await msg.edit(content="Vectors for Copenhagen staffing – Monday " + str(date_formatted) + "\n\nSchedules: https://vatsim-scandinavia.org/forums/topic/3745-vectors-to-copenhagen-schedules-2021/ \n\nWe want to encourage you to follow these guidelines to optimize the process.\n- Force Majeure is happening to all of us, but generally sign up, only when you firmly believe you are able to attend\n- If you had a position last week, consider giving other people a chance, before booking the same position again\n- Please do not forget to unbook if you are unable to participate, and advise a staff member or the Facebook group.\n\nInstructions:\n- To book a postion enter “/book [name of position]” (e.g. /book EKCH_APP)\n- If you need to cancel a position enter “/unbook [name of position] (e.g. /unbook EKCH_APP)\n- Booking in VATBOOK must be done SEPERATELY: https://cc.vatsim-scandinavia.org/vatbook \n- Main positions must be booked first\n\nMain Positions: \nEKDK_CTR: \nEKCH_APP: \nEKCH_TWR: \nEKCH_GND:\nEKCH_DEL: \n\nSecondary Positions:\nEKDK_V_CTR: \nEKDK_D_CTR: \nEKCH_F_APP: \nEKCH_DEP: \nEKCH_C_TWR: \nEKCH_D_TWR: \n\nRegional Positions:\nEKBI_APP: \nEKBI_TWR: \nEKYT_APP: \nEKYT_TWR: \nEKKA_TWR: \nEKKA_APP: \nEKAH_APP: \nEKAH_TWR: \nEKRK_TWR: \nEKRK_APP: ")
             await channel.send("The chat is being automatic reset!")
             await asyncio.sleep(5)
             await channel.purge(limit=None, check=lambda msg: not msg.pinned)
