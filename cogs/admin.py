@@ -1,15 +1,20 @@
 import os
+import datetime
 
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord_slash import cog_ext, SlashContext
 from helpers.message import roles, embed
-from helpers.config import COGS_LOAD, GUILD_ID
+from helpers.config import COGS_LOAD, GUILD_ID, BOT_CHANNEL
 
 
 class AdminCog(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.reload_vtc.start()
+
+    def cog_unload(self):
+        self.reload_vtc.cancel()
 
     guild_ids = [GUILD_ID]
 
@@ -56,6 +61,22 @@ class AdminCog(commands.Cog):
             await ctx.send(f'**`ERROR:`** {type(e).__name__} - {e}')
         else:
             await ctx.send('**`SUCCESS`**')
+
+    @tasks.loop(seconds=60)
+    async def reload_vtc(self):
+        """
+            Command which Reloads a Module.
+        """
+        await self.bot.wait_until_ready()
+        now = datetime.datetime.now()
+        channel = self.bot.get_channel(int(BOT_CHANNEL))
+
+        try:
+            if now.weekday() == 0 and now.hour == 23 and 00 <= now.minute <= 00:
+                self.bot.unload_extension(COGS_LOAD["vtc"])
+                self.bot.load_extension(COGS_LOAD["vtc"])
+        except Exception as e:
+            await channel.send(f'**`ERROR:`** {type(e).__name__} - {e}')
 
     @cog_ext.cog_slash(name="cogs", guild_ids=guild_ids, description="Command which sends a message with all available cogs.")
     @commands.has_any_role(*roles())

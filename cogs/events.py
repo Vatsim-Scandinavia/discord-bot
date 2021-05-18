@@ -6,9 +6,10 @@ import aiohttp
 import mysql.connector
 from discord.ext import commands, tasks
 
-from helpers.config import POST_EVENTS_INTERVAL, EVENTS_CHANNEL, EVENTS_ROLE
+from helpers.config import POST_EVENTS_INTERVAL, EVENTS_CHANNEL, EVENTS_ROLE, GUILD_ID
 from helpers.message import embed, event_description, get_image
 
+guild_ids = [GUILD_ID]
 
 class EventsCog(commands.Cog):
     RSS_FEED_URL = 'https://vatsim-scandinavia.org/api/calendar/events'
@@ -159,6 +160,16 @@ class EventsCog(commands.Cog):
 
         mydb.commit()
 
-
+    @cog_ext.cog_slash(name="embed", guild_ids=guild_ids, description="Function sends example embed.")
+    async def embed(self, ctx):
+        """
+        Function sends example embed
+        :param ctx:
+        :return:
+        """
+        message = embed(title='test', description="test")
+            
+        await ctx.send(embed=message)
+                
 def setup(bot):
     bot.add_cog(EventsCog(bot))
