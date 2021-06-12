@@ -1,256 +1,677 @@
 import os
-import discord
-from discord.ext import commands, tasks
+import fileinput
+import sys
+import re
+from discord.ext import commands
 from discord_slash import cog_ext
 import datetime
-import asyncio
-import mysql.connector
 from helpers.config import VTC_CHANNEL, VTC_STAFFING_MSG, GUILD_ID, VTC_POSITIONS
 from helpers.message import staff_roles
 
-mydb = mysql.connector.connect(
-    host="localhost",
-    user=os.getenv('BOT_DB_USER'),
-    password=os.getenv('BOT_DB_PASSWORD'),
-    database=os.getenv('BOT_DB_NAME')
-)
+guild_ids = [GUILD_ID]
 
-today = datetime.date.today()
-next_monday = today + datetime.timedelta(days=-today.weekday(), weeks=1)
-date_formatted = next_monday.strftime("%d/%m/%Y")  
 
-class VTCcog(commands.Cog):
-    guild_ids = [GUILD_ID]
+class newVTCcog(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.autoreset.start()
+        """self.autoreset.start()"""
 
     def cog_unload(self):
-        self.autoreset.cancel()
+        """ self.autoreset.cancel()"""
 
-    @cog_ext.cog_slash(name="setupvtc", guild_ids=guild_ids, description="Bot sends VTC staffing message")
+    @cog_ext.cog_slash(name="setupstaffing", guild_ids=guild_ids, description="Bot setups staffing information")
     @commands.has_any_role(*staff_roles())
-    async def setupvtc(self, ctx):
-        username = ctx.author.id
-        if ctx.channel.id == VTC_CHANNEL:
-            msg = await ctx.send("Message is being generated")
-            await msg.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-            await ctx.send("Vectors for Copenhagen staffing – Monday " + str(date_formatted) + "\n\nSchedules: https://vatsim-scandinavia.org/forums/topic/3745-vectors-to-copenhagen-schedules-2021/ \n\nWe want to encourage you to follow these guidelines to optimize the process.\n- Force Majeure is happening to all of us, but generally sign up, only when you firmly believe you are able to attend\n- If you had a position last week, consider giving other people a chance, before booking the same position again\n- Please do not forget to unbook if you are unable to participate, and advise a staff member or the Facebook group.\n\nInstructions:\n- To book a postion enter “/book [name of position]” (e.g. /book EKCH_APP)\n- If you need to cancel a position enter “/unbook [name of position] (e.g. /unbook EKCH_APP)\n- Booking in VATBOOK must be done SEPERATELY: https://cc.vatsim-scandinavia.org/vatbook \n- Main positions must be booked first\n\nMain Positions: \nEKDK_CTR: \nEKCH_APP: \nEKCH_TWR: \nEKCH_GND:\nEKCH_DEL: \n\nSecondary Positions:\nEKDK_V_CTR: \nEKDK_D_CTR: \nEKCH_F_APP: \nEKCH_DEP: \nEKCH_C_TWR: \nEKCH_D_TWR: \n\nRegional Positions:\nEKBI_APP: \nEKBI_TWR: \nEKYT_APP: \nEKYT_TWR: \nEKKA_TWR: \nEKKA_APP: \nEKAH_APP: \nEKAH_TWR: \nEKRK_TWR: \nEKRK_APP: ")
-        else: 
-            await ctx.send("<@" + str(username) + "> Please use the <#" + str(VTC_CHANNEL) + "> channel")
+    async def setupstaffing(self, ctx) -> None:
+        titel = await self._get_titel(ctx)
+        staffing_date = await self._get_date(ctx)
+        staffing_message = await self._get_staffing_message(ctx)
+        main_pos = await self._get_mainpositions_message(ctx)
+        secondary_pos = await self._get_secondarypositions_message(ctx)
+        regional_pos = await self._getregionalpositions_message(ctx)
+        channels = await self._get_channels(ctx)
 
-    @cog_ext.cog_slash(name="manreset", guild_ids=guild_ids, description="Bot manually resets the chat and the staffing.")
-    @commands.has_any_role(*staff_roles())
-    async def manreset(self, ctx):
-        username = ctx.author.id
-        if ctx.channel.id == VTC_CHANNEL:
-            mydb.reconnect()
-            mancursor = mydb.cursor()
-            sql = "UPDATE vtc SET name = '' WHERE id < 19"
-            mancursor.execute(sql)
-            mydb.commit()
-            await self.updatepositions(ctx)
-            await ctx.send("The chat is being manually reset!")
-            await asyncio.sleep(5)
-            await ctx.channel.purge(limit=None, check=lambda msg: not msg.pinned)
-        else:
-            await ctx.send("<@" + str(username) + "> Please use the <#" + str(VTC_CHANNEL) + "> channel")
+        format_staffing_message = ""
 
-    @cog_ext.cog_slash(name="book", guild_ids=guild_ids, description="Function to book position")
-    async def book(self, ctx, position: str):
-        usernick = ctx.author.id
-        try:
-            if ctx.channel.id == VTC_CHANNEL:
-                mydb.reconnect()
-                bookedcursor = mydb.cursor()
-                bookedcursor.execute("SELECT name FROM vtc WHERE name='' and position='" + position + "'")
-                booked_sql = bookedcursor.fetchone()
-                if booked_sql == None:
-                    await ctx.send("<@" + str(usernick) + "> an error has occurred!")
-                    await asyncio.sleep(5)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-                else:
-                    if position in VTC_POSITIONS:
-                        mydb.reconnect()
-                        cursor = mydb.cursor()
-                        cursor.execute("SELECT name FROM vtc WHERE name = '<@" + str(usernick) + ">'")
-                        sql = cursor.fetchone()
-                        if sql == None:
-                            await self.bookposition(ctx, position, cursor)
-                        else:
-                            await ctx.send("<@" + str(usernick) + "> You already have a booking!")
-                            await asyncio.sleep(5)
-                            await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-            else:
-                await ctx.send("Please use the <#" + str(VTC_CHANNEL) + "> channel")
+        if format_staffing_message != "":
+            format_staffing_message += "\n"
 
-        except Exception as e:
-            await ctx.send(f'**`ERROR:`** {type(e).__name__} - {e}')
+        main_positions_data = "\n" .join(position for position in main_pos)
+        secondary_positions_data = "\n" .join(
+            position for position in secondary_pos)
+        regional_positions_data = "\n" .join(
+            position for position in regional_pos)
 
-    async def bookposition(self, ctx, position: str, cursor) -> None:
-        usernick = ctx.author.id
-        sql = "UPDATE vtc SET name = '<@" + str(usernick) + ">' WHERE position ='" + position + "'"
-        cursor.execute(sql)
-        mydb.commit()
-        await self.updatepositions(ctx)
-        await ctx.send("<@" + str(usernick) + "> Confirmed booking for " + position + "!") 
-        await asyncio.sleep(5)
-        await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-        
-    async def updatepositions(self, ctx) -> None:      
-        mydb.reconnect()
+        format_staffing_message += titel + " staffing - " + staffing_date + "\n\n" + staffing_message + \
+            "\n\nMain Positions:\n" + \
+            str(main_positions_data) + \
+            "\n\nSecondary Positions:\n" + \
+            str(secondary_positions_data) + \
+            "\n\nRegional Positions:\n" + str(regional_positions_data)
 
-        #Delivery
-        delCursor = mydb.cursor()
-        delCursor.execute("SELECT name FROM vtc WHERE id = '1'")
-        ekch_del_sql = delCursor.fetchone()
-
-        #Apron
-        gndCursor = mydb.cursor()
-        gndCursor.execute("SELECT name FROM vtc WHERE id = '2'")
-        ekch_gnd_sql = gndCursor.fetchone()
-
-        #Tower
-        twrCursor = mydb.cursor()
-        twrCursor.execute("SELECT name FROM vtc WHERE id = '3'")
-        ekch_twr_sql = twrCursor.fetchone()
-
-        #Departure Tower
-        DtwrCursor = mydb.cursor()
-        DtwrCursor.execute("SELECT name FROM vtc WHERE id = '4'")
-        ekch_d_twr_sql = DtwrCursor.fetchone()
-
-        #Crossing Tower
-        CtwrCursor = mydb.cursor()
-        CtwrCursor.execute("SELECT name FROM vtc WHERE id = '5'")
-        ekch_c_twr_sql = CtwrCursor.fetchone()
-
-        #Approach
-        appCursor = mydb.cursor()
-        appCursor.execute("SELECT name FROM vtc WHERE id = '6'")
-        ekch_app_sql = appCursor.fetchone()
-
-
-        #Final Approach
-        fappCursor = mydb.cursor()
-        fappCursor.execute("SELECT name FROM vtc WHERE id = '7'")
-        ekch_f_app_sql = fappCursor.fetchone()
-
-        #Departure
-        depCursor = mydb.cursor()
-        depCursor.execute("SELECT name FROM vtc WHERE id = '8'")
-        ekch_dep_sql = depCursor.fetchone()
-
-        #BLL Approach
-        bappCursor = mydb.cursor()
-        bappCursor.execute("SELECT name FROM vtc WHERE id = '9'")
-        ekbi_app_sql = bappCursor.fetchone()
-
-        #BLL Tower
-        btwrCursor = mydb.cursor()
-        btwrCursor.execute("SELECT name FROM vtc WHERE id = '10'")
-        ekbi_twr_sql = btwrCursor.fetchone()
-
-        #AAL Approach
-        AALappCursor = mydb.cursor()
-        AALappCursor.execute("SELECT name FROM vtc WHERE id = '11'")
-        ekyt_app_sql = AALappCursor.fetchone()
-
-        #AAL Tower
-        AALtwrCursor = mydb.cursor()
-        AALtwrCursor.execute("SELECT name FROM vtc WHERE id = '12'")
-        ekyt_twr_sql = AALtwrCursor.fetchone()
-
-        #KRP Approach
-        KRPappCursor = mydb.cursor()
-        KRPappCursor.execute("SELECT name FROM vtc WHERE id = '13'")
-        ekka_app_sql = KRPappCursor.fetchone()
-
-        #KRP Tower
-        KRPtwrCursor = mydb.cursor()
-        KRPtwrCursor.execute("SELECT name FROM vtc WHERE id = '14'")
-        ekka_twr_sql = KRPtwrCursor.fetchone()
-
-        #AAR Tower
-        AARtwrCursor = mydb.cursor()
-        AARtwrCursor.execute("SELECT name FROM vtc WHERE id = '15'")
-        ekah_twr_sql = AARtwrCursor.fetchone()
-
-        #AAR Approach
-        AARappCursor = mydb.cursor()
-        AARappCursor.execute("SELECT name FROM vtc WHERE id = '16'")
-        ekah_app_sql = AARappCursor.fetchone()
-
-        #EKDK CTR
-        EKDKCursor = mydb.cursor()
-        EKDKCursor.execute("SELECT name FROM vtc WHERE id = '17'")
-        ekdk_ctr_sql = EKDKCursor.fetchone()
-
-        #EKDK D CTR
-        EKDKdCursor = mydb.cursor()
-        EKDKdCursor.execute("SELECT name FROM vtc WHERE id = '18'")
-        ekdk_d_ctr_sql = EKDKdCursor.fetchone()
-
-        #EKDK V CTR
-        EKDKvCursor = mydb.cursor()
-        EKDKvCursor.execute("SELECT name FROM vtc WHERE id = '19'")
-        ekdk_v_ctr_sql = EKDKvCursor.fetchone()
-
-        #EKRK TWR
-        EKRKtwrCursor = mydb.cursor()
-        EKRKtwrCursor.execute("SELECT name FROM vtc WHERE id = '20'")
-        ekrk_twr_sql = EKRKtwrCursor.fetchone()
-
-        #EKRK APP
-        EKRKappCursor = mydb.cursor()
-        EKRKappCursor.execute("SELECT name FROM vtc WHERE id = '21'")
-        ekrk_app_sql = EKRKappCursor.fetchone()
-
-        channel = self.bot.get_channel(int(VTC_CHANNEL))
-        message = await channel.fetch_message(VTC_STAFFING_MSG)
-        await message.edit(content="Vectors for Copenhagen staffing – Monday " + str(date_formatted) + "\n\nSchedules: https://vatsim-scandinavia.org/forums/topic/3745-vectors-to-copenhagen-schedules-2021/ \n\nWe want to encourage you to follow these guidelines to optimize the process.\n- Force Majeure is happening to all of us, but generally sign up, only when you firmly believe you are able to attend\n- If you had a position last week, consider giving other people a chance, before booking the same position again\n- Please do not forget to unbook if you are unable to participate, and advise a staff member or the Facebook group.\n\nInstructions:\n- To book a postion enter “/book [name of position]” (e.g. /book EKCH_APP)\n- If you need to cancel a position enter “/unbook [name of position] (e.g. /unbook EKCH_APP)\n- Booking in VATBOOK must be done SEPERATELY: https://cc.vatsim-scandinavia.org/vatbook \n- Main positions must be booked first\n\nMain Positions: \nEKDK_CTR: " + str(ekdk_ctr_sql[0]) + "\nEKCH_APP: " + str(ekch_app_sql[0]) + "\nEKCH_TWR: " + str(ekch_twr_sql[0]) + "\nEKCH_GND: " + str(ekch_gnd_sql[0]) + "\nEKCH_DEL: " + str(ekch_del_sql[0]) + "\n\nSecondary Positions:\nEKDK_V_CTR: " + str(ekdk_v_ctr_sql[0]) + "\nEKDK_D_CTR: " + str(ekdk_d_ctr_sql[0]) + "\nEKCH_F_APP: " + str(ekch_f_app_sql[0]) + "\nEKCH_DEP: " + str(ekch_dep_sql[0]) + "\nEKCH_C_TWR: " + str(ekch_c_twr_sql[0]) + "\nEKCH_D_TWR: " + str(ekch_d_twr_sql[0]) + "\n\nRegional Positions:\nEKBI_APP: " + str(ekbi_app_sql[0]) + "\nEKBI_TWR: " + str(ekbi_twr_sql[0]) + "\nEKYT_APP: " + str(ekyt_app_sql[0]) + "\nEKYT_TWR: " + str(ekyt_twr_sql[0]) + "\nEKKA_TWR: " + str(ekka_twr_sql[0]) + "\nEKKA_APP: " + str(ekka_app_sql[0]) + "\nEKAH_APP: " + str(ekah_app_sql[0]) + "\nEKAH_TWR: " + str(ekah_twr_sql[0]) + "\nEKRK_TWR: " + str(ekrk_twr_sql[0]) + "\nEKRK_APP: " + str(ekrk_app_sql[0]) + " ")
-        
-    @cog_ext.cog_slash(name="Unbook", guild_ids=guild_ids, description="Function to cancel your requested position.")
-    async def cancel(self, ctx) -> None:
-        usernick = ctx.author.id
-        if ctx.channel.id == VTC_CHANNEL:
-            mydb.reconnect()
-            Cancelcursor = mydb.cursor()
-            Cancelcursor.execute("SELECT name FROM vtc WHERE name = '<@" + str(usernick) + ">'")
-            cancel_sql = Cancelcursor.fetchone()
-            if cancel_sql == None:
-                await ctx.send("<@" + str(usernick) + "> You don't have a booking!")
-                await asyncio.sleep(5)
-                await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-            else:
-                sql = "UPDATE vtc SET name = '' WHERE name = '<@" + str(usernick) + ">'"
-                Cancelcursor.execute(sql)
-                mydb.commit()
-                await self.updatepositions(ctx)
-                await ctx.send("<@" + str(usernick) + "> Confirmed cancelling of your booking!")
-                await asyncio.sleep(5)
-                await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-        else:
-            await ctx.send("<@" + str(usernick) + "> Please use the <#" + str(VTC_CHANNEL) + "> channel")
-
-    @tasks.loop(seconds=60)
-    async def autoreset(self) -> None:
-        await self.bot.wait_until_ready()
-        now = datetime.datetime.now()
-        if now.weekday() == 0 and now.hour == 23 and 00 <= now.minute <= 00:
-            mydb.reconnect()
-            mancursor = mydb.cursor()
-            sql = "UPDATE vtc SET name = '' WHERE id < 19"
-            mancursor.execute(sql)
-            mydb.commit()
-            await self.bot.wait_until_ready()
-            channel = self.bot.get_channel(int(VTC_CHANNEL))
-            msg = await channel.fetch_message(VTC_STAFFING_MSG)
-            await msg.edit(content="Vectors for Copenhagen staffing – Monday " + str(date_formatted) + "\n\nSchedules: https://vatsim-scandinavia.org/forums/topic/3745-vectors-to-copenhagen-schedules-2021/ \n\nWe want to encourage you to follow these guidelines to optimize the process.\n- Force Majeure is happening to all of us, but generally sign up, only when you firmly believe you are able to attend\n- If you had a position last week, consider giving other people a chance, before booking the same position again\n- Please do not forget to unbook if you are unable to participate, and advise a staff member or the Facebook group.\n\nInstructions:\n- To book a postion enter “/book [name of position]” (e.g. /book EKCH_APP)\n- If you need to cancel a position enter “/unbook [name of position] (e.g. /unbook EKCH_APP)\n- Booking in VATBOOK must be done SEPERATELY: https://cc.vatsim-scandinavia.org/vatbook \n- Main positions must be booked first\n\nMain Positions: \nEKDK_CTR: \nEKCH_APP: \nEKCH_TWR: \nEKCH_GND:\nEKCH_DEL: \n\nSecondary Positions:\nEKDK_V_CTR: \nEKDK_D_CTR: \nEKCH_F_APP: \nEKCH_DEP: \nEKCH_C_TWR: \nEKCH_D_TWR: \n\nRegional Positions:\nEKBI_APP: \nEKBI_TWR: \nEKYT_APP: \nEKYT_TWR: \nEKKA_TWR: \nEKKA_APP: \nEKAH_APP: \nEKAH_TWR: \nEKRK_TWR: \nEKRK_APP: ")
-            await channel.send("The chat is being automatic reset!")
-            await asyncio.sleep(5)
+        for channel in channels:
+            timestamp = datetime.datetime.now()
+            msg = await channel.send(format_staffing_message)
+            await msg.pin()
             await channel.purge(limit=None, check=lambda msg: not msg.pinned)
+            with open('staffing-info/' + titel + '.txt', mode='w') as file:
+                file.write("------ Created at ------\n" + str(timestamp) + "\n------------------------\n\n------ Updated at ------\n\n------------------------\n\n------ Titel ------\n" + str(titel) + "\n-------------------\n\n------ Day of event ------\n" + str(staffing_date) +
+                           "\n--------------------------\n\n------ Staffing Message ------\n" + str(staffing_message) + "\n------------------------------\n\n------ Main Positions ------\n" + str(
+                               main_positions_data) + "\n----------------------------\n\n------ Secondary Positions ------\n" + str(secondary_positions_data)
+                           + "\n---------------------------------\n\n------ Regional Positions ------\n" + str(regional_positions_data) + "\n--------------------------------\n\n------ Channel ------\n" +
+                           str(channel) + "\n---------------------\n\n------ Channel id ------\n" + str(channel.id) + "\n------------------------\n\n------ Message id ------\n" + str(msg.id) + "\n------------------------\n\n------ Original Full Staffing Message ------\n" + str(format_staffing_message) + "\n------------------------")
+                print('Staffing file for ' + titel +
+                      ' created at ' + str(timestamp))
+
+    async def _get_titel(self, ctx):
+        """
+        Function gets a message that'll be included in announcement
+        :param ctx:
+        :return:
+        """
+        try:
+            await ctx.send('Event Title? **FYI this command expires in 1 minute**')
+            message = await self.bot.wait_for('message', timeout=60, check=lambda
+                                              message: message.author == ctx.author and ctx.channel == message.channel)
+
+            if len(message.content) < 1:
+                await ctx.send('Setup cancelled. No message was provided.')
+                raise ValueError
+
+            if os.path.isfile('staffing-info/' + message.content + '.txt'):
+                await ctx.send('Setup cancelled. A staffing with that name already exists.')
+                raise ValueError
+
+            return message.content
+        except Exception as exception:
+            await ctx.send(str(exception))
+            raise exception
+
+    async def _get_date(self, ctx):
+        """
+        Function gets a message that'll be included in announcement
+        :param ctx:
+        :return:
+        """
+        try:
+            available_days = ['Monday', 'Tuesday', 'Wednesday',
+                              'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+            await ctx.send('Event Day of the week? **FYI this command expires in 1 minute** Available days: ' + str(available_days)[1:-1])
+            message = await self.bot.wait_for('message', timeout=60, check=lambda
+                                              message: message.author == ctx.author and ctx.channel == message.channel)
+
+            if message.content == available_days[0]:
+                today = datetime.date.today()
+                next_monday = today + \
+                    datetime.timedelta(days=0-today.weekday(), weeks=1)
+                date_formatted = next_monday.strftime("%A %d/%m/%Y")
+                return date_formatted
+
+            elif message.content == available_days[1]:
+                today = datetime.date.today()
+                next_tuesday = today + \
+                    datetime.timedelta(days=1-today.weekday(), weeks=1)
+                date_formatted = next_tuesday.strftime("%A %d/%m/%Y")
+                return date_formatted
+
+            elif message.content == available_days[2]:
+                today = datetime.date.today()
+                next_wednesday = today + \
+                    datetime.timedelta(days=2-today.weekday(), weeks=1)
+                date_formatted = next_wednesday.strftime("%A %d/%m/%Y")
+                return date_formatted
+
+            elif message.content == available_days[3]:
+                today = datetime.date.today()
+                next_thursday = today + \
+                    datetime.timedelta(days=3-today.weekday(), weeks=1)
+                date_formatted = next_thursday.strftime("%A %d/%m/%Y")
+                return date_formatted
+
+            elif message.content == available_days[4]:
+                today = datetime.date.today()
+                next_friday = today + \
+                    datetime.timedelta(days=4-today.weekday(), weeks=1)
+                date_formatted = next_friday.strftime("%A %d/%m/%Y")
+                return date_formatted
+
+            elif message.content == available_days[5]:
+                today = datetime.date.today()
+                next_saturday = today + \
+                    datetime.timedelta(days=5-today.weekday(), weeks=1)
+                date_formatted = next_saturday.strftime("%A %d/%m/%Y")
+                return date_formatted
+
+            elif message.content == available_days[6]:
+                today = datetime.date.today()
+                next_sunday = today + \
+                    datetime.timedelta(days=6-today.weekday(), weeks=1)
+                date_formatted = next_sunday.strftime("%A %d/%m/%Y")
+                return date_formatted
+
+            if len(message.content) < 1:
+                await ctx.send('Setup cancelled. No message was provided.')
+                raise ValueError
+
+            return message.content
+        except Exception as exception:
+            await ctx.send(str(exception))
+            raise exception
+
+    async def _get_staffing_message(self, ctx):
+        """
+        Function gets a message that'll be included in announcement
+        :param ctx:
+        :return:
+        """
+        try:
+            await ctx.send('Staffing message? **FYI this command expires in 1 minute**')
+            message = await self.bot.wait_for('message', timeout=60, check=lambda
+                                              message: message.author == ctx.author and ctx.channel == message.channel)
+
+            if len(message.content) < 1:
+                await ctx.send('Setup cancelled. No message was provided.')
+                raise ValueError
+
+            return message.content
+        except Exception as exception:
+            await ctx.send(str(exception))
+            raise exception
+
+    async def _get_mainpositions_message(self, ctx):
+        """
+        Function gets a message that'll be included in announcement
+        :param ctx:
+        :return:
+        """
+        try:
+
+            position = []
+            types = 'Main'
+            times = await self._get_howmanypositions_message(ctx, types)
+            num = 0
+            for _ in range(int(times)):
+                num += 1
+                await ctx.send('Main position nr. ' + str(num) + '? **FYI this command expires in 1 minute**')
+                message = await self.bot.wait_for('message', timeout=60, check=lambda
+                                                  message: message.author == ctx.author and ctx.channel == message.channel)
+                position.append(message.content + ":")
+
+                if len(message.content) < 1:
+                    await ctx.send('Setup cancelled. No positions was provided.')
+                    raise ValueError
+
+            return position
+        except Exception as exception:
+            await ctx.send(str(exception))
+            raise exception
+
+    async def _get_secondarypositions_message(self, ctx):
+        """
+        Function gets a message that'll be included in announcement
+        :param ctx:
+        :return:
+        """
+        try:
+
+            position = []
+            types = 'Secondary'
+            times = await self._get_howmanypositions_message(ctx, types)
+            num = 0
+            for _ in range(int(times)):
+                num += 1
+                await ctx.send('Secondary position nr. ' + str(num) + '? **FYI this command expires in 1 minute**')
+                message = await self.bot.wait_for('message', timeout=60, check=lambda
+                                                  message: message.author == ctx.author and ctx.channel == message.channel)
+                position.append(message.content + ":")
+
+                if len(message.content) < 1:
+                    await ctx.send('Setup cancelled. No positions was provided.')
+                    raise ValueError
+
+            return position
+        except Exception as exception:
+            await ctx.send(str(exception))
+            raise exception
+
+    async def _getregionalpositions_message(self, ctx):
+        """
+        Function gets a message that'll be included in announcement
+        :param ctx:
+        :return:
+        """
+        try:
+
+            position = []
+            types = 'Regional'
+            times = await self._get_howmanypositions_message(ctx, types)
+            num = 0
+            for _ in range(int(times)):
+                num += 1
+                await ctx.send('Regional position nr. ' + str(num) + '? **FYI this command expires in 1 minute**')
+                message = await self.bot.wait_for('message', timeout=60, check=lambda
+                                                  message: message.author == ctx.author and ctx.channel == message.channel)
+                position.append(message.content + ":")
+
+                if len(message.content) < 1:
+                    await ctx.send('Setup cancelled. No positions was provided.')
+                    raise ValueError
+
+            return position
+        except Exception as exception:
+            await ctx.send(str(exception))
+            raise exception
+
+    async def _get_howmanypositions_message(self, ctx, types):
+        """
+        Function gets a message that'll be included in announcement
+        :param ctx:
+        :return:
+        """
+        try:
+            await ctx.send('How many ' + types + ' positions? **FYI this command expires in 1 minute**')
+            message = await self.bot.wait_for('message', timeout=60, check=lambda
+                                              message: message.author == ctx.author and ctx.channel == message.channel)
+
+            if len(message.content) < 1:
+                await ctx.send('Setup cancelled. No message was provided.')
+                raise ValueError
+
+            return message.content
+        except Exception as exception:
+            await ctx.send(str(exception))
+            raise exception
+
+    async def _get_channels(self, ctx):
+        """
+        Function gets channels where it should send the announcement
+        :param ctx:
+        :return:
+        """
+        try:
+            await ctx.send('Where would you like to post the staffing message? **FYI this command expires in 1 minute**')
+
+            message = await self.bot.wait_for('message', timeout=60, check=lambda
+                                              message: message.author == ctx.author and ctx.channel == message.channel)
+
+            if len(message.channel_mentions) < 1:
+                await ctx.send('Setup canceled. No channel provided.')
+                raise ValueError
+
+            return message.channel_mentions
+        except Exception as exception:
+            await ctx.send(str(exception))
+            raise exception
+
+    @cog_ext.cog_slash(name="showallstaffings", guild_ids=guild_ids, description="Bot shows all staffings available")
+    @commands.has_any_role(*staff_roles())
+    async def showallstaffings(self, ctx) -> None:
+        showall = os.listdir("staffing-info")
+        allstaffings = []
+        for x in showall:
+            allstaffings.append(os.path.splitext(x)[0])
+        show_all_staffings = "\n" .join(files for files in allstaffings)
+        await ctx.send("All Staffings:\n**`" + str(show_all_staffings) + "`**")
+
+    @cog_ext.cog_slash(name="updatestaffing", guild_ids=guild_ids, description="Bot updates selected staffing")
+    @commands.has_any_role(*staff_roles())
+    async def updatestaffing(self, ctx, titel) -> None:
+        try:
+            showall = os.listdir("staffing-info")
+
+            if titel + ".txt" in showall:
+                options = ['Titel', 'Day of event', 'Staffing message',
+                           'Main Positions', 'Secondary Positions', 'Regional Positions', 'Exit Updater']
+                avail = "\n" .join(files for files in options)
+                await ctx.send('What would you like to update? **FYI this command expires in 1 minute**\n\nAvailable options:\n' + str(avail))
+
+                message = await self.bot.wait_for('message', timeout=60, check=lambda
+                                                  message: message.author == ctx.author and ctx.channel == message.channel)
+
+                if message.content == options[0]:
+                    newtitel = await self._update_titel(ctx)
+                    headings = []
+                    start = 0
+                    with open('staffing-info/' + titel + ".txt") as f:
+                        for ln in f:
+                            # append to heading list
+                            if start == 1:
+                                # when the second dashed line is seen, stop appending
+                                if ln.startswith('---'):
+                                    start = 0
+                                    continue
+                                headings.append(ln.rstrip())
+                            # first dashed line, indicate to start appending
+                            if ln.startswith('------ Titel ------'):
+                                start = 1
+                    if headings[0] == titel:
+                        for line in fileinput.input(['staffing-info/' + titel + '.txt'], inplace=True):
+                            if line.startswith(titel):
+                                line = newtitel + '\n'
+                            sys.stdout.write(line)
+                        os.rename('staffing-info/' + titel + '.txt',
+                                  'staffing-info/' + newtitel + '.txt')
+                        await ctx.send("Titel Updated to - '" + newtitel + "'")
+                        await self._update_message(ctx, titel)
+                    else:
+                        await ctx.send('Titels does not match.')
+
+                if message.content == options[1]:
+                    newdate = await self._get_date(ctx)
+                    headings = []
+                    start = 0
+                    with open('staffing-info/' + titel + ".txt") as f:
+                        for ln in f:
+                            # append to heading list
+                            if start == 1:
+                                # when the second dashed line is seen, stop appending
+                                if ln.startswith('---'):
+                                    start = 0
+                                    continue
+                                headings.append(ln.rstrip())
+                            if ln.startswith('------ Day of event ------'):
+                                start = 1
+                    for line in fileinput.input(['staffing-info/' + titel + '.txt'], inplace=True):
+                        if line.startswith(headings[0]):
+                            line = newdate + '\n'
+                        sys.stdout.write(line)
+                    await ctx.send("Day of event Updated to - '" + newdate + "'")
+                    await self._update_message(ctx, titel)
+
+                if message.content == options[2]:
+                    new_staffing_msg = await self._get_staffing_message(ctx)
+
+                    headings = []
+                    start = 0
+                    with open('staffing-info/' + titel + ".txt") as f:
+                        for ln in f:
+                            # append to heading list
+                            if start == 1:
+                                # when the second dashed line is seen, stop appending
+                                if ln.startswith('---'):
+                                    start = 0
+                                    continue
+                                headings.append(ln.rstrip())
+                            if ln.startswith('------ Staffing Message ------'):
+                                start = 1
+                    state = 0
+                    for line in fileinput.input('staffing-info/' + titel + '.txt', inplace=True):
+                        if state == 1:
+                            if line.startswith('---'):
+                                state = 0
+                                line.replace(str(headings), "")
+                                continue
+                        if line.startswith('------ Staffing Message ------'):
+                            state = 1
+                        sys.stdout.write(line)
+                        
+                    await self._update_message(ctx, titel)
+                    await ctx.send("Staffing message Updated to - '" + new_staffing_msg + "'")
+
+                if message.content == options[3]:
+                    new_main_pos = await self._get_mainpositions_message(ctx)
+                    headings = []
+                    start = 0
+                    with open('staffing-info/' + titel + ".txt") as f:
+                        for ln in f:
+                            # append to heading list
+                            if start == 1:
+                                # when the second dashed line is seen, stop appending
+                                if ln.startswith('---'):
+                                    start = 0
+                                    continue
+                                headings.append(ln.rstrip())
+                            # first dashed line, indicate to start appending
+                            if ln.startswith('------ Main Positions ------'):
+                                start = 1
+                    for line in fileinput.input(['staffing-info/' + titel + '.txt'], inplace=True):
+                        if line.startswith(headings[0]):
+                            main_positions_data = "\n" .join(position for position in new_main_pos)
+                            line = str(main_positions_data) + '\n'
+                        sys.stdout.write(line)
+                    await ctx.send("Main positions Updated to - '" + str(new_main_pos) + "'")
+                    await self._update_message(ctx, titel)
+
+                if message.content == options[4]:
+                    new_secondary_pos = await self._get_secondarypositions_message(ctx)
+                    headings = []
+                    start = 0
+                    with open('staffing-info/' + titel + ".txt") as f:
+                        for ln in f:
+                            # append to heading list
+                            if start == 1:
+                                # when the second dashed line is seen, stop appending
+                                if ln.startswith('---'):
+                                    start = 0
+                                    continue
+                                headings.append(ln.rstrip())
+                            # first dashed line, indicate to start appending
+                            if ln.startswith('------ Secondary Positions ------'):
+                                start = 1
+                    for line in fileinput.input(['staffing-info/' + titel + '.txt'], inplace=True):
+                        if line.startswith(headings[0]):
+                            secondary_positions_data = "\n" .join(position for position in new_secondary_pos)
+                            line = str(secondary_positions_data) + '\n'
+                        sys.stdout.write(line)
+                    await ctx.send("Secondary positions Updated to - '" + str(new_secondary_pos) + "'")
+                    await self._update_message(ctx, titel)
+
+                if message.content == options[5]:
+                    new_regonal_pos = await self._getregionalpositions_message(ctx)
+                    headings = []
+                    start = 0
+                    with open('staffing-info/' + titel + ".txt") as f:
+                        for ln in f:
+                            # append to heading list
+                            if start == 1:
+                                # when the second dashed line is seen, stop appending
+                                if ln.startswith('---'):
+                                    start = 0
+                                    continue
+                                headings.append(ln.rstrip())
+                            # first dashed line, indicate to start appending
+                            if ln.startswith('------ Regional Positions ------'):
+                                start = 1
+                    for line in fileinput.input(['staffing-info/' + titel + '.txt'], inplace=True):
+                        if line.startswith(headings[0]):
+                            regional_positions_data = "\n" .join(position for position in new_regonal_pos)
+                            line = str(regional_positions_data) + '\n'
+                        sys.stdout.write(line)
+                    await ctx.send("Regional positions Updated to - '" + str(new_regonal_pos) + "'")
+                    await self._update_message(ctx, titel)
+
+                if len(message.content) < 1:
+                    await ctx.send('Update canceled. No option provided.')
+                    raise ValueError
+            else:
+                await ctx.send("Staffing not found.")
+
+        except Exception as exception:
+            await ctx.send(str(exception))
+            raise exception
+
+    async def _update_titel(self, ctx):
+        try:
+            await ctx.send('What should the new titel be? **FYI this command expires in 1 minute**')
+
+            message = await self.bot.wait_for('message', timeout=60, check=lambda
+                                              message: message.author == ctx.author and ctx.channel == message.channel)
+
+            if len(message.content) < 1:
+                await ctx.send('Update canceled. No titel provided.')
+                raise ValueError
+
+            return message.content
+        except Exception as exception:
+            await ctx.send(str(exception))
+            raise exception
+
+    async def _update_message(self, ctx, titel):
+        try:
+            channel_id = await self._get_channel_id(titel)
+            message_id = await self._get_message_id(titel)
+            staffing_date = await self._get_staffing_date(titel)
+            staffing_message = await self._get_staffing_msg(titel)
+            main_position = await self._get_all_main_pos(titel)
+            secondary_position = await self._get_all_secondary_pos(titel)
+            regional_position = await self._get_all_regional_pos(titel)
+
+            format_staffing_message = ""
+
+            if format_staffing_message != "":
+                format_staffing_message += "\n"
+
+            staffing_msg_formatted = "\n" .join(msg for msg in staffing_message)
+            main_positions_data = "\n" .join(position for position in main_position)
+            secondary_positions_data = "\n" .join(
+            position for position in secondary_position)
+            regional_positions_data = "\n" .join(
+            position for position in regional_position)
+
+            format_staffing_message += titel + " staffing - " + staffing_date[0] + "\n\n" + str(staffing_msg_formatted) + \
+                "\n\nMain Positions:\n" + \
+                str(main_positions_data) + \
+                "\n\nSecondary Positions:\n" + \
+                str(secondary_positions_data) + \
+                "\n\nRegional Positions:\n" + str(regional_positions_data)
+
+            channel = self.bot.get_channel(int(channel_id[0]))
+            message = await channel.fetch_message(int(message_id[0]))
+            await message.edit(content=format_staffing_message)
+        except Exception as exception:
+            await ctx.send(str(exception))
+            raise exception
+
+    async def _get_channel_id(self, titel):
+        channel_id = []
+        start = 0
+        with open('staffing-info/' + titel + ".txt") as f:
+            for ln in f:
+                # append to heading list
+                if start == 1:
+                    # when the second dashed line is seen, stop appending
+                    if ln.startswith('---'):
+                        start = 0
+                        continue
+                    channel_id.append(ln.rstrip())
+                    # first dashed line, indicate to start appending
+                if ln.startswith('------ Channel id ------'):
+                    start = 1
+        return channel_id
+
+    async def _get_message_id(self, titel):
+        message_id = []
+        start = 0
+        with open('staffing-info/' + titel + ".txt") as f:
+            for ln in f:
+                # append to heading list
+                if start == 1:
+                    # when the second dashed line is seen, stop appending
+                    if ln.startswith('---'):
+                        start = 0
+                        continue
+                    message_id.append(ln.rstrip())
+                    # first dashed line, indicate to start appending
+                if ln.startswith('------ Message id ------'):
+                    start = 1
+        return message_id
+
+    async def _get_staffing_date(self, titel):
+        staffing_date = []
+        start = 0
+        with open('staffing-info/' + titel + ".txt") as f:
+            for ln in f:
+                # append to heading list
+                if start == 1:
+                    # when the second dashed line is seen, stop appending
+                    if ln.startswith('---'):
+                        start = 0
+                        continue
+                    staffing_date.append(ln.rstrip())
+                    # first dashed line, indicate to start appending
+                if ln.startswith('------ Day of event ------'):
+                    start = 1
+        return staffing_date
+
+    async def _get_staffing_msg(self, titel):
+        staffing_msg = []
+        start = 0
+        with open('staffing-info/' + titel + ".txt") as f:
+            for ln in f:
+                # append to heading list
+                if start == 1:
+                    # when the second dashed line is seen, stop appending
+                    if ln.startswith('---'):
+                        start = 0
+                        continue
+                    staffing_msg.append(ln.rstrip())
+                    # first dashed line, indicate to start appending
+                if ln.startswith('------ Staffing Message ------'):
+                    start = 1
+        return staffing_msg
+
+    async def _get_all_main_pos(self, titel):
+        main_pos = []
+        start = 0
+        with open('staffing-info/' + titel + ".txt") as f:
+            for ln in f:
+                # append to heading list
+                if start == 1:
+                    # when the second dashed line is seen, stop appending
+                    if ln.startswith('---'):
+                        start = 0
+                        continue
+                    main_pos.append(ln.rstrip())
+                    # first dashed line, indicate to start appending
+                if ln.startswith('------ Main Positions ------'):
+                    start = 1
+        return main_pos
+
+    async def _get_all_secondary_pos(self, titel):
+        secondary_pos = []
+        start = 0
+        with open('staffing-info/' + titel + ".txt") as f:
+            for ln in f:
+                # append to heading list
+                if start == 1:
+                    # when the second dashed line is seen, stop appending
+                    if ln.startswith('---'):
+                        start = 0
+                        continue
+                    secondary_pos.append(ln.rstrip())
+                    # first dashed line, indicate to start appending
+                if ln.startswith('------ Secondary Positions ------'):
+                    start = 1
+        return secondary_pos
+
+    async def _get_all_regional_pos(self, titel):
+        regional_pos = []
+        start = 0
+        with open('staffing-info/' + titel + ".txt") as f:
+            for ln in f:
+                # append to heading list
+                if start == 1:
+                    # when the second dashed line is seen, stop appending
+                    if ln.startswith('---'):
+                        start = 0
+                        continue
+                    regional_pos.append(ln.rstrip())
+                    # first dashed line, indicate to start appending
+                if ln.startswith('------ Regional Positions ------'):
+                    start = 1
+        return regional_pos
+
+    @cog_ext.cog_slash(name="update_staffing_message", guild_ids=guild_ids, description="Bot updates staffing message ***TESTING ONLY***")
+    @commands.has_any_role(*staff_roles())
+    async def update_staffing_message(self, ctx) -> None:
+        channel_id = 849206253330497537
+        message_id = 850509348597792779
+        channel = self.bot.get_channel(int(channel_id))
+        message = await channel.fetch_message(message_id)
+        await message.edit(content="test")
+        await ctx.send("Updating Message")
+
 
 def setup(bot):
-    bot.add_cog(VTCcog(bot))
+    bot.add_cog(newVTCcog(bot))
