@@ -673,15 +673,15 @@ class VTCcog(commands.Cog):
 
             usernick = ctx.author.id
             if position + ":" in positions:
-                if str(usernick) in positions:
+                if any(str(usernick) in match for match in positions):
                     await ctx.send("<@" + str(usernick) + "> You already have a booking.")
-                elif str(usernick) not in positions:
+                else:
                     for line in fileinput.input(['staffing-info/' + titel + '.txt'], inplace=True):
                         if str(usernick) not in line and line.startswith(position + ":"):
                             line = position + ': <@' + str(usernick) + '>\n'
                         sys.stdout.write(line)
-                await ctx.send("<@" + str(usernick) + "> Confirmed booking for " + position + "!")
-                await self._update_message(ctx, titel)
+                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for " + position + "!")
+                    await self._update_message(ctx, titel)
             else:
                 await ctx.send("<@" + str(usernick) + "> The position " + position + " does not exist or is already booked.")
 
@@ -718,7 +718,6 @@ class VTCcog(commands.Cog):
         message = await channel.fetch_message(message_id)
         await message.edit(content="test")
         await ctx.send("Updating Message")
-
 
 def setup(bot):
     bot.add_cog(VTCcog(bot))
