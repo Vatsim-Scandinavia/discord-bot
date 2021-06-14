@@ -11,7 +11,7 @@ from helpers.message import staff_roles
 guild_ids = [GUILD_ID]
 
 
-class newVTCcog(commands.Cog):
+class VTCcog(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
@@ -662,6 +662,53 @@ class newVTCcog(commands.Cog):
                     start = 1
         return regional_pos
 
+    @cog_ext.cog_slash(name="book", guild_ids=guild_ids, description="Bot updates selected staffing")
+    async def book(self, ctx, titel, position: str) -> None:
+        try:
+            main_pos = await self._get_all_main_pos(titel)
+            secondary_pos = await self._get_all_secondary_pos(titel)
+            regional_pos = await self._get_all_regional_pos(titel)
+            positions = []
+            positions.extend(main_pos + secondary_pos + regional_pos)
+
+            usernick = ctx.author.id
+            if position + ":" in positions:
+                if str(usernick) in positions:
+                    await ctx.send("<@" + str(usernick) + "> You already have a booking.")
+                elif str(usernick) not in positions:
+                    for line in fileinput.input(['staffing-info/' + titel + '.txt'], inplace=True):
+                        if str(usernick) not in line and line.startswith(position + ":"):
+                            line = position + ': <@' + str(usernick) + '>\n'
+                        sys.stdout.write(line)
+                await ctx.send("<@" + str(usernick) + "> Confirmed booking for " + position + "!")
+                await self._update_message(ctx, titel)
+            else:
+                await ctx.send("<@" + str(usernick) + "> The position " + position + " does not exist or is already booked.")
+
+        except Exception as exception:
+            await ctx.send(str(exception))
+            raise exception
+
+    @cog_ext.cog_slash(name="unbook", guild_ids=guild_ids, description="Bot updates selected staffing")
+    async def unbook(self, ctx, titel, position: str) -> None:
+        try:
+            usernick = ctx.author.id
+            main_pos = await self._get_all_main_pos(titel)
+            secondary_pos = await self._get_all_secondary_pos(titel)
+            regional_pos = await self._get_all_regional_pos(titel)
+            positions = []
+            positions.extend(main_pos + secondary_pos + regional_pos)
+            for line in fileinput.input(['staffing-info/' + titel + '.txt'], inplace=True):
+                if line.startswith(position) and str(usernick) in line:
+                    line = position + ':\n'
+                sys.stdout.write(line)
+            await ctx.send("<@" + str(usernick) + "> Confirmed unbooking for " + position + "!")
+            await self._update_message(ctx, titel)
+
+        except Exception as exception:
+            await ctx.send(str(exception))
+            raise exception
+
     @cog_ext.cog_slash(name="update_staffing_message", guild_ids=guild_ids, description="Bot updates staffing message ***TESTING ONLY***")
     @commands.has_any_role(*staff_roles())
     async def update_staffing_message(self, ctx) -> None:
@@ -674,4 +721,4 @@ class newVTCcog(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(newVTCcog(bot))
+    bot.add_cog(VTCcog(bot))
