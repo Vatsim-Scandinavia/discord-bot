@@ -35,8 +35,8 @@ COGS_LOAD = {
 
 VTC_POSITIONS = {
     'EKCH_DEL', 'ekch_del',
-    'EKCH_GND', 'ekch_gnd',
-    'EKCH_TWR', 'ekch_twr',
+    'EKCH_A_GND', 'ekch_a_gnd',
+    'EKCH_A_TWR', 'ekch_a_twr',
     'EKCH_D_TWR', 'ekch_d_twr',
     'EKCH_C_TWR', 'ekch_c_twr',
     'EKRK_TWR', 'ekrk_twr',
@@ -45,14 +45,14 @@ VTC_POSITIONS = {
     'EKYT_TWR', 'ekyt_twr',
     'EKKA_TWR', 'ekka_twr',
     'EKAH_TWR', 'ekah_twr',
-    'EKCH_APP', 'ekch_app',
+    'EKCH_W_APP', 'ekch_w_app',
     'EKCH_F_APP', 'ekch_f_app',
-    'EKCH_DEP', 'ekch_dep',
+    'EKCH_W_DEP', 'ekch_w_dep',
     'EKBI_APP', 'ekbi_app',
     'EKYT_APP', 'ekyt_app',
     'EKKA_APP', 'ekka_app',
     'EKAH_APP', 'ekah_app',
-    'EKDK_CTR', 'ekdk_ctr',
+    'EKDK_B_CTR', 'ekdk_b_ctr',
     'EKDK_D_CTR', 'ekdk_d_ctr',
     'EKDK_V_CTR', 'ekdk_v_ctr',
 }
