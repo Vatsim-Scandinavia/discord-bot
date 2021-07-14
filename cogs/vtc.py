@@ -47,7 +47,7 @@ class VTCcog(commands.Cog):
         if ctx.channel.id == VTC_CHANNEL:
             mydb.reconnect()
             mancursor = mydb.cursor()
-            sql = "UPDATE vtc SET name = '' WHERE id < 19"
+            sql = "UPDATE vtc SET name = '' WHERE id < 21"
             mancursor.execute(sql)
             mydb.commit()
             await self.updatepositions(ctx)
@@ -241,7 +241,7 @@ class VTCcog(commands.Cog):
         if now.weekday() == 0 and now.hour == 23 and 00 <= now.minute <= 00:
             mydb.reconnect()
             mancursor = mydb.cursor()
-            sql = "UPDATE vtc SET name = '' WHERE id < 19"
+            sql = "UPDATE vtc SET name = '' WHERE id < 21"
             mancursor.execute(sql)
             mydb.commit()
             await self.bot.wait_until_ready()
