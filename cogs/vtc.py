@@ -1,8 +1,8 @@
-import os
+import os, re
 import fileinput
 import sys
-import re
-from discord.ext import commands
+import asyncio
+from discord.ext import commands, tasks
 from discord_slash import cog_ext
 import datetime
 from helpers.config import VTC_CHANNEL, VTC_STAFFING_MSG, GUILD_ID, VTC_POSITIONS
@@ -15,10 +15,10 @@ class VTCcog(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        """self.autoreset.start()"""
+        self.autoreset.start()
 
     def cog_unload(self):
-        """ self.autoreset.cancel()"""
+        self.autoreset.cancel()
 
     @cog_ext.cog_slash(name="setupstaffing", guild_ids=guild_ids, description="Bot setups staffing information")
     @commands.has_any_role(*staff_roles())
@@ -353,7 +353,7 @@ class VTCcog(commands.Cog):
                         os.rename('staffing-info/' + titel + '.txt',
                                   'staffing-info/' + newtitel + '.txt')
                         await ctx.send("Titel Updated to - '" + newtitel + "'")
-                        await self._update_message(ctx, titel)
+                        await self._update_message(titel)
                     else:
                         await ctx.send('Titels does not match.')
 
@@ -377,7 +377,7 @@ class VTCcog(commands.Cog):
                             line = newdate + '\n'
                         sys.stdout.write(line)
                     await ctx.send("Day of event Updated to - '" + newdate + "'")
-                    await self._update_message(ctx, titel)
+                    await self._update_message(titel)
 
                 if message.content == options[2]:
                     new_staffing_msg = await self._get_staffing_message(ctx)
@@ -406,7 +406,7 @@ class VTCcog(commands.Cog):
                             state = 1
                         sys.stdout.write(line)
                         
-                    await self._update_message(ctx, titel)
+                    await self._update_message(titel)
                     await ctx.send("Staffing message Updated to - '" + new_staffing_msg + "'")
 
                 if message.content == options[3]:
@@ -431,7 +431,7 @@ class VTCcog(commands.Cog):
                             line = str(main_positions_data) + '\n'
                         sys.stdout.write(line)
                     await ctx.send("Main positions Updated to - '" + str(new_main_pos) + "'")
-                    await self._update_message(ctx, titel)
+                    await self._update_message(titel)
 
                 if message.content == options[4]:
                     new_secondary_pos = await self._get_secondarypositions_message(ctx)
@@ -455,7 +455,7 @@ class VTCcog(commands.Cog):
                             line = str(secondary_positions_data) + '\n'
                         sys.stdout.write(line)
                     await ctx.send("Secondary positions Updated to - '" + str(new_secondary_pos) + "'")
-                    await self._update_message(ctx, titel)
+                    await self._update_message(titel)
 
                 if message.content == options[5]:
                     new_regonal_pos = await self._getregionalpositions_message(ctx)
@@ -479,7 +479,7 @@ class VTCcog(commands.Cog):
                             line = str(regional_positions_data) + '\n'
                         sys.stdout.write(line)
                     await ctx.send("Regional positions Updated to - '" + str(new_regonal_pos) + "'")
-                    await self._update_message(ctx, titel)
+                    await self._update_message(titel)
 
                 if len(message.content) < 1:
                     await ctx.send('Update canceled. No option provided.')
@@ -507,7 +507,7 @@ class VTCcog(commands.Cog):
             await ctx.send(str(exception))
             raise exception
 
-    async def _update_message(self, ctx, titel):
+    async def _update_message(self, titel):
         try:
             channel_id = await self._get_channel_id(titel)
             message_id = await self._get_message_id(titel)
@@ -540,7 +540,7 @@ class VTCcog(commands.Cog):
             message = await channel.fetch_message(int(message_id[0]))
             await message.edit(content=format_staffing_message)
         except Exception as exception:
-            await ctx.send(str(exception))
+            """await channel.send(str(exception))"""
             raise exception
 
     async def _get_channel_id(self, titel):
@@ -675,15 +675,21 @@ class VTCcog(commands.Cog):
             if position + ":" in positions:
                 if any(str(usernick) in match for match in positions):
                     await ctx.send("<@" + str(usernick) + "> You already have a booking.")
+                    await asyncio.sleep(5)
+                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
                 else:
                     for line in fileinput.input(['staffing-info/' + titel + '.txt'], inplace=True):
                         if str(usernick) not in line and line.startswith(position + ":"):
                             line = position + ': <@' + str(usernick) + '>\n'
                         sys.stdout.write(line)
                     await ctx.send("<@" + str(usernick) + "> Confirmed booking for " + position + "!")
-                    await self._update_message(ctx, titel)
+                    await self._update_message(titel)
+                    await asyncio.sleep(5)
+                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
             else:
                 await ctx.send("<@" + str(usernick) + "> The position " + position + " does not exist or is already booked.")
+                await asyncio.sleep(5)
+                await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
 
         except Exception as exception:
             await ctx.send(str(exception))
@@ -703,7 +709,9 @@ class VTCcog(commands.Cog):
                     line = position + ':\n'
                 sys.stdout.write(line)
             await ctx.send("<@" + str(usernick) + "> Confirmed unbooking for " + position + "!")
-            await self._update_message(ctx, titel)
+            await self._update_message(titel)
+            await asyncio.sleep(5)
+            await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
 
         except Exception as exception:
             await ctx.send(str(exception))
@@ -712,12 +720,294 @@ class VTCcog(commands.Cog):
     @cog_ext.cog_slash(name="update_staffing_message", guild_ids=guild_ids, description="Bot updates staffing message ***TESTING ONLY***")
     @commands.has_any_role(*staff_roles())
     async def update_staffing_message(self, ctx) -> None:
-        channel_id = 849206253330497537
-        message_id = 850509348597792779
-        channel = self.bot.get_channel(int(channel_id))
-        message = await channel.fetch_message(message_id)
-        await message.edit(content="test")
-        await ctx.send("Updating Message")
+        try:
+            await self.bot.wait_until_ready()
+            get_autoupdate_date = await self._get_autoupdate_date()
+            days = []
+            print(get_autoupdate_date)
+            if any('Monday' in match for match in get_autoupdate_date):
+                days.append("0")
+            if any('Tuesday' in match for match in get_autoupdate_date):
+                days.append("1")
+            if any('Wednesday' in match for match in get_autoupdate_date):
+                days.append("2")
+            if any('Thursday' in match for match in get_autoupdate_date):
+                days.append("3")
+            if any('Friday' in match for match in get_autoupdate_date):
+                days.append("4")
+            if any('Saturday' in match for match in get_autoupdate_date):
+                days.append("5")
+            if any('Sunday' in match for match in get_autoupdate_date):
+                days.append("6")
+
+            titel = None
+            titels = os.listdir("staffing-info")
+            all_staffing_titels = []
+            for x in titels:
+                all_staffing_titels.append(os.path.splitext(x)[0])
+
+            all_files = os.listdir("staffing-info")
+            now = datetime.datetime.now()
+            for day in days:
+                if now.weekday() == int(day):
+                    for file in all_files:
+                        titel = os.path.splitext(file)[0]
+                        main_position = await self._get_all_main_pos(titel)
+                        secondary_position = await self._get_all_secondary_pos(titel)
+                        regional_position = await self._get_all_regional_pos(titel)
+                        positions = []
+                        positions.extend(main_position + secondary_position + regional_position)
+
+                        avail_pos = []
+                        for line in fileinput.input(["staffing-info/" + file], inplace=True):
+                            if int(day) == 0:
+                                today = datetime.date.today()
+                                next_friday = today + \
+                                    datetime.timedelta(days=0-today.weekday(), weeks=1)
+                                date_formatted = next_friday.strftime("%A %d/%m/%Y")
+                                if line.startswith('Monday'):
+                                    line = date_formatted + '\n'
+                                sys.stdout.write(line)
+                        
+                            elif int(day) == 1:
+                                today = datetime.date.today()
+                                next_friday = today + \
+                                    datetime.timedelta(days=1-today.weekday(), weeks=1)
+                                date_formatted = next_friday.strftime("%A %d/%m/%Y")
+                                if line.startswith('Tuesday'):
+                                    line = date_formatted + '\n'
+                                sys.stdout.write(line)
+
+                            elif int(day) == 2:
+                                today = datetime.date.today()
+                                next_friday = today + \
+                                    datetime.timedelta(days=2-today.weekday(), weeks=1)
+                                date_formatted = next_friday.strftime("%A %d/%m/%Y")
+                                if line.startswith('Wednesday'):
+                                    line = date_formatted + '\n'
+                                sys.stdout.write(line)
+
+                            elif int(day) == 3:
+                                today = datetime.date.today()
+                                next_friday = today + \
+                                    datetime.timedelta(days=3-today.weekday(), weeks=1)
+                                date_formatted = next_friday.strftime("%A %d/%m/%Y")
+                                if line.startswith('Thursday'):
+                                    line = date_formatted + '\n'
+                                sys.stdout.write(line)
+
+                            elif int(day) == 4:
+                                today = datetime.date.today()
+                                next_friday = today + \
+                                    datetime.timedelta(days=4-today.weekday(), weeks=1)
+                                date_formatted = next_friday.strftime("%A %d/%m/%Y")
+                                if line.startswith('Friday'):
+                                    line = date_formatted + '\n'
+                                    for position in positions:
+                                        spline = position.rstrip()
+                                        result = re.sub(":.*.", ":", spline)
+                                        avail_pos.append(result)
+                                sys.stdout.write(line)
+
+                            elif int(day) == 5:
+                                today = datetime.date.today()
+                                next_friday = today + \
+                                    datetime.timedelta(days=5-today.weekday(), weeks=1)
+                                date_formatted = next_friday.strftime("%A %d/%m/%Y")
+                                if line.startswith('Saturday'):
+                                    line = date_formatted + '\n'
+                                sys.stdout.write(line)
+
+                            elif int(day) == 6:
+                                today = datetime.date.today()
+                                next_friday = today + \
+                                    datetime.timedelta(days=6-today.weekday(), weeks=1)
+                                date_formatted = next_friday.strftime("%A %d/%m/%Y")
+                                if line.startswith('Sunday'):
+                                    line = date_formatted + '\n'
+                                sys.stdout.write(line)
+                            else:
+                                pass
+                    print(avail_pos)
+                    if titel != None:
+                        await self._update_message(titel)
+                        channel_id = await self._get_channel_id(titel)
+                        channel = self.bot.get_channel(int(channel_id[0]))
+                        await channel.send("The chat is being automatically reset!")
+                        await asyncio.sleep(5)
+                        await channel.purge(limit=None, check=lambda msg: not msg.pinned)
+                    else:
+                        await ctx.send("Proccess Incomplete")
+        except Exception as exception:
+            await ctx.send(str(exception))
+            raise exception
+
+    async def _get_staffing_titel(self, file):
+        titel = []
+        start = 0
+        with open('staffing-info/' + file) as f:
+            for ln in f:
+                # append to heading list
+                if start == 1:
+                    # when the second dashed line is seen, stop appending
+                    if ln.startswith('---'):
+                        start = 0
+                        continue
+                    titel.append(ln.rstrip())
+                # first dashed line, indicate to start appending
+                if ln.startswith('------ Titel ------'):
+                    start = 1
+        return titel
+
+    @tasks.loop(seconds=60)
+    async def autoreset(self) -> None:
+        await self.bot.wait_until_ready()
+        get_autoupdate_date = await self._get_autoupdate_date()
+        days = []
+        if any('Monday' in match for match in get_autoupdate_date):
+            days.append("0")
+        elif any('Tuesday' in match for match in get_autoupdate_date):
+            days.append("1")
+        elif any('Wednesday' in match for match in get_autoupdate_date):
+            days.append("2")
+        elif any('Thursday' in match for match in get_autoupdate_date):
+            days.append("3")
+        elif any('Friday' in match for match in get_autoupdate_date):
+            days.append("4")
+        elif any('Saturday' in match for match in get_autoupdate_date):
+            days.append("5")
+        elif any('Sunday' in match for match in get_autoupdate_date):
+            days.append("6")
+
+        now = datetime.datetime.now()
+        showall = os.listdir("staffing-info")
+        all_staffing_files = []
+        for x in showall:
+            all_staffing_files.append(os.path.splitext(x)[0])
+        all_files = "\n" .join(files for files in all_staffing_files)
+
+        titels = []
+        for x in titels:
+            titels.append(os.path.splitext(x)[0])
+        for day in days:
+            if now.weekday() == int(day) and now.hour == 15 and 30 <= now.minute <= 35:
+                for files in all_files:
+                    for line in fileinput.input(["staffing-info/" + str(files)], inplace=True):
+                        if int(day) == 0:
+                            today = datetime.date.today()
+                            next_monday = today + \
+                                datetime.timedelta(days=0-today.weekday(), weeks=1)
+                            date_formatted = next_monday.strftime("%A %d/%m/%Y")
+                            if line.startswith('Monday'):
+                                line = date_formatted
+                            sys.stdout.write(line)
+                            for titel in titels:
+                                await self._update_message(titel)
+                                channel = await self._get_channel_id(titel)
+                            await channel.send("The chat is being automatically reset!")
+                            await asyncio.sleep(5)
+                            await channel.purge(limit=None, check=lambda msg: not msg.pinned)
+                        
+                        elif int(day) == 1:
+                            today = datetime.date.today()
+                            next_tuesday = today + \
+                                datetime.timedelta(days=1-today.weekday(), weeks=1)
+                            date_formatted = next_tuesday.strftime("%A %d/%m/%Y")
+                            if line.startswith('Tuesday'):
+                                line = date_formatted
+                            sys.stdout.write(line)
+                            for titel in titels:
+                                await self._update_message(titel)
+                                channel = await self._get_channel_id(titel)
+                            await channel.send("The chat is being automatically reset!")
+                            await asyncio.sleep(5)
+                            await channel.purge(limit=None, check=lambda msg: not msg.pinned)
+
+                        elif int(day) == 2:
+                            today = datetime.date.today()
+                            next_wednesday = today + \
+                                datetime.timedelta(days=2-today.weekday(), weeks=1)
+                            date_formatted = next_wednesday.strftime("%A %d/%m/%Y")
+                            if line.startswith('Wednesday'):
+                                line = date_formatted
+                            sys.stdout.write(line)
+                            await self._update_message(titel)
+                            channel = await self._get_channel_id(titel)
+                            await channel.send("The chat is being automatically reset!")
+                            await asyncio.sleep(5)
+                            await channel.purge(limit=None, check=lambda msg: not msg.pinned)
+
+                        elif int(day) == 3:
+                            today = datetime.date.today()
+                            next_thursday = today + \
+                                datetime.timedelta(days=3-today.weekday(), weeks=1)
+                            date_formatted = next_thursday.strftime("%A %d/%m/%Y")
+                            if line.startswith('Thursday'):
+                                line = date_formatted
+                            sys.stdout.write(line)
+                            await self._update_message(titel)
+                            channel = await self._get_channel_id(titel)
+                            await channel.send("The chat is being automatically reset!")
+                            await asyncio.sleep(5)
+                            await channel.purge(limit=None, check=lambda msg: not msg.pinned)
+
+                        elif int(day) == 4:
+                            today = datetime.date.today()
+                            next_friday = today + \
+                                datetime.timedelta(days=4-today.weekday(), weeks=1)
+                            date_formatted = next_friday.strftime("%A %d/%m/%Y")
+                            if line.startswith('Friday'):
+                                line = date_formatted
+                            sys.stdout.write(line)
+                            await self._update_message(titel)
+                            channel = await self._get_channel_id(titel)
+                            await channel.send("The chat is being automatically reset!")
+                            await asyncio.sleep(5)
+                            await channel.purge(limit=None, check=lambda msg: not msg.pinned)
+
+                        elif int(day) == 5:
+                            today = datetime.date.today()
+                            next_saturday = today + \
+                                datetime.timedelta(days=5-today.weekday(), weeks=1)
+                            date_formatted = next_saturday.strftime("%A %d/%m/%Y")
+                            if line.startswith('Saturday'):
+                                line = date_formatted
+                            sys.stdout.write(line)
+                            await self._update_message(titel)
+                            channel = await self._get_channel_id(titel)
+                            await channel.send("The chat is being automatically reset!")
+                            await asyncio.sleep(5)
+                            await channel.purge(limit=None, check=lambda msg: not msg.pinned)
+
+                        elif int(day) == 6:
+                            today = datetime.date.today()
+                            next_sunday = today + \
+                                datetime.timedelta(days=6-today.weekday(), weeks=1)
+                            date_formatted = next_sunday.strftime("%A %d/%m/%Y")
+                            if line.startswith('Sunday'):
+                                line = date_formatted
+                            sys.stdout.write(line)
+                            await self._update_message(titel)
+                            channel = await self._get_channel_id(titel)
+                            await channel.send("The chat is being automatically reset!")
+                            await asyncio.sleep(5)
+                            await channel.purge(limit=None, check=lambda msg: not msg.pinned)
+
+    async def _get_autoupdate_date(self):
+        all_files = os.listdir("staffing-info")
+        day = []
+        for files in all_files:
+            start = 0
+            with open('staffing-info/' + files, 'r') as f:
+                for ln in f:
+                    if start == 1:
+                        if ln.startswith('---'):
+                            start = 0
+                            continue
+                        day.append(ln.rstrip())
+                    if ln.startswith('------ Day of event ------'):
+                        start = 1
+        return day
 
 def setup(bot):
     bot.add_cog(VTCcog(bot))
