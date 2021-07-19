@@ -99,7 +99,7 @@ VTC_STAFFING_MSG = int(os.getenv('VTC_STAFFING_MSG'))
 BOT_CHANNEL = int(os.getenv('BOT_CHANNEL'))
 
 CHECK_MEMBERS_INTERVAL = int(os.getenv('CHECK_MEMBERS_INTERVAL', 86400))
-POST_EVENTS_INTERVAL = int(os.getenv('POST_EVENTS_INTERVAL', 900))
+POST_EVENTS_INTERVAL = int(os.getenv('POST_EVENTS_INTERVAL', 120))
 
 def prefix() -> list:
     return PREFIXES
