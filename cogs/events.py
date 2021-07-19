@@ -159,17 +159,6 @@ class EventsCog(commands.Cog):
         cursor.execute(f'UPDATE events SET published = TRUE WHERE id = {ID}')
 
         mydb.commit()
-
-    @cog_ext.cog_slash(name="embed", guild_ids=guild_ids, description="Function sends example embed.")
-    async def embed(self, ctx):
-        """
-        Function sends example embed
-        :param ctx:
-        :return:
-        """
-        message = embed(title='test', description="test")
-            
-        await ctx.send(embed=message)
                 
 def setup(bot):
     bot.add_cog(EventsCog(bot))
