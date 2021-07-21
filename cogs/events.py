@@ -15,7 +15,7 @@ class EventsCog(commands.Cog):
     RSS_FEED_URL = 'https://vatsim-scandinavia.org/api/calendar/events'
     PARAMS = {
         'rangeStart': datetime.now().strftime('%Y-%m-%d'),
-        'perPage': 50,
+        'perPage': 25,
         'hidden': 0,
         'calendars': 1,  # Community calendar only!
     }
@@ -29,15 +29,19 @@ class EventsCog(commands.Cog):
 
     FOOTER = {
         'text': 'Starting time',
-        'icon': '',
+        'icon': 'https://twemoji.maxcdn.com/v/latest/72x72/1f551.png',
     }
+
 
     def __init__(self, bot):
         self.bot = bot
         self.events.start()
 
+
     def cog_unload(self):
         self.events.cancel()
+
+
 
     @tasks.loop(seconds=POST_EVENTS_INTERVAL)
     async def events(self):
@@ -78,6 +82,7 @@ class EventsCog(commands.Cog):
         Function gets all events from the API
         :return:
         """
+        
         async with aiohttp.ClientSession() as session:
             auth = aiohttp.BasicAuth(os.getenv('FORUM_API_TOKEN'), '')
             async with session.get(self.RSS_FEED_URL, auth=auth, params=self.PARAMS) as resp:
@@ -92,7 +97,6 @@ class EventsCog(commands.Cog):
         """
         cursor = mydb.cursor()
         channel = self.bot.get_channel(EVENTS_CHANNEL)
-        role = channel.guild.get_role(EVENTS_ROLE)
         for event in events['results']:
             if self._convert_time(event.get('start')) < datetime.utcnow():
                 continue
@@ -103,15 +107,15 @@ class EventsCog(commands.Cog):
 
             if result != None:
                 cursor.execute(
-                    "UPDATE events SET name = %s, url = %s, img = %s, description = %s, start_time = %s WHERE event_id = '%s'",
+                    "UPDATE events SET name = %s, url = %s, img = %s, description = %s, start_time = %s, recurring = %s WHERE event_id = '%s'",
                     (event.get('title'), event.get('url'), get_image(event.get('description')),
-                     event_description(event.get('description')), self._convert_time(event.get('start')),
+                     event_description(event.get('description')), self._convert_time(event.get('start')), event.get('recurrence'),
                      event.get('id')))
             else:
                 cursor.execute(
-                    "INSERT INTO events (name, url, img, description, start_time, event_id) VALUES (%s, %s, %s, %s, %s, %s)",
+                    "INSERT INTO events (name, url, img, description, start_time, recurring, event_id) VALUES (%s, %s, %s, %s, %s, %s, %s)",
                     (event.get('title'), event.get('url'), get_image(event.get('description')),
-                     event_description(event.get('description')), self._convert_time(event.get('start')),
+                     event_description(event.get('description')), self._convert_time(event.get('start')), event.get('recurrence'),
                      event.get('id')))
                 msg = embed(title=event.get('title'), url=event.get('url'), description=event_description(event.get('description')),
                             image=get_image(event.get('description')),
@@ -135,7 +139,8 @@ class EventsCog(commands.Cog):
         """
         cursor = mydb.cursor()
 
-        cursor.execute("SELECT * FROM events WHERE published = FALSE")
+        cursor.execute("SELECT * FROM events WHERE published IS NULL")
+        # TODO Add recurring events support
 
         return cursor.fetchall()
 
@@ -145,7 +150,13 @@ class EventsCog(commands.Cog):
         :param start:
         :return:
         """
-        return start - timedelta(hours=2) <= datetime.utcnow()
+
+        # Define the when it's 2 hours prior, and the threshold of notifying to avoid notifications way too late
+        notificationTime = start - timedelta(hours=2)
+        notificationThreshold = start - timedelta(hours=1.75)
+        now = datetime.utcnow()
+
+        return (now >= notificationTime and now <= notificationThreshold)
 
     async def _mark_as_published(self, ID: int, mydb):
         """
@@ -156,7 +167,7 @@ class EventsCog(commands.Cog):
         """
         cursor = mydb.cursor()
 
-        cursor.execute(f'UPDATE events SET published = TRUE WHERE id = {ID}')
+        cursor.execute(f'UPDATE events SET published = UTC_TIMESTAMP() WHERE id = {ID}')
 
         mydb.commit()
                 
