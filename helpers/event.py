@@ -48,10 +48,43 @@ class Event():
         return self.recurring is not None
 
     def is_expired(self) -> bool:
-        if self.is_recurring_event:
+        if self.is_recurring_event():
             return datetime.utcnow() > self.recurring_end
         else:
             return datetime.utcnow() > self.start
+
+    def should_be_notified(self) -> bool:
+        
+        start = self.start
+        now = datetime.utcnow()
+
+        is_recurring = self.is_recurring_event()
+
+        # Change the start date if recurrence is the thing
+        if is_recurring:
+            recurred_date = self.__get_recurred_date(start, self.recurring, self.recurring_interval, self.recurring_end)
+
+            # If today is notification day and we've not already notified
+            if recurred_date is not False:
+                # Go on if it's never been published
+                if self.published is None:
+                    start = recurred_date
+                # Go on if it's not passed two hours since last publish
+                elif datetime.utcnow() > self.published + timedelta(hours = 2):
+                    start = recurred_date
+                else:
+                    return False
+            else:
+                return False
+
+        # Define the when it's 2 hours prior, and the threshold of notifying to avoid notifications way too late
+        notificationTime = start - timedelta(hours=2)
+        notificationThreshold = start - timedelta(hours=1.75)
+
+        return (now >= notificationTime and now <= notificationThreshold)
+
+
+
 
 
 
@@ -104,6 +137,8 @@ class Event():
         self.recurring_end = self.__parse_ics_recurrence_end(params, self.start)
 
 
+    def mark_as_published(self):
+        self.published = datetime.utcnow()
 
 
 
@@ -127,6 +162,7 @@ class Event():
 
         return params
 
+
     def __parse_ics_recurrence_end(self, params: list, start_time: datetime):
 
         # If until timestamp has been provided, let's use that
@@ -144,3 +180,32 @@ class Event():
 
         # If no timestamp selected, none can be calculated, then this is probably an event without end date
         return start_time + timedelta(days=(365*10))
+
+
+    def __get_recurred_date(self, proposed_date, recurring, interval, recurring_end):
+        """
+        Function to return back the date of next reccurence or False
+        """
+
+        interval = interval or 1
+
+        while(proposed_date <= recurring_end):
+
+                # Break if we're past today
+                if proposed_date.date() > datetime.utcnow().date():
+                    break
+
+                # Does the day isolated match today?
+                if proposed_date.date() == datetime.utcnow().date():
+                    return proposed_date
+
+                if recurring == "DAILY":
+                    proposed_date = proposed_date + timedelta(days=interval)
+                elif recurring == "WEEKLY":
+                    proposed_date = proposed_date + timedelta(weeks=interval)
+                elif recurring == "MONTHLY":
+                    proposed_date = proposed_date + timedelta(months=interval)
+                else:
+                    return False
+        
+        return False
