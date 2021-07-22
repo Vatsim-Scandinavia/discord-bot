@@ -263,13 +263,22 @@ class EventsCog(commands.Cog):
         recurring = event[self.RECURRING]
         recurring_end = event[self.RECURRING_END]
         interval = event[self.RECURRING_INTERVAL]
+        published = event[self.PUBLISHED]
 
         # Check if it's a recurring event
         if recurring and recurring_end >= now:
-            recurred_date = self._get_today_is_recurred_date(start, interval, recurring, recurring_end)
+            recurred_date = self._get_recurred_date(start, interval, recurring, recurring_end)
 
-            if recurred_date:
-                start = recurred_date
+            # If today is notification day and we've not already notified
+            if recurred_date is not False:
+                # Go on if it's never been published
+                if published is None:
+                    start = recurred_date
+                # Go on if it's not passed two hours since last publish
+                elif datetime.utcnow() > published + timedelta(hours = 2):
+                    start = recurred_date
+                else:
+                    return False
             else:
                 return False
 
@@ -363,17 +372,25 @@ class EventsCog(commands.Cog):
         else:
             return None 
 
-    def _get_today_is_recurred_date(self, start, interval, recurring, recurring_end):
+    def _get_recurred_date(self, proposed_date, interval, recurring, recurring_end):
         """
         Function which returns a list of possible dates
         :param event:
         :return:
         """
 
-        proposed_date = start
         interval = interval or 1
 
         while(proposed_date <= recurring_end):
+
+                # Break if we're past today
+                if proposed_date.date() > datetime.utcnow().date():
+                    break
+
+                # Does the day isolated match today?
+                if proposed_date.date() == datetime.utcnow().date():
+                    return proposed_date
+
                 if recurring == "DAILY":
                     proposed_date = proposed_date + timedelta(days=interval)
                 elif recurring == "WEEKLY":
@@ -382,10 +399,6 @@ class EventsCog(commands.Cog):
                     proposed_date = proposed_date + timedelta(months=interval)
                 else:
                     return False
-
-                # Does the day isolated match today?
-                if proposed_date == datetime.today():
-                    return proposed_date
         
         return False
           
