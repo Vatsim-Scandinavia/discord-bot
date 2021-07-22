@@ -25,3 +25,7 @@ ALTER TABLE `vatsca_discord`.`events` CHANGE `published` `published` DATETIME NU
 
 UPDATE events SET published = start_time WHERE published = "0000-00-00 00:00:00" and UTC_TIMESTAMP() > start_time;
 UPDATE events SET published = NULL WHERE published = "0000-00-00 00:00:00"
+
+ALTER TABLE `vatsca_discord`.`events` DROP INDEX `event_id`;
+CREATE UNIQUE INDEX `id` ON `vatsca_discord`.`events`(`id`) USING BTREE;
+ALTER TABLE `vatsca_discord`.`events` DROP COLUMN `event_id`;
