@@ -3,11 +3,12 @@ from datetime import datetime, timedelta
 from discord_slash import cog_ext
 
 import aiohttp
-import mysql.connector
 from discord.ext import commands, tasks
 
 from helpers.config import POST_EVENTS_INTERVAL, GET_EVENTS_INTERVAL, EVENTS_CHANNEL, EVENTS_ROLE, GUILD_ID
 from helpers.message import embed, event_description, get_image
+from helpers.database import db_connection
+from helpers.event import Event
 
 guild_ids = [GUILD_ID]
 
@@ -78,18 +79,10 @@ class EventsCog(commands.Cog):
         """
         await self.bot.wait_until_ready()
 
-        mydb = mysql.connector.connect(
-            host="localhost",
-            user=os.getenv('BOT_DB_USER'),
-            password=os.getenv('BOT_DB_PASSWORD'),
-            database=os.getenv('BOT_DB_NAME')
-        )
+        mydb = db_connection()
 
         # Fetch and store events
         await self._refresh_events(mydb)
-
-        mydb.close()
-
 
 
     @tasks.loop(seconds=POST_EVENTS_INTERVAL)
@@ -102,12 +95,7 @@ class EventsCog(commands.Cog):
 
         channel = self.bot.get_channel(EVENTS_CHANNEL)
         role = channel.guild.get_role(EVENTS_ROLE)
-        mydb = mysql.connector.connect(
-            host="localhost",
-            user=os.getenv('BOT_DB_USER'),
-            password=os.getenv('BOT_DB_PASSWORD'),
-            database=os.getenv('BOT_DB_NAME')
-        )
+        mydb = db_connection()
 
         events = await self._fetch_sql_events(mydb)
         for event in events:
@@ -123,8 +111,6 @@ class EventsCog(commands.Cog):
                 except Exception as e:
                     await channel.send(text, embed=msg)
                     await self._mark_as_published(event[self.ID], mydb)
-
-        mydb.close()
 
 
 
