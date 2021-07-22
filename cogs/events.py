@@ -300,14 +300,13 @@ class EventsCog(commands.Cog):
             return datetime.strptime(params["until"], "%Y%m%dT%H%M%S")
 
         # If no timestamp has been given, calculate based on the interval
-        #TODO count and interval multiplication to get correct length!
         if "count" in params:
             if params["freq"] == "DAILY":
-                return datetime.strptime(start_time, "%Y-%m-%dT%H:%M:%SZ") + timedelta(days=int(params["count"]))
+                return datetime.strptime(start_time, "%Y-%m-%dT%H:%M:%SZ") + timedelta(days = (int(params["count"]) * int(params["interval"]) ))
             elif params["freq"] == "WEEKLY":
-                return datetime.strptime(start_time, "%Y-%m-%dT%H:%M:%SZ") + timedelta(weeks=int(params["count"]))
+                return datetime.strptime(start_time, "%Y-%m-%dT%H:%M:%SZ") + timedelta(weeks = (int(params["count"]) * int(params["interval"]) ))
             elif params["freq"] == "MONTHLY":
-                return datetime.strptime(start_time, "%Y-%m-%dT%H:%M:%SZ") + timedelta(months=int(params["count"]))
+                return datetime.strptime(start_time, "%Y-%m-%dT%H:%M:%SZ") + timedelta(months = (int(params["count"]) * int(params["interval"]) ))
 
         # If no timestamp selected, none can be calculated, then this is probably an event without end date
         return datetime.strptime(start_time, "%Y-%m-%dT%H:%M:%SZ") + timedelta(days=(365*10))
