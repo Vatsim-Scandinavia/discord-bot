@@ -189,15 +189,16 @@ class EventsCog(commands.Cog):
             for stored_event in stored_events: 
                 if new_event.get('id') == stored_event[self.EVENT_ID]:
                     found_event = True
-                    continue
+                    break
 
             if found_event:
                 continue
 
 
             # Insert the new event to the database
+            # In the edge case of updating a existing but expired event, fallback on DUPLICATE KEY is made
             cursor.execute(
-                    "INSERT INTO events (name, url, img, description, start_time, recurring, recurring_interval, recurring_end, event_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                    "INSERT INTO events (name, url, img, description, start_time, recurring, recurring_interval, recurring_end, event_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE name = VALUES(name), url = VALUES(url), img = VALUES(img), description = VALUES(description), start_time = VALUES(start_time), recurring = VALUES(recurring), recurring_interval = VALUES(recurring_interval), recurring_end = VALUES(recurring_end)",
                     (new_event.get('title'), new_event.get('url'), get_image(new_event.get('description')),
                      event_description(new_event.get('description')), self._convert_time(new_event.get('start')),
                      self._get_ics_freq(new_event.get('recurrence')), self._get_ics_interval(updated_event.get('recurrence')), self._get_ics_recurring_end(new_event.get('recurrence'), new_event.get('start')),
@@ -370,6 +371,7 @@ class EventsCog(commands.Cog):
         """
 
         proposed_date = start
+        interval = interval or 1
 
         while(proposed_date <= recurring_end):
                 if recurring == "DAILY":
