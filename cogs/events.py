@@ -19,7 +19,7 @@ class EventsCog(commands.Cog):
         'perPage': 25,
         'hidden': 0,
         'sortDir': 'desc',
-        'calendars': 2,  # Community calendar only!
+        'calendars': 1,  # Community calendar only!
     }
 
     # Indexing of database return
@@ -201,7 +201,7 @@ class EventsCog(commands.Cog):
                     "INSERT INTO events (name, url, img, description, start_time, recurring, recurring_interval, recurring_end, event_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE name = VALUES(name), url = VALUES(url), img = VALUES(img), description = VALUES(description), start_time = VALUES(start_time), recurring = VALUES(recurring), recurring_interval = VALUES(recurring_interval), recurring_end = VALUES(recurring_end)",
                     (new_event.get('title'), new_event.get('url'), get_image(new_event.get('description')),
                      event_description(new_event.get('description')), self._convert_time(new_event.get('start')),
-                     self._get_ics_freq(new_event.get('recurrence')), self._get_ics_interval(updated_event.get('recurrence')), self._get_ics_recurring_end(new_event.get('recurrence'), new_event.get('start')),
+                     self._get_ics_freq(new_event.get('recurrence')), self._get_ics_interval(new_event.get('recurrence')), self._get_ics_recurring_end(new_event.get('recurrence'), new_event.get('start')),
                      new_event.get('id')))
 
             #Publish the newly scheduled event in channel
@@ -222,7 +222,7 @@ class EventsCog(commands.Cog):
         cursor = mydb.cursor()
 
         # Get unpublished events or recurring events that has been published as potential events
-        cursor.execute("SELECT * FROM events WHERE published IS NULL OR (published IS NOT NULL AND recurring IS NOT NULL AND UTC_TIMESTAMP() <= recurring_end)")
+        cursor.execute("SELECT * FROM events WHERE published IS NULL OR (published IS NOT NULL AND recurring IS NULL AND UTC_TIMESTAMP() <= start_time) OR (published IS NOT NULL AND recurring IS NOT NULL AND UTC_TIMESTAMP() <= recurring_end)")
 
         return cursor.fetchall()
 
@@ -368,9 +368,10 @@ class EventsCog(commands.Cog):
         params = self._split_ics_params(ics)
 
         if "interval" in params:
-            return params["interval"]
-        else:
-            return None 
+            if params["interval"] is not None:
+                return params["interval"]
+
+        return None 
 
     def _get_recurred_date(self, proposed_date, interval, recurring, recurring_end):
         """

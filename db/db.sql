@@ -22,3 +22,6 @@ ALTER TABLE `vatsca_discord`.`events` ADD COLUMN `recurring` VARCHAR(255) NULL D
 ALTER TABLE `vatsca_discord`.`events` ADD COLUMN `recurring_interval` SMALLINT COMMENT '' AFTER `recurring`;
 ALTER TABLE `vatsca_discord`.`events` ADD COLUMN `recurring_end` DATETIME COMMENT '' AFTER `recurring`;
 ALTER TABLE `vatsca_discord`.`events` CHANGE `published` `published` DATETIME NULL COMMENT '';
+
+UPDATE events SET published = start_time WHERE published = "0000-00-00 00:00:00" and UTC_TIMESTAMP() > start_time;
+UPDATE events SET published = NULL WHERE published = "0000-00-00 00:00:00"
