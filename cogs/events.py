@@ -30,9 +30,10 @@ class EventsCog(commands.Cog):
     DESCRIPTION = 4
     START = 5
     RECURRING = 6
-    RECURRING_END = 7
-    PUBLISHED = 8
-    EVENT_ID = 9
+    RECURRING_INTERVAL = 7
+    RECURRING_END = 8
+    PUBLISHED = 9
+    EVENT_ID = 10
 
     # Embed parameters
     FOOTER = {
@@ -84,7 +85,7 @@ class EventsCog(commands.Cog):
             database=os.getenv('BOT_DB_NAME')
         )
 
-        #Fetch and store events
+        # Fetch and store events
         await self._refresh_events(mydb)
 
         mydb.close()
@@ -151,15 +152,26 @@ class EventsCog(commands.Cog):
             for stored_event in stored_events:
                 # Check for updates of the already stored events
                 async with session.get(self.RSS_FEED_URL + "/" + str(stored_event[self.EVENT_ID]), auth=auth) as resp:
-                    assert resp.status == 200
-                    updated_event = await resp.json()
-                    cursor.execute(
-                        "UPDATE events SET name = %s, url = %s, img = %s, description = %s, start_time = %s, recurring = %s, recurring_end = %s WHERE event_id = '%s'",
-                        (updated_event.get('title'), updated_event.get('url'), get_image(updated_event.get('description')),
-                        event_description(updated_event.get('description')), self._convert_time(updated_event.get('start')),
-                        self._get_ics_freq(updated_event.get('recurrence')), self._get_ics_recurring_end(updated_event.get('recurrence'), updated_event.get('start')),
-                        updated_event.get('id')))
 
+                    # Update if found, delete if not
+                    if resp.status == 200:
+                        updated_event = await resp.json()
+
+                        # Delete if it's soft deleted aka. hidden
+                        if updated_event.get('hidden'):
+                            ID = updated_event.get('id')
+                            cursor.execute(f'DELETE FROM events WHERE event_id = {ID}')
+
+                        cursor.execute(
+                            "UPDATE events SET name = %s, url = %s, img = %s, description = %s, start_time = %s, recurring = %s, recurring_interval = %s, recurring_end = %s WHERE event_id = '%s'",
+                            (updated_event.get('title'), updated_event.get('url'), get_image(updated_event.get('description')),
+                            event_description(updated_event.get('description')), self._convert_time(updated_event.get('start')),
+                            self._get_ics_freq(updated_event.get('recurrence')), self._get_ics_interval(updated_event.get('recurrence')), self._get_ics_recurring_end(updated_event.get('recurrence'), updated_event.get('start')),
+                            updated_event.get('id')))
+                    elif resp.status == 404:
+                        ID = stored_event[self.EVENT_ID]
+                        cursor.execute(f'DELETE FROM events WHERE event_id = {ID}')
+                    
             # Grab all NEW event data from API
             async with session.get(self.RSS_FEED_URL, auth=auth, params=self.PARAMS) as resp2:
                 assert resp2.status == 200
@@ -185,10 +197,10 @@ class EventsCog(commands.Cog):
 
             # Insert the new event to the database
             cursor.execute(
-                    "INSERT INTO events (name, url, img, description, start_time, recurring, recurring_end, event_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                    "INSERT INTO events (name, url, img, description, start_time, recurring, recurring_interval, recurring_end, event_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
                     (new_event.get('title'), new_event.get('url'), get_image(new_event.get('description')),
                      event_description(new_event.get('description')), self._convert_time(new_event.get('start')),
-                     self._get_ics_freq(new_event.get('recurrence')), self._get_ics_recurring_end(new_event.get('recurrence'), new_event.get('start')),
+                     self._get_ics_freq(new_event.get('recurrence')), self._get_ics_interval(updated_event.get('recurrence')), self._get_ics_recurring_end(new_event.get('recurrence'), new_event.get('start')),
                      new_event.get('id')))
 
             #Publish the newly scheduled event in channel
@@ -249,10 +261,11 @@ class EventsCog(commands.Cog):
 
         recurring = event[self.RECURRING]
         recurring_end = event[self.RECURRING_END]
+        interval = event[self.RECURRING_INTERVAL]
 
         # Check if it's a recurring event
         if recurring and recurring_end >= now:
-            recurred_date = self._get_today_is_recurred_date(start, recurring, recurring_end)
+            recurred_date = self._get_today_is_recurred_date(start, interval, recurring, recurring_end)
 
             if recurred_date:
                 start = recurred_date
@@ -328,9 +341,28 @@ class EventsCog(commands.Cog):
         if "freq" in params:
             return params["freq"]
         else:
-            return None  
+            return None 
 
-    def _get_today_is_recurred_date(self, start, recurring, recurring_end):
+    def _get_ics_interval(self, ics: str):
+        """
+        Function fetches the interval of recurrence
+        :param ics:
+        :return:
+        """
+
+        # Return null if there's no recurring
+        if ics is None:
+            return None
+
+        # Split the ICS parameters into a table
+        params = self._split_ics_params(ics)
+
+        if "interval" in params:
+            return params["interval"]
+        else:
+            return None 
+
+    def _get_today_is_recurred_date(self, start, interval, recurring, recurring_end):
         """
         Function which returns a list of possible dates
         :param event:
@@ -341,11 +373,11 @@ class EventsCog(commands.Cog):
 
         while(proposed_date <= recurring_end):
                 if recurring == "DAILY":
-                    proposed_date = proposed_date + timedelta(days=1)
+                    proposed_date = proposed_date + timedelta(days=interval)
                 elif recurring == "WEEKLY":
-                    proposed_date = proposed_date + timedelta(weeks=1)
+                    proposed_date = proposed_date + timedelta(weeks=interval)
                 elif recurring == "MONTHLY":
-                    proposed_date = proposed_date + timedelta(months=1)
+                    proposed_date = proposed_date + timedelta(months=interval)
                 else:
                     return False
 

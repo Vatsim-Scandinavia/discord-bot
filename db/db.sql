@@ -19,5 +19,6 @@ CREATE TABLE IF NOT EXISTS `vtc` (
 
 /* Table alters for event functionality update */ 
 ALTER TABLE `vatsca_discord`.`events` ADD COLUMN `recurring` VARCHAR(255) NULL DEFAULT NULL COMMENT '' AFTER `start_time`;
+ALTER TABLE `vatsca_discord`.`events` ADD COLUMN `recurring_interval` SMALLINT COMMENT '' AFTER `recurring`;
 ALTER TABLE `vatsca_discord`.`events` ADD COLUMN `recurring_end` DATETIME COMMENT '' AFTER `recurring`;
 ALTER TABLE `vatsca_discord`.`events` CHANGE `published` `published` DATETIME NULL COMMENT '';
