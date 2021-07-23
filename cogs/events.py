@@ -26,7 +26,7 @@ class EventsCog(commands.Cog):
         'perPage': 25,
         'hidden': 0,
         'sortDir': 'desc',
-        'calendars': 2,  # Community calendar only!
+        'calendars': 1,  # Community calendar only!
     }
 
     # Indexing of database return
@@ -194,7 +194,7 @@ class EventsCog(commands.Cog):
             success = await event.fetch_api_updates()
 
             # If not found in API, delete it from local and database records
-            if not success:
+            if not success or event.is_expired():
                 ID = event.id
                 self.events.pop(ID)
                 cursor.execute(f'DELETE FROM events WHERE id = {ID}')
