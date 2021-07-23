@@ -121,6 +121,10 @@ class Event():
                 # If reccurence data is available, parse it
                 if updated_event.get('recurrence') is not None:
                     self.parse_recurrence(updated_event.get('recurrence'))
+                else:
+                    self.recurring = None
+                    self.recurring_interval = None
+                    self.recurring_end = None
 
             return True
 
@@ -184,7 +188,7 @@ class Event():
         Function to return back the date of next reccurence or False
         """
 
-        interval = interval or 1
+        interval = int(interval) or 1
 
         while(proposed_date <= recurring_end):
 
