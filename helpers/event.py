@@ -15,6 +15,9 @@ class Event():
     API_URL = 'https://vatsim-scandinavia.org/api/calendar/events'
 
     def __init__(self, id, name, img, url, desc, start: datetime, recurring, recurring_interval, recurring_end, published):
+        """
+        Create an Event object
+        """
         self.id = id
         self.name = name
         self.img = img
@@ -41,15 +44,25 @@ class Event():
     #
 
     def is_recurring_event(self) -> bool:
+        """
+        Check if event is recurring
+        """
+
         return self.recurring is not None
 
     def is_expired(self) -> bool:
+        """
+        Check if event is expired and no longer valid
+        """
         if self.is_recurring_event():
             return datetime.utcnow() > self.recurring_end
         else:
             return datetime.utcnow() > self.start
 
     def should_be_notified(self) -> bool:
+        """
+        Check if this event triggers a notification
+        """
         
         start = self.start
         now = datetime.utcnow()
@@ -96,6 +109,10 @@ class Event():
     #
 
     async def fetch_api_updates(self):
+        """
+        Fetch API updates for this object
+        """
+
         auth = aiohttp.BasicAuth(os.getenv('FORUM_API_TOKEN'), '')
         
         async with aiohttp.ClientSession() as session:
@@ -130,6 +147,9 @@ class Event():
 
 
     def parse_recurrence(self, ics):
+        """
+        Parse recurrence ICS string
+        """
 
         params = self.__split_ics_params(ics)
 
@@ -139,6 +159,10 @@ class Event():
 
 
     def mark_as_published(self):
+        """
+        Mark event as published
+        """
+
         self.published = datetime.utcnow()
 
 
@@ -156,6 +180,10 @@ class Event():
     #
 
     def __split_ics_params(self, ics: str):
+        """
+        Split ICS parameters
+        """
+
         params = {}
         for param in ics.split(';'):
             split = param.split('=')
@@ -165,6 +193,9 @@ class Event():
 
 
     def __parse_ics_recurrence_end(self, params: list, start_time: datetime):
+        """
+        Parse and calculate when the last day of recurrence is
+        """
 
         # If until timestamp has been provided, let's use that
         if "until" in params:

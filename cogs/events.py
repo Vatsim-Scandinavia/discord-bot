@@ -183,7 +183,9 @@ class EventsCog(commands.Cog):
 
 
     async def fetch_api(self):
-
+        """
+        Fetch fresh updates for our existing events and create new ones
+        """
 
         # Refresh our current models
         mydb = db_connection()
@@ -263,6 +265,10 @@ class EventsCog(commands.Cog):
 
 
     async def save_data(self):
+        """
+        Save all data so far to MySQL
+        """
+
         for event in self.events.values():
 
             mydb = db_connection()
@@ -305,8 +311,6 @@ class EventsCog(commands.Cog):
     def _convert_time(self, time: str) -> datetime:
         """
         Function converts time to SQL time
-        :param time:
-        :return:
         """
         return datetime.strptime(time, "%Y-%m-%dT%H:%M:%SZ")
           
