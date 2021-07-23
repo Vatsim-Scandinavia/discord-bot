@@ -121,7 +121,7 @@ class EventsCog(commands.Cog):
         role = channel.guild.get_role(EVENTS_ROLE)
 
         for event in self.events.values():
-
+            
             # If event object says it should be notified and it's not a old and expired event
             if event.should_be_notified() and not event.is_expired():
 
@@ -138,7 +138,7 @@ class EventsCog(commands.Cog):
                 await channel.send(text, embed=msg)
 
                 event.mark_as_published()
-                print(event.published)
+                
 
 
 
@@ -284,8 +284,6 @@ class EventsCog(commands.Cog):
                     event.published,
                 )
             )
-
-            print(cursor._executed)
 
             mydb.commit()
 

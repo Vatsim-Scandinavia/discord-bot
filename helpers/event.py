@@ -28,10 +28,6 @@ class Event():
 
         self.published = published
 
-        self.hidden = False
-
-
-
 
 
 
@@ -70,11 +66,14 @@ class Event():
                 if self.published is None:
                     start = recurred_date
                 # Go on if it's not passed two hours since last publish
-                elif datetime.utcnow() > self.published + timedelta(hours = 2):
+                elif now > self.published + timedelta(hours = 2):
                     start = recurred_date
                 else:
                     return False
             else:
+                return False
+        else:
+            if self.published is not None:
                 return False
 
         # Define the when it's 2 hours prior, and the threshold of notifying to avoid notifications way too late
@@ -82,7 +81,6 @@ class Event():
         notificationThreshold = start - timedelta(hours=1.75)
 
         return (now >= notificationTime and now <= notificationThreshold)
-
 
 
 
@@ -117,7 +115,6 @@ class Event():
                 self.desc = event_description(updated_event.get('description'))
                 
                 self.start = datetime.strptime(updated_event.get('start'), "%Y-%m-%dT%H:%M:%SZ")
-                self.published = updated_event.get('published')
 
                 self.hidden = updated_event.get('hidden')
 
