@@ -125,12 +125,18 @@ class EventsCog(commands.Cog):
             # If event object says it should be notified and it's not a old and expired event
             if event.should_be_notified() and not event.is_expired():
 
+                # Set the correct event start time to embed if its recurring
+                start_time = event.start
+                if event.is_recurring_event:
+                    start_time = event._get_recurred_date(event.start, event.recurring, event.recurring_interval, event.recurring_end)
+
+                # Create the embed message
                 msg = embed(
                     title=event.name, 
                     url=event.url, 
                     description=event.desc,
                     image=event.img,
-                    timestamp=event.start, 
+                    timestamp=start_time, 
                     footer=self.FOOTER
                 )
 

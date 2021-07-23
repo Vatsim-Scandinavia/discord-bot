@@ -71,7 +71,7 @@ class Event():
 
         # Change the start date if recurrence is the thing
         if is_recurring:
-            recurred_date = self.__get_recurred_date(start, self.recurring, self.recurring_interval, self.recurring_end)
+            recurred_date = self._get_recurred_date(start, self.recurring, self.recurring_interval, self.recurring_end)
 
             # If today is notification day and we've not already notified
             if recurred_date is not False:
@@ -214,7 +214,7 @@ class Event():
         return start_time + timedelta(days=(365*10))
 
 
-    def __get_recurred_date(self, proposed_date, recurring, interval, recurring_end):
+    def _get_recurred_date(self, proposed_date, recurring, interval, recurring_end):
         """
         Function to return back the date of next reccurence or False
         """
@@ -223,13 +223,13 @@ class Event():
 
         while(proposed_date <= recurring_end):
 
+                # Is the proposed datetime happening between 2h and 1.75h? It's today then
+                if proposed_date <= datetime.utcnow() + timedelta(hours=2) and proposed_date >= datetime.utcnow() + timedelta(hours=1.75) :
+                    return proposed_date
+
                 # Break if we're past today
                 if proposed_date.date() > datetime.utcnow().date():
                     break
-
-                # Does the day isolated match today?
-                if proposed_date.date() == datetime.utcnow().date():
-                    return proposed_date
 
                 if recurring == "DAILY":
                     proposed_date = proposed_date + timedelta(days=interval)
