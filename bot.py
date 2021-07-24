@@ -9,6 +9,7 @@ from discord.ext import commands
 from discord_slash import SlashCommand
 from dotenv import load_dotenv
 from helpers.config import VATSCA_MEMBER_ROLE, VATSIM_MEMBER_ROLE, GUILD_ID
+from helpers.members import get_division_members
 from helpers import config
 
 load_dotenv('.env')
@@ -30,8 +31,6 @@ async def on_ready() -> None:
 
     try:
         await bot.change_presence(activity=config.activity(), status=config.status())
-
-        print('Presence changed.')
     except InvalidArgument as e:
         print(f'Error changing presence. Exception - {e}')
 
@@ -63,18 +62,16 @@ async def on_member_update(before_update, user: discord.User):
         if len(cid) < 1:
             raise ValueError
 
-        request = requests.get("https://api.vatsim.net/api/subdivisions/SCA/members/", headers={'Authorization': 'Token ' + os.getenv('VATSIM_API_TOKEN')})
-        if request.status_code == requests.codes.ok:
-            data = request.json()
+        api_data = await get_division_members()
 
-            for entry in data:
-                if entry['id'] == str(cid[0]):
-                    if vatsca_member not in user.roles and entry["subdivision"] == 'SCA':
-                        await user.add_roles(vatsca_member)
-                    elif vatsca_member in user.roles and entry["subdivision"] != 'SCA':
-                        await user.remove_roles(vatsca_member)
-                    
-                    break
+        for entry in api_data:
+            if entry['id'] == str(cid[0]):
+                if vatsca_member not in user.roles and entry["subdivision"] == 'SCA':
+                    await user.add_roles(vatsca_member)
+                elif vatsca_member in user.roles and entry["subdivision"] != 'SCA':
+                    await user.remove_roles(vatsca_member)
+                
+                break
 
     except ValueError as e:
         # This happens when a CID is not found, ignore it
