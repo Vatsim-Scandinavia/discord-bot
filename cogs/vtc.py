@@ -5,7 +5,9 @@ import asyncio
 from discord.ext import commands, tasks
 from discord_slash import cog_ext
 import datetime
-from helpers.config import VTC_CHANNEL, VTC_STAFFING_MSG, GUILD_ID, VTC_POSITIONS
+
+from discord_slash.utils.manage_commands import create_option
+from helpers.config import GUILD_ID
 from helpers.message import staff_roles
 
 guild_ids = [GUILD_ID]
@@ -739,6 +741,7 @@ class VTCcog(commands.Cog):
                 days.append("5")
             if any('Sunday' in match for match in get_autoupdate_date):
                 days.append("6")
+            print(days)
 
             titel = None
             titels = os.listdir("staffing-info")

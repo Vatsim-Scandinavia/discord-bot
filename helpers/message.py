@@ -1,7 +1,7 @@
-import bs4
+import re
 import discord
-import html2markdown
 
+from markdownify import markdownify as md
 from helpers.config import ADMIN_ROLES, STAFF_ROLES, VATSCA_BLUE
 
 
@@ -74,8 +74,14 @@ def event_description(description: str) -> str:
     :param description:
     :return:
     """
-    soup = bs4.BeautifulSoup(description, features='html.parser')
-    return html2markdown.convert(f'{soup.get_text()}').replace("&nbsp;", " ")
+    
+    # Create markdown of the description, except img tag and trim the result.
+    markdown = md(description, strip=['img']).strip()
+
+    # If there's more than two newlines, replace them with two, this removes excessive newlines from last step
+    markdown = re.sub('\n\n(\n)*', '\n\n', markdown)
+
+    return markdown
 
 
 def get_image(text: str) -> str:
@@ -84,10 +90,15 @@ def get_image(text: str) -> str:
     :param text:
     :return:
     """
-    soup = bs4.BeautifulSoup(text, features='html.parser')
-    img = soup.find_all('img')
 
+    # Process the text and only convert the image
+    markdown = md(text, convert=['img'])
+
+    # Regex the URL of the image from the markdown
+    img = re.findall('(?:!\[(?:.*?)\]\((.*?)\))', markdown)
+
+    # If image is found, return the first or return null
     if len(img) > 0:
-        return img[0]['src']
-    else:
-        return ''
+        return img[0]
+
+    return ''
