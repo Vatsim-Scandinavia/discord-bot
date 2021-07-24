@@ -2,10 +2,9 @@ discord.py==1.6.0
 discord==1.0.1
 discord-py-slash-command==1.0.9.5
 mysql_connector_repackaged==0.3.1
-mysql-connector-python=8.0.23
+mysql-connector-python==8.0.23
 python-dotenv==0.15.0
 requests==2.25.1
-bs4==0.0.1
-html2markdown==0.1.7
+markdownify==0.9.2
 python-version==0.0.2
 websockets==8.1
