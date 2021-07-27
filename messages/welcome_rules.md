@@ -5,7 +5,7 @@ To gain access to this server, please follow the instructions sent by the Vatsim
 
 :thinking: If you have issues with verifying your account or roles, check out this [troubleshooting guide](https://vatsim-scandinavia.org/forums/topic/3560-discord-access-troubleshooting/) first before contacting staff.
 
-- - -
+▫️▫️▫️
 
 :bookmark: VATSIM Scandinavia provide a Discord server for its members. This server may however be freely used by any member of VATSIM Scandinavia or its parent organizations, who adheres to the following rules:
 
@@ -24,5 +24,7 @@ To gain access to this server, please follow the instructions sent by the Vatsim
 :seven: Use PPT (Push to talk) setting in ATC voice channels, the 'voice activity' option might be turned off to avoid disturbances
 
 :eight: Members being idle for more than 30 minutes will be moved to the 'Away' channel
+
+▫️▫️▫️
 
 _By verifying your account on this Discord server, you agree to [Vatsim Scandinavia's Data Protection Policy](https://vatsim-scandinavia.org/about/data-protection-policy/)._
