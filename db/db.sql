@@ -15,8 +15,23 @@ CREATE TABLE `events` (
   UNIQUE KEY `id` (`id`) USING BTREE
 )
 
-CREATE TABLE IF NOT EXISTS `vtc` (
-    id int NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    position varchar(255) NOT NULL,
-    name varchar(255) NOT NULL
+CREATE TABLE IF NOT EXISTS `staffing` (
+    `id` int(11) NOT NULL AUTO_INCREMENT,
+    `title` varchar(255) NOT NULL,
+    `date` date DEFAULT NULL,
+    `description` text NOT NULL,
+    `channel_id` bigint NOT NULL,
+    `message_id` bigint NOT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `id` (`id`) USING BTREE
+);
+
+CREATE TABLE IF NOT EXISTS `positions` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `position` text NOT NULL,
+  `user` text NOT NULL,
+  `type` text NOT NULL,
+  `title` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id` (`id`) USING BTREE
 );

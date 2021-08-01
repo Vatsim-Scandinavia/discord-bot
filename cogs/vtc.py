@@ -1,20 +1,25 @@
-import os, re
-import fileinput
-import sys
-import asyncio
-from discord.ext import commands, tasks
-from discord_slash import cog_ext
 import datetime
+import asyncio
 
-from discord_slash.utils.manage_commands import create_option
-from helpers.config import GUILD_ID
+from discord.ext import commands, tasks
+from discord.ext.commands import cog
+from discord.ext.commands.core import check
+from discord_slash import cog_ext
+from discord_slash.utils.manage_commands import create_choice, create_option
+
+from helpers.config import GUILD_ID, AVAILABLE_EVENT_DAYS
 from helpers.message import staff_roles
+from helpers.database import db_connection
 
-guild_ids = [GUILD_ID]
-
+guild_id = [GUILD_ID]
 
 class VTCcog(commands.Cog):
-
+    #
+    # ----------------------------------
+    # COG FUNCTIONS
+    # ----------------------------------
+    #
+    
     def __init__(self, bot):
         self.bot = bot
         self.autoreset.start()
@@ -22,995 +27,700 @@ class VTCcog(commands.Cog):
     def cog_unload(self):
         self.autoreset.cancel()
 
-    @cog_ext.cog_slash(name="setupstaffing", guild_ids=guild_ids, description="Bot setups staffing information")
+    #
+    # ----------------------------------
+    # SLASH COMMAND FUNCTIONS
+    # ----------------------------------
+    #
+
+    @cog_ext.cog_slash(name="setupstaffing", guild_ids=guild_id, description="Bot setups staffing information")
     @commands.has_any_role(*staff_roles())
     async def setupstaffing(self, ctx) -> None:
-        titel = await self._get_titel(ctx)
-        staffing_date = await self._get_date(ctx)
-        staffing_message = await self._get_staffing_message(ctx)
-        main_pos = await self._get_mainpositions_message(ctx)
-        secondary_pos = await self._get_secondarypositions_message(ctx)
-        regional_pos = await self._getregionalpositions_message(ctx)
-        channels = await self._get_channels(ctx)
+        title = await self._get_title(ctx)
+        date = await self._get_date(ctx)
+        description = await self._get_description(ctx)
+        main_position = await self._get_main_positions(ctx)
+        secondary_position = await self._get_secondary_positions(ctx)
+        regional_position = await self._get_regional_positions(ctx)
+        channels = await self._get_channel(ctx)
 
         format_staffing_message = ""
 
         if format_staffing_message != "":
             format_staffing_message += "\n"
 
-        main_positions_data = "\n" .join(position for position in main_pos)
-        secondary_positions_data = "\n" .join(
-            position for position in secondary_pos)
-        regional_positions_data = "\n" .join(
-            position for position in regional_pos)
+        main_position_data = "\n" .join(position for position in main_position)
+        secondary_position_data = "\n" .join(position for position in secondary_position)
+        regional_position_data = "\n" .join(position for position in regional_position)
 
-        format_staffing_message += titel + " staffing - " + staffing_date + "\n\n" + staffing_message + \
-            "\n\nMain Positions:\n" + \
-            str(main_positions_data) + \
-            "\n\nSecondary Positions:\n" + \
-            str(secondary_positions_data) + \
-            "\n\nRegional Positions:\n" + str(regional_positions_data)
+        formatted_date = date.strftime("%A %d/%m/%Y")
+
+        format_staffing_message += f'{title} staffing - {formatted_date}\n\n{description}\n\nMain Positions:\n{main_position_data}\n\nSecondary Positions:\n{secondary_position_data}\n\nRegional Positions:\n{regional_position_data}'
+
+        mydb = db_connection()
+        cursor = mydb.cursor()
 
         for channel in channels:
-            timestamp = datetime.datetime.now()
             msg = await channel.send(format_staffing_message)
             await msg.pin()
             await channel.purge(limit=None, check=lambda msg: not msg.pinned)
-            with open('staffing-info/' + titel + '.txt', mode='w') as file:
-                file.write("------ Created at ------\n" + str(timestamp) + "\n------------------------\n\n------ Updated at ------\n\n------------------------\n\n------ Titel ------\n" + str(titel) + "\n-------------------\n\n------ Day of event ------\n" + str(staffing_date) +
-                           "\n--------------------------\n\n------ Staffing Message ------\n" + str(staffing_message) + "\n------------------------------\n\n------ Main Positions ------\n" + str(
-                               main_positions_data) + "\n----------------------------\n\n------ Secondary Positions ------\n" + str(secondary_positions_data)
-                           + "\n---------------------------------\n\n------ Regional Positions ------\n" + str(regional_positions_data) + "\n--------------------------------\n\n------ Channel ------\n" +
-                           str(channel) + "\n---------------------\n\n------ Channel id ------\n" + str(channel.id) + "\n------------------------\n\n------ Message id ------\n" + str(msg.id) + "\n------------------------\n\n------ Original Full Staffing Message ------\n" + str(format_staffing_message) + "\n------------------------")
-                print('Staffing file for ' + titel +
-                      ' created at ' + str(timestamp))
+            cursor.execute(
+                'INSERT INTO staffing(title, date, description, channel_id, message_id) VALUES (%s, %s, %s, %s, %s)', 
+                (
+                    title,
+                    date,
+                    description,
+                    channel.id,
+                    msg.id
+                )
+            )
 
-    async def _get_titel(self, ctx):
+            mydb.commit()
+
+            type = 'main'
+            for position in main_position:
+                cursor.execute(
+                    'INSERT INTO positions(position, user, type, title) VALUES (%s, "", %s, %s)',
+                    (
+                        position,
+                        type,
+                        title
+                    )
+                )
+                mydb.commit()
+
+            type = 'secondary'
+            for position in secondary_position:
+                cursor.execute(
+                    'INSERT INTO positions(position, user, type, title) VALUES (%s, "", %s, %s)',
+                    (
+                        position,
+                        type,
+                        title
+                    )
+                )
+                mydb.commit()
+
+            type = 'regional'
+            for position in regional_position:
+                cursor.execute(
+                    'INSERT INTO positions(position, user, type, title) VALUES (%s, "", %s, %s)',
+                    (
+                        position,
+                        type,
+                        title
+                    )
+                )
+                mydb.commit()
+
+    @cog_ext.cog_slash(name="showallstaffings", guild_ids=guild_id, description="Bot shows all staffings available")
+    @commands.has_any_role(*staff_roles())
+    async def showallstaffings(self, ctx) -> None:
+        mydb = db_connection()
+        cursor = mydb.cursor()
+        cursor.execute(
+            'SELECT title FROM staffing'
+        )
+        showall = cursor.fetchall()
+        titels = []
+        for each in showall:
+            titels.append(each[0])
+        showalltitles = "\n" .join(titles for titles in titels)
+        await ctx.send(f"All Staffings:\n**`{showalltitles}`**")
+
+    @cog_ext.cog_slash(name="updatestaffing", guild_ids=guild_id, description='Bot updates selected staffing', options=[
+        create_option(
+            name='title',
+            description='Select which event you want to update',
+            option_type=3,
+            required=True,
+            choices=[
+                create_choice(
+                    name='Vectors to Copenhagen',
+                    value='Vectors to Copenhagen'
+                ),
+                create_choice(
+                    name='VTC',
+                    value='VTC'
+                )
+            ]
+        )
+    ])
+    @commands.has_any_role(*staff_roles())
+    async def updatestaffing(self, ctx, title) -> None:
+        try:
+            mydb = db_connection()
+            cursor = mydb.cursor()
+            cursor.execute(
+                'SELECT title FROM staffing'
+            )
+            showall = cursor.fetchall()
+            titles = []
+            for all in showall:
+                titles.append(all[0])
+            
+            if title in titles:
+                options = ['Title', 'Day of event', 'Staffing message', 'Main Positions', 'Secondary Positions', 'Regional Positions', 'Delete Staffing', 'Exit Updater']
+                avail = "\n" .join(files for files in options)
+                await ctx.send(f'What would you like to update in staffing `{title}`? **FYI this command expires in 1 minute**\n\nAvailable options:\n{avail}')
+                message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
+
+                if message.content == options[0]:
+                    newtitle = await self._get_title(ctx)
+                    cursor.execute(
+                        'UPDATE staffing, positions SET staffing.title = %s, positions.title = %s WHERE staffing.title = %s and positions.title = %s',
+                        (
+                            newtitle,
+                            newtitle,
+                            title,
+                            title
+                        )
+                    )
+                    mydb.commit()
+                    title = newtitle
+                    await self._updatemessage(title)
+                    await ctx.send(f'Title updated to - {newtitle}')
+
+                elif message.content == options[1]:
+                    newdate = await self._get_date(ctx)
+                    cursor.execute(
+                        'UPDATE staffing SET date = %s WHERE title = %s',
+                        (
+                            newdate,
+                            title
+                        )
+                    )
+                    mydb.commit()
+                    await self._updatemessage(title)
+                    formatted_date = newdate.strftime("%A %d/%m/%Y")
+                    await ctx.send(f'Event date has been updated to - {formatted_date}')
+                
+                elif message.content == options[2]:
+                    newdescription = await self._get_description(ctx)
+                    cursor.execute(
+                        'UPDATE staffing SET description = %s WHERE title = %s',
+                        (
+                            newdescription,
+                            title
+                        )
+                    )
+                    mydb.commit()
+                    await self._updatemessage(title)
+                    await ctx.send(f'Event description/staffing message has been updated to:\n{newdescription}')
+
+                elif message.content == options[3]:
+                    new_main_positions = await self._get_main_positions(ctx)
+                    formatted_main_positions = "\n" .join(position for position in new_main_positions)
+                    type = 'main'
+                    cursor.execute(f"DELETE FROM positions WHERE type = '{type}' and title = '{title}'")
+                    for position in new_main_positions:
+                        cursor.execute('INSERT INTO positions(position, user, type, title) VALUES (%s, "", %s, %s)',
+                        (
+                            position,
+                            type,
+                            title
+                        ))
+                    mydb.commit()
+                    await self._updatemessage(title)
+                    await ctx.send(f'Main Positions updated to:\n{formatted_main_positions}')
+
+                elif message.content == options[4]:
+                    new_secondary_positions = await self._get_secondary_positions(ctx)
+                    formatted_secondary_positions = "\n" .join(position for position in new_secondary_positions)
+                    type = 'secondary'
+                    cursor.execute(f"DELETE FROM positions WHERE type = '{type}' and title = '{title}'")
+                    for position in new_secondary_positions:
+                        cursor.execute('INSERT INTO positions(position, user, type, title) VALUES (%s, "", %s, %s)',
+                        (
+                            position,
+                            type,
+                            title
+                        ))
+                    mydb.commit()
+                    await self._updatemessage(title)
+                    await ctx.send(f'Secondary Positions updated to:\n{formatted_secondary_positions}')
+
+                elif message.content == options[5]:
+                    new_regional_positions = await self._get_regional_positions(ctx)
+                    formatted_regional_positions = "\n" .join(position for position in new_regional_positions)
+                    type = 'regional'
+                    cursor.execute(f"DELETE FROM positions WHERE type = '{type}' and title = '{title}'")
+                    for position in new_regional_positions:
+                        cursor.execute('INSERT INTO positions(position, user, type, title) VALUES (%s, "", %s, %s)',
+                        (
+                            position,
+                            type,
+                            title
+                        ))
+                    mydb.commit()
+                    await self._updatemessage(title)
+                    await ctx.send(f'Regional Positions updated to:\n{formatted_regional_positions}')
+
+                elif message.content == options[6]:
+                    confirm_delete = await self._getconfirmation(ctx, title)
+
+                    if confirm_delete == title:
+                        cursor.execute(f"SELECT * FROM staffing WHERE title = '{title}'")
+                        all_details = cursor.fetchone()
+                        channel_id = all_details[4]
+                        message_id = all_details[5]
+                        channel = self.bot.get_channel(int(channel_id))
+                        message = await channel.fetch_message(int(message_id))
+                        await message.delete()
+                        cursor.execute(f"DELETE FROM staffing WHERE title = '{title}'")
+                        mydb.commit()
+
+                        await ctx.send(f'Staffing for `{title}` has been deleted')
+                    elif confirm_delete == 'CANCEL':
+                        await ctx.send(f'Deletion of `{title}` has been cancelled.')
+
+                elif message.content == options[7]:
+                    now = datetime.datetime.now()
+                    now = now.strftime("%d-%m-%Y %H:%M:%S %p")
+                    await ctx.send(f'Staffing updater for `{title}` exited at - {now}')
+            else:
+                await ctx.send(f'{title} staffing does not exist.')
+        except Exception as e:
+            await ctx.send(f'Error updating staffing {title} - {e}')
+            raise e
+
+    @cog_ext.cog_slash(name="book", guild_ids=guild_id, description='Bot books selected position for selected staffing')
+    async def book(self, ctx, title, position) -> None:
+        try:
+            mydb = db_connection()
+            cursor = mydb.cursor()
+            cursor.execute(f"SELECT position, user FROM positions WHERE title ='{title}'")
+
+            positions = cursor.fetchall()
+
+            cursor.execute(f"SELECT channel_id FROM staffing WHERE title = '{title}'")
+            
+            event_data = cursor.fetchone()
+            usernick = ctx.author.id
+            if ctx.channel.id == event_data[0]:
+                mydb.reconnect()
+                if any(f'<@{usernick}>' in match for match in positions):
+                    await ctx.send(f"<@{usernick}> You already have a booking!")
+                    await asyncio.sleep(5)
+                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                elif any(position + ':' in match for match in positions):
+                    cursor.execute(f"UPDATE positions SET user = '<@{usernick}>' WHERE position = '{position}:' and title = '{title}'")
+                    mydb.commit()
+                    await self._updatemessage(title)
+                    await ctx.send(f"<@{usernick}> Confirmed booking for position {position} for event {title}")
+                    await asyncio.sleep(5)
+                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+            else:
+                await ctx.send(f"<@{usernick}> Please use the <#{event_data[0]}> channel")
+                await asyncio.sleep(5)
+                await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+        except Exception as e:
+            await ctx.send(f"Error booking position {position} for event {title} - {e}")
+            raise e
+
+    @cog_ext.cog_slash(name="unbook", guild_ids=guild_id, description='Bot books selected position for selected staffing')
+    async def unbook(self, ctx, title) -> None:
+        try:
+            mydb = db_connection()
+            cursor = mydb.cursor()
+
+            cursor.execute(f"SELECT position, user FROM positions WHERE title = '{title}'")
+            
+            positions = cursor.fetchall()
+
+            cursor.execute(f"SELECT channel_id FROM staffing WHERE title = '{title}'")
+
+            event_data = cursor.fetchone()
+
+            usernick = ctx.author.id
+            if ctx.channel.id == event_data[0]:
+                mydb.reconnect()
+                if any(f'<@{usernick}>' in match for match in positions):
+                    cursor.execute(f"UPDATE positions SET user = '' WHERE user = '<@{usernick}>' and title = '{title}'")
+                    mydb.commit()
+                    await self._updatemessage(title)
+                    await ctx.send(f"<@{usernick}> Confirmed cancelling of your booking!")
+                    await asyncio.sleep(5)
+                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+            else:
+                await ctx.send(f"<@{usernick}> Please use the <#{event_data[0]}> channel")
+                await asyncio.sleep(5)
+                await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+        except Exception as e:
+            await ctx.send(f"Error unbooking position for event {title} - {e}")
+            raise e
+
+    #
+    # ----------------------------------
+    # TASK LOOP FUNCTIONS
+    # ----------------------------------
+    #
+
+    @tasks.loop(seconds=60)
+    async def autoreset(self) -> None:
+        await self.bot.wait_until_ready()
+        mydb = db_connection()
+        cursor = mydb.cursor()
+        cursor.execute('SELECT * FROM staffing')
+        staffings = cursor.fetchall()
+        now = datetime.datetime.today()
+
+        for staffing in staffings:
+            date = staffing[2]
+            day = date.strftime("%d")
+            month = date.strftime("%m")
+            year = date.strftime("%Y")
+            formatted_date = datetime.datetime(int(year), int(month), int(day))
+            if now.date() == formatted_date.date() and now.hour == 1 and 15 <= now.minute <= 15:
+                title = staffing[1]
+                cursor.execute(f"UPDATE positions SET user = '' WHERE title = '{title}'")
+                newdate = ''
+                if formatted_date.weekday() == 0:
+                    today = datetime.date.today()
+                    newdate = today + datetime.timedelta(days=0-today.weekday(), weeks=1)
+
+                elif formatted_date.weekday() == 1:
+                    today = datetime.date.today()
+                    newdate = today + datetime.timedelta(days=1-today.weekday(), weeks=1)
+
+                elif formatted_date.weekday() == 2:
+                    today = datetime.date.today()
+                    newdate = today + datetime.timedelta(days=2-today.weekday(), weeks=1)
+
+                elif formatted_date.weekday() == 3:
+                    today = datetime.date.today()
+                    newdate = today + datetime.timedelta(days=3-today.weekday(), weeks=1)
+
+                elif formatted_date.weekday() == 4:
+                    today = datetime.date.today()
+                    newdate = today + datetime.timedelta(days=4-today.weekday(), weeks=1)
+
+                elif formatted_date.weekday() == 5:
+                    today = datetime.date.today()
+                    newdate = today + datetime.timedelta(days=5-today.weekday(), weeks=1)
+
+                elif formatted_date.weekday() == 6:
+                    today = datetime.date.today()
+                    newdate = today + datetime.timedelta(days=6-today.weekday(), weeks=1)
+                
+                cursor.execute(f"UPDATE staffing SET date = '{newdate}' WHERE title = '{title}'")
+                mydb.commit()
+                await self._updatemessage(title)
+                channel = self.bot.get_channel(int(staffing[4]))
+                await channel.send("The chat is being automatic reset!")
+                await asyncio.sleep(5)
+                await channel.purge(limit=None, check=lambda msg: not msg.pinned)
+
+
+
+
+
+
+    #
+    # ----------------------------------
+    # ASYNC DATA FUNCTIONS
+    # ----------------------------------
+    #
+
+    async def _get_title(self, ctx):
         """
-        Function gets a message that'll be included in announcement
+        Function gets the title from a message that'll be included in the staffing message
         :param ctx:
         :return:
         """
         try:
             await ctx.send('Event Title? **FYI this command expires in 1 minute**')
-            message = await self.bot.wait_for('message', timeout=60, check=lambda
-                                              message: message.author == ctx.author and ctx.channel == message.channel)
+            message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
 
             if len(message.content) < 1:
                 await ctx.send('Setup cancelled. No message was provided.')
                 raise ValueError
 
-            if os.path.isfile('staffing-info/' + message.content + '.txt'):
-                await ctx.send('Setup cancelled. A staffing with that name already exists.')
-                raise ValueError
+            mydb = db_connection()
+            cursor = mydb.cursor()
+            cursor.execute(
+                'SELECT title FROM staffing'
+            )
+            getall = cursor.fetchall()
+            for each in getall:
+                if message.content == each[0]:
+                    await ctx.send(f'The event `{message.content}` already exists.')
+                    raise ValueError
 
             return message.content
-        except Exception as exception:
-            await ctx.send(str(exception))
-            raise exception
+        except Exception as e:
+            await ctx.send(f'Error getting the title - {e}')
+            raise e
 
     async def _get_date(self, ctx):
         """
-        Function gets a message that'll be included in announcement
+        Function gets the date of the event from a message that'll be included in the staffing message
         :param ctx:
         :return:
         """
         try:
-            available_days = ['Monday', 'Tuesday', 'Wednesday',
-                              'Thursday', 'Friday', 'Saturday', 'Sunday']
+            avail_days = AVAILABLE_EVENT_DAYS
 
-            await ctx.send('Event Day of the week? **FYI this command expires in 1 minute** Available days: ' + str(available_days)[1:-1])
-            message = await self.bot.wait_for('message', timeout=60, check=lambda
-                                              message: message.author == ctx.author and ctx.channel == message.channel)
+            await ctx.send('Event Day of the week? **FYI this command expires in 1 minute** Available days: ' + str(avail_days)[1:-1])
+            message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
 
-            if message.content == available_days[0]:
+            if message.content == avail_days[0]:
                 today = datetime.date.today()
-                next_monday = today + \
-                    datetime.timedelta(days=0-today.weekday(), weeks=1)
-                date_formatted = next_monday.strftime("%A %d/%m/%Y")
-                return date_formatted
+                event_day = today + datetime.timedelta(days=0-today.weekday(), weeks=1)
 
-            elif message.content == available_days[1]:
+            elif message.content == avail_days[1]:
                 today = datetime.date.today()
-                next_tuesday = today + \
-                    datetime.timedelta(days=1-today.weekday(), weeks=1)
-                date_formatted = next_tuesday.strftime("%A %d/%m/%Y")
-                return date_formatted
+                event_day = today + datetime.timedelta(days=1-today.weekday(), weeks=1)
 
-            elif message.content == available_days[2]:
+            elif message.content == avail_days[2]:
                 today = datetime.date.today()
-                next_wednesday = today + \
-                    datetime.timedelta(days=2-today.weekday(), weeks=1)
-                date_formatted = next_wednesday.strftime("%A %d/%m/%Y")
-                return date_formatted
+                event_day = today + datetime.timedelta(days=2-today.weekday(), weeks=1)
 
-            elif message.content == available_days[3]:
+            elif message.content == avail_days[3]:
                 today = datetime.date.today()
-                next_thursday = today + \
-                    datetime.timedelta(days=3-today.weekday(), weeks=1)
-                date_formatted = next_thursday.strftime("%A %d/%m/%Y")
-                return date_formatted
+                event_day = today + datetime.timedelta(days=3-today.weekday(), weeks=1)
 
-            elif message.content == available_days[4]:
+            elif message.content == avail_days[4]:
                 today = datetime.date.today()
-                next_friday = today + \
-                    datetime.timedelta(days=4-today.weekday(), weeks=1)
-                date_formatted = next_friday.strftime("%A %d/%m/%Y")
-                return date_formatted
+                event_day = today + datetime.timedelta(days=4-today.weekday(), weeks=1)
 
-            elif message.content == available_days[5]:
+            elif message.content == avail_days[5]:
                 today = datetime.date.today()
-                next_saturday = today + \
-                    datetime.timedelta(days=5-today.weekday(), weeks=1)
-                date_formatted = next_saturday.strftime("%A %d/%m/%Y")
-                return date_formatted
+                event_day = today + datetime.timedelta(days=5-today.weekday(), weeks=1)
 
-            elif message.content == available_days[6]:
+            elif message.content == avail_days[6]:
                 today = datetime.date.today()
-                next_sunday = today + \
-                    datetime.timedelta(days=6-today.weekday(), weeks=1)
-                date_formatted = next_sunday.strftime("%A %d/%m/%Y")
-                return date_formatted
+                event_day = today + datetime.timedelta(days=6-today.weekday(), weeks=1)
 
             if len(message.content) < 1:
                 await ctx.send('Setup cancelled. No message was provided.')
                 raise ValueError
 
-            return message.content
-        except Exception as exception:
-            await ctx.send(str(exception))
-            raise exception
-
-    async def _get_staffing_message(self, ctx):
+            return event_day
+        except Exception as e:
+            await ctx.send(f'Error getting date of the event - {e}')
+            raise e
+    
+    async def _get_description(self, ctx):
         """
-        Function gets a message that'll be included in announcement
+        Function gets the description of the event from a message that'll be included in the staffing message
         :param ctx:
         :return:
         """
         try:
             await ctx.send('Staffing message? **FYI this command expires in 1 minute**')
-            message = await self.bot.wait_for('message', timeout=60, check=lambda
-                                              message: message.author == ctx.author and ctx.channel == message.channel)
+            message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
 
             if len(message.content) < 1:
                 await ctx.send('Setup cancelled. No message was provided.')
                 raise ValueError
 
             return message.content
-        except Exception as exception:
-            await ctx.send(str(exception))
-            raise exception
-
-    async def _get_mainpositions_message(self, ctx):
+        except Exception as e:
+            await ctx.send(f'Error getting the Staffing message - {e}')
+            raise e
+        
+    async def _get_main_positions(self, ctx):
         """
-        Function gets a message that'll be included in announcement
+        Function gets the main positions of the event from a message that'll be included in the staffing message
         :param ctx:
         :return:
         """
         try:
-
             position = []
-            types = 'Main'
-            times = await self._get_howmanypositions_message(ctx, types)
+            type = 'Main'
+            times = await self.get_howmanypositions(ctx, type)
             num = 0
             for _ in range(int(times)):
                 num += 1
-                await ctx.send('Main position nr. ' + str(num) + '? **FYI this command expires in 1 minute**')
-                message = await self.bot.wait_for('message', timeout=60, check=lambda
-                                                  message: message.author == ctx.author and ctx.channel == message.channel)
-                position.append(message.content + ":")
+                await ctx.send(f'Main position nr. {num}? **FYI this command expires in 1 minute**')
+                message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
+                position.append(message.content + ':')
 
-                if len(message.content) < 1:
+            if len(message.content) < 1:
                     await ctx.send('Setup cancelled. No positions was provided.')
                     raise ValueError
 
             return position
-        except Exception as exception:
-            await ctx.send(str(exception))
-            raise exception
+        except Exception as e:
+            await ctx.send(f'Error getting main positions - {e}')
+            raise e
 
-    async def _get_secondarypositions_message(self, ctx):
+    async def _get_secondary_positions(self, ctx):
         """
-        Function gets a message that'll be included in announcement
+        Function gets the main positions of the event from a message that'll be included in the staffing message
         :param ctx:
         :return:
         """
         try:
-
             position = []
-            types = 'Secondary'
-            times = await self._get_howmanypositions_message(ctx, types)
+            type = 'Secondary'
+            times = await self.get_howmanypositions(ctx, type)
             num = 0
             for _ in range(int(times)):
                 num += 1
-                await ctx.send('Secondary position nr. ' + str(num) + '? **FYI this command expires in 1 minute**')
-                message = await self.bot.wait_for('message', timeout=60, check=lambda
-                                                  message: message.author == ctx.author and ctx.channel == message.channel)
-                position.append(message.content + ":")
+                await ctx.send(f'Secondary position nr. {num}? **FYI this command expires in 1 minute**')
+                message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
+                position.append(message.content + ':')
 
-                if len(message.content) < 1:
+            if len(message.content) < 1:
                     await ctx.send('Setup cancelled. No positions was provided.')
                     raise ValueError
 
             return position
-        except Exception as exception:
-            await ctx.send(str(exception))
-            raise exception
+        except Exception as e:
+            await ctx.send(f'Error getting secondary positions - {e}')
+            raise e
 
-    async def _getregionalpositions_message(self, ctx):
+    async def _get_regional_positions(self, ctx):
         """
-        Function gets a message that'll be included in announcement
+        Function gets the main positions of the event from a message that'll be included in the staffing message
         :param ctx:
         :return:
         """
         try:
-
             position = []
-            types = 'Regional'
-            times = await self._get_howmanypositions_message(ctx, types)
+            type = 'Regional'
+            times = await self.get_howmanypositions(ctx, type)
             num = 0
             for _ in range(int(times)):
                 num += 1
-                await ctx.send('Regional position nr. ' + str(num) + '? **FYI this command expires in 1 minute**')
-                message = await self.bot.wait_for('message', timeout=60, check=lambda
-                                                  message: message.author == ctx.author and ctx.channel == message.channel)
-                position.append(message.content + ":")
+                await ctx.send(f'Regional position nr. {num}? **FYI this command expires in 1 minute**')
+                message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
+                position.append(message.content + ':')
 
-                if len(message.content) < 1:
+            if len(message.content) < 1:
                     await ctx.send('Setup cancelled. No positions was provided.')
                     raise ValueError
 
             return position
-        except Exception as exception:
-            await ctx.send(str(exception))
-            raise exception
+        except Exception as e:
+            await ctx.send(f'Error getting regional positions - {e}')
+            raise e
 
-    async def _get_howmanypositions_message(self, ctx, types):
+    async def get_howmanypositions(self, ctx, type):
         """
-        Function gets a message that'll be included in announcement
+        Function gets the how many positions of the event from a message that'll be included in the staffing message
         :param ctx:
         :return:
         """
         try:
-            await ctx.send('How many ' + types + ' positions? **FYI this command expires in 1 minute**')
-            message = await self.bot.wait_for('message', timeout=60, check=lambda
-                                              message: message.author == ctx.author and ctx.channel == message.channel)
+            await ctx.send(f'How many {type} positions? **FYI this command expires in 1 minute**')
+            message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
 
             if len(message.content) < 1:
                 await ctx.send('Setup cancelled. No message was provided.')
                 raise ValueError
 
             return message.content
-        except Exception as exception:
-            await ctx.send(str(exception))
-            raise exception
+        except Exception as e:
+            await ctx.send(f'Error getting amount of positions - {e}')
+            raise e
 
-    async def _get_channels(self, ctx):
+    async def _get_channel(self, ctx):
         """
-        Function gets channels where it should send the announcement
+        Function gets the channel of the event from a message where the staffing message will be posted
         :param ctx:
         :return:
         """
         try:
             await ctx.send('Where would you like to post the staffing message? **FYI this command expires in 1 minute**')
-
-            message = await self.bot.wait_for('message', timeout=60, check=lambda
-                                              message: message.author == ctx.author and ctx.channel == message.channel)
+            message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
 
             if len(message.channel_mentions) < 1:
                 await ctx.send('Setup canceled. No channel provided.')
                 raise ValueError
 
             return message.channel_mentions
-        except Exception as exception:
-            await ctx.send(str(exception))
-            raise exception
+        except Exception as e:
+            await ctx.send(f'Error getting channel - {e}')
+            raise e
 
-    @cog_ext.cog_slash(name="showallstaffings", guild_ids=guild_ids, description="Bot shows all staffings available")
-    @commands.has_any_role(*staff_roles())
-    async def showallstaffings(self, ctx) -> None:
-        showall = os.listdir("staffing-info")
-        allstaffings = []
-        for x in showall:
-            allstaffings.append(os.path.splitext(x)[0])
-        show_all_staffings = "\n" .join(files for files in allstaffings)
-        await ctx.send("All Staffings:\n**`" + str(show_all_staffings) + "`**")
-
-    @cog_ext.cog_slash(name="updatestaffing", guild_ids=guild_ids, description="Bot updates selected staffing")
-    @commands.has_any_role(*staff_roles())
-    async def updatestaffing(self, ctx, titel) -> None:
+    async def _read_titles(self):
         try:
-            showall = os.listdir("staffing-info")
+            mydb = db_connection()
+            cursor = mydb.cursor()
 
-            if titel + ".txt" in showall:
-                options = ['Titel', 'Day of event', 'Staffing message',
-                           'Main Positions', 'Secondary Positions', 'Regional Positions', 'Exit Updater']
-                avail = "\n" .join(files for files in options)
-                await ctx.send('What would you like to update? **FYI this command expires in 1 minute**\n\nAvailable options:\n' + str(avail))
+            cursor.execute(
+                'SELECT title FROM STAFFING'
+            )
+            titles = cursor.fetchall()
+            all_titles = []
+            for title in titles:
+                all_titles.append(title[0])
+            return all_titles
+        except Exception as e:
+            await print(f'Error reading titles - {e}')
+            raise e
 
-                message = await self.bot.wait_for('message', timeout=60, check=lambda
-                                                  message: message.author == ctx.author and ctx.channel == message.channel)
-
-                if message.content == options[0]:
-                    newtitel = await self._update_titel(ctx)
-                    headings = []
-                    start = 0
-                    with open('staffing-info/' + titel + ".txt") as f:
-                        for ln in f:
-                            # append to heading list
-                            if start == 1:
-                                # when the second dashed line is seen, stop appending
-                                if ln.startswith('---'):
-                                    start = 0
-                                    continue
-                                headings.append(ln.rstrip())
-                            # first dashed line, indicate to start appending
-                            if ln.startswith('------ Titel ------'):
-                                start = 1
-                    if headings[0] == titel:
-                        for line in fileinput.input(['staffing-info/' + titel + '.txt'], inplace=True):
-                            if line.startswith(titel):
-                                line = newtitel + '\n'
-                            sys.stdout.write(line)
-                        os.rename('staffing-info/' + titel + '.txt',
-                                  'staffing-info/' + newtitel + '.txt')
-                        await ctx.send("Titel Updated to - '" + newtitel + "'")
-                        await self._update_message(titel)
-                    else:
-                        await ctx.send('Titels does not match.')
-
-                if message.content == options[1]:
-                    newdate = await self._get_date(ctx)
-                    headings = []
-                    start = 0
-                    with open('staffing-info/' + titel + ".txt") as f:
-                        for ln in f:
-                            # append to heading list
-                            if start == 1:
-                                # when the second dashed line is seen, stop appending
-                                if ln.startswith('---'):
-                                    start = 0
-                                    continue
-                                headings.append(ln.rstrip())
-                            if ln.startswith('------ Day of event ------'):
-                                start = 1
-                    for line in fileinput.input(['staffing-info/' + titel + '.txt'], inplace=True):
-                        if line.startswith(headings[0]):
-                            line = newdate + '\n'
-                        sys.stdout.write(line)
-                    await ctx.send("Day of event Updated to - '" + newdate + "'")
-                    await self._update_message(titel)
-
-                if message.content == options[2]:
-                    new_staffing_msg = await self._get_staffing_message(ctx)
-
-                    headings = []
-                    start = 0
-                    with open('staffing-info/' + titel + ".txt") as f:
-                        for ln in f:
-                            # append to heading list
-                            if start == 1:
-                                # when the second dashed line is seen, stop appending
-                                if ln.startswith('---'):
-                                    start = 0
-                                    continue
-                                headings.append(ln.rstrip())
-                            if ln.startswith('------ Staffing Message ------'):
-                                start = 1
-                    state = 0
-                    for line in fileinput.input('staffing-info/' + titel + '.txt', inplace=True):
-                        if state == 1:
-                            if line.startswith('---'):
-                                state = 0
-                                line.replace(str(headings), "")
-                                continue
-                        if line.startswith('------ Staffing Message ------'):
-                            state = 1
-                        sys.stdout.write(line)
-                        
-                    await self._update_message(titel)
-                    await ctx.send("Staffing message Updated to - '" + new_staffing_msg + "'")
-
-                if message.content == options[3]:
-                    new_main_pos = await self._get_mainpositions_message(ctx)
-                    headings = []
-                    start = 0
-                    with open('staffing-info/' + titel + ".txt") as f:
-                        for ln in f:
-                            # append to heading list
-                            if start == 1:
-                                # when the second dashed line is seen, stop appending
-                                if ln.startswith('---'):
-                                    start = 0
-                                    continue
-                                headings.append(ln.rstrip())
-                            # first dashed line, indicate to start appending
-                            if ln.startswith('------ Main Positions ------'):
-                                start = 1
-                    for line in fileinput.input(['staffing-info/' + titel + '.txt'], inplace=True):
-                        if line.startswith(headings[0]):
-                            main_positions_data = "\n" .join(position for position in new_main_pos)
-                            line = str(main_positions_data) + '\n'
-                        sys.stdout.write(line)
-                    await ctx.send("Main positions Updated to - '" + str(new_main_pos) + "'")
-                    await self._update_message(titel)
-
-                if message.content == options[4]:
-                    new_secondary_pos = await self._get_secondarypositions_message(ctx)
-                    headings = []
-                    start = 0
-                    with open('staffing-info/' + titel + ".txt") as f:
-                        for ln in f:
-                            # append to heading list
-                            if start == 1:
-                                # when the second dashed line is seen, stop appending
-                                if ln.startswith('---'):
-                                    start = 0
-                                    continue
-                                headings.append(ln.rstrip())
-                            # first dashed line, indicate to start appending
-                            if ln.startswith('------ Secondary Positions ------'):
-                                start = 1
-                    for line in fileinput.input(['staffing-info/' + titel + '.txt'], inplace=True):
-                        if line.startswith(headings[0]):
-                            secondary_positions_data = "\n" .join(position for position in new_secondary_pos)
-                            line = str(secondary_positions_data) + '\n'
-                        sys.stdout.write(line)
-                    await ctx.send("Secondary positions Updated to - '" + str(new_secondary_pos) + "'")
-                    await self._update_message(titel)
-
-                if message.content == options[5]:
-                    new_regonal_pos = await self._getregionalpositions_message(ctx)
-                    headings = []
-                    start = 0
-                    with open('staffing-info/' + titel + ".txt") as f:
-                        for ln in f:
-                            # append to heading list
-                            if start == 1:
-                                # when the second dashed line is seen, stop appending
-                                if ln.startswith('---'):
-                                    start = 0
-                                    continue
-                                headings.append(ln.rstrip())
-                            # first dashed line, indicate to start appending
-                            if ln.startswith('------ Regional Positions ------'):
-                                start = 1
-                    for line in fileinput.input(['staffing-info/' + titel + '.txt'], inplace=True):
-                        if line.startswith(headings[0]):
-                            regional_positions_data = "\n" .join(position for position in new_regonal_pos)
-                            line = str(regional_positions_data) + '\n'
-                        sys.stdout.write(line)
-                    await ctx.send("Regional positions Updated to - '" + str(new_regonal_pos) + "'")
-                    await self._update_message(titel)
-
-                if len(message.content) < 1:
-                    await ctx.send('Update canceled. No option provided.')
-                    raise ValueError
-            else:
-                await ctx.send("Staffing not found.")
-
-        except Exception as exception:
-            await ctx.send(str(exception))
-            raise exception
-
-    async def _update_titel(self, ctx):
+    async def _updatemessage(self, title):
         try:
-            await ctx.send('What should the new titel be? **FYI this command expires in 1 minute**')
+            mydb = db_connection()
+            cursor = mydb.cursor()
+            cursor.execute(f"SELECT * FROM staffing WHERE title = '{title}'")
 
-            message = await self.bot.wait_for('message', timeout=60, check=lambda
-                                              message: message.author == ctx.author and ctx.channel == message.channel)
+            events = cursor.fetchone()
 
-            if len(message.content) < 1:
-                await ctx.send('Update canceled. No titel provided.')
-                raise ValueError
+            title = events[1]
+            date = events[2]
+            description = events[3]
+            channel_id = events[4]
+            message_id = events[5]
 
-            return message.content
-        except Exception as exception:
-            await ctx.send(str(exception))
-            raise exception
+            type = 'main'
+            cursor.execute(f"SELECT * FROM positions WHERE title = '{title}' and type = '{type}'")
+            main_pos = cursor.fetchall()
+            main_positions = []
+            for position in main_pos:
+                main_positions.append(f'{position[1]} {position[2]}')
+                main_position_data = "\n" .join(position for position in main_positions)
 
-    async def _update_message(self, titel):
-        try:
-            channel_id = await self._get_channel_id(titel)
-            message_id = await self._get_message_id(titel)
-            staffing_date = await self._get_staffing_date(titel)
-            staffing_message = await self._get_staffing_msg(titel)
-            main_position = await self._get_all_main_pos(titel)
-            secondary_position = await self._get_all_secondary_pos(titel)
-            regional_position = await self._get_all_regional_pos(titel)
+            type = 'secondary'
+            cursor.execute(f"SELECT * FROM positions WHERE title = '{title}' and type = '{type}'")
+            secondary_pos = cursor.fetchall()
+            secondary_positions = []
+            for position in secondary_pos:
+                secondary_positions.append(f'{position[1]} {position[2]}')
+                secondary_position_data = "\n" .join(position for position in secondary_positions)
+
+            type = 'regional'
+            cursor.execute(f"SELECT * FROM positions WHERE title = '{title}' and type = '{type}'")
+            regional_pos = cursor.fetchall()
+            regional_positions = []
+            for position in regional_pos:
+                regional_positions.append(f'{position[1]} {position[2]}')
+                regional_position_data = "\n" .join(position for position in regional_positions)
 
             format_staffing_message = ""
 
             if format_staffing_message != "":
                 format_staffing_message += "\n"
 
-            staffing_msg_formatted = "\n" .join(msg for msg in staffing_message)
-            main_positions_data = "\n" .join(position for position in main_position)
-            secondary_positions_data = "\n" .join(
-            position for position in secondary_position)
-            regional_positions_data = "\n" .join(
-            position for position in regional_position)
+            mydb.reconnect()
 
-            format_staffing_message += titel + " staffing - " + staffing_date[0] + "\n\n" + str(staffing_msg_formatted) + \
-                "\n\nMain Positions:\n" + \
-                str(main_positions_data) + \
-                "\n\nSecondary Positions:\n" + \
-                str(secondary_positions_data) + \
-                "\n\nRegional Positions:\n" + str(regional_positions_data)
+            formatted_date = date.strftime("%A %d/%m/%Y")
+            format_staffing_message += f'{title} staffing - {formatted_date}\n\n{description}\n\nMain Positions:\n{main_position_data}\n\nSecondary Positions:\n{secondary_position_data}\n\nRegional Positions:\n{regional_position_data}'
 
-            channel = self.bot.get_channel(int(channel_id[0]))
-            message = await channel.fetch_message(int(message_id[0]))
+            channel = self.bot.get_channel(int(channel_id))
+            message = await channel.fetch_message(int(message_id))
             await message.edit(content=format_staffing_message)
-        except Exception as exception:
-            """await channel.send(str(exception))"""
-            raise exception
 
-    async def _get_channel_id(self, titel):
-        channel_id = []
-        start = 0
-        with open('staffing-info/' + titel + ".txt") as f:
-            for ln in f:
-                # append to heading list
-                if start == 1:
-                    # when the second dashed line is seen, stop appending
-                    if ln.startswith('---'):
-                        start = 0
-                        continue
-                    channel_id.append(ln.rstrip())
-                    # first dashed line, indicate to start appending
-                if ln.startswith('------ Channel id ------'):
-                    start = 1
-        return channel_id
+        except Exception as e:
+            print(f'Unable to update message - {e}')
+            raise e
 
-    async def _get_message_id(self, titel):
-        message_id = []
-        start = 0
-        with open('staffing-info/' + titel + ".txt") as f:
-            for ln in f:
-                # append to heading list
-                if start == 1:
-                    # when the second dashed line is seen, stop appending
-                    if ln.startswith('---'):
-                        start = 0
-                        continue
-                    message_id.append(ln.rstrip())
-                    # first dashed line, indicate to start appending
-                if ln.startswith('------ Message id ------'):
-                    start = 1
-        return message_id
-
-    async def _get_staffing_date(self, titel):
-        staffing_date = []
-        start = 0
-        with open('staffing-info/' + titel + ".txt") as f:
-            for ln in f:
-                # append to heading list
-                if start == 1:
-                    # when the second dashed line is seen, stop appending
-                    if ln.startswith('---'):
-                        start = 0
-                        continue
-                    staffing_date.append(ln.rstrip())
-                    # first dashed line, indicate to start appending
-                if ln.startswith('------ Day of event ------'):
-                    start = 1
-        return staffing_date
-
-    async def _get_staffing_msg(self, titel):
-        staffing_msg = []
-        start = 0
-        with open('staffing-info/' + titel + ".txt") as f:
-            for ln in f:
-                # append to heading list
-                if start == 1:
-                    # when the second dashed line is seen, stop appending
-                    if ln.startswith('---'):
-                        start = 0
-                        continue
-                    staffing_msg.append(ln.rstrip())
-                    # first dashed line, indicate to start appending
-                if ln.startswith('------ Staffing Message ------'):
-                    start = 1
-        return staffing_msg
-
-    async def _get_all_main_pos(self, titel):
-        main_pos = []
-        start = 0
-        with open('staffing-info/' + titel + ".txt") as f:
-            for ln in f:
-                # append to heading list
-                if start == 1:
-                    # when the second dashed line is seen, stop appending
-                    if ln.startswith('---'):
-                        start = 0
-                        continue
-                    main_pos.append(ln.rstrip())
-                    # first dashed line, indicate to start appending
-                if ln.startswith('------ Main Positions ------'):
-                    start = 1
-        return main_pos
-
-    async def _get_all_secondary_pos(self, titel):
-        secondary_pos = []
-        start = 0
-        with open('staffing-info/' + titel + ".txt") as f:
-            for ln in f:
-                # append to heading list
-                if start == 1:
-                    # when the second dashed line is seen, stop appending
-                    if ln.startswith('---'):
-                        start = 0
-                        continue
-                    secondary_pos.append(ln.rstrip())
-                    # first dashed line, indicate to start appending
-                if ln.startswith('------ Secondary Positions ------'):
-                    start = 1
-        return secondary_pos
-
-    async def _get_all_regional_pos(self, titel):
-        regional_pos = []
-        start = 0
-        with open('staffing-info/' + titel + ".txt") as f:
-            for ln in f:
-                # append to heading list
-                if start == 1:
-                    # when the second dashed line is seen, stop appending
-                    if ln.startswith('---'):
-                        start = 0
-                        continue
-                    regional_pos.append(ln.rstrip())
-                    # first dashed line, indicate to start appending
-                if ln.startswith('------ Regional Positions ------'):
-                    start = 1
-        return regional_pos
-
-    @cog_ext.cog_slash(name="book", guild_ids=guild_ids, description="Bot updates selected staffing")
-    async def book(self, ctx, titel, position: str) -> None:
+    async def _getconfirmation(self, ctx, title):
         try:
-            main_pos = await self._get_all_main_pos(titel)
-            secondary_pos = await self._get_all_secondary_pos(titel)
-            regional_pos = await self._get_all_regional_pos(titel)
-            positions = []
-            positions.extend(main_pos + secondary_pos + regional_pos)
+            await ctx.send(f'To confirm you want to delete staffing {title} type `{title}` in the chat. If you want to cancel the deletion type `CANCEL` in the chat. **FYI this command expires in 1 minute**')
+            message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
 
-            usernick = ctx.author.id
-            if position + ":" in positions:
-                if any(str(usernick) in match for match in positions):
-                    await ctx.send("<@" + str(usernick) + "> You already have a booking.")
-                    await asyncio.sleep(5)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-                else:
-                    for line in fileinput.input(['staffing-info/' + titel + '.txt'], inplace=True):
-                        if str(usernick) not in line and line.startswith(position + ":"):
-                            line = position + ': <@' + str(usernick) + '>\n'
-                        sys.stdout.write(line)
-                    await ctx.send("<@" + str(usernick) + "> Confirmed booking for " + position + "!")
-                    await self._update_message(titel)
-                    await asyncio.sleep(5)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-            else:
-                await ctx.send("<@" + str(usernick) + "> The position " + position + " does not exist or is already booked.")
-                await asyncio.sleep(5)
-                await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+            if len(message.content) < 1:
+                await ctx.send('Deletion cancelled. No message was provided.')
+                raise ValueError
 
-        except Exception as exception:
-            await ctx.send(str(exception))
-            raise exception
-
-    @cog_ext.cog_slash(name="unbook", guild_ids=guild_ids, description="Bot updates selected staffing")
-    async def unbook(self, ctx, titel, position: str) -> None:
-        try:
-            usernick = ctx.author.id
-            main_pos = await self._get_all_main_pos(titel)
-            secondary_pos = await self._get_all_secondary_pos(titel)
-            regional_pos = await self._get_all_regional_pos(titel)
-            positions = []
-            positions.extend(main_pos + secondary_pos + regional_pos)
-            for line in fileinput.input(['staffing-info/' + titel + '.txt'], inplace=True):
-                if line.startswith(position) and str(usernick) in line:
-                    line = position + ':\n'
-                sys.stdout.write(line)
-            await ctx.send("<@" + str(usernick) + "> Confirmed unbooking for " + position + "!")
-            await self._update_message(titel)
-            await asyncio.sleep(5)
-            await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-
-        except Exception as exception:
-            await ctx.send(str(exception))
-            raise exception
-
-    @cog_ext.cog_slash(name="update_staffing_message", guild_ids=guild_ids, description="Bot updates staffing message ***TESTING ONLY***")
-    @commands.has_any_role(*staff_roles())
-    async def update_staffing_message(self, ctx) -> None:
-        try:
-            await self.bot.wait_until_ready()
-            get_autoupdate_date = await self._get_autoupdate_date()
-            days = []
-            print(get_autoupdate_date)
-            if any('Monday' in match for match in get_autoupdate_date):
-                days.append("0")
-            if any('Tuesday' in match for match in get_autoupdate_date):
-                days.append("1")
-            if any('Wednesday' in match for match in get_autoupdate_date):
-                days.append("2")
-            if any('Thursday' in match for match in get_autoupdate_date):
-                days.append("3")
-            if any('Friday' in match for match in get_autoupdate_date):
-                days.append("4")
-            if any('Saturday' in match for match in get_autoupdate_date):
-                days.append("5")
-            if any('Sunday' in match for match in get_autoupdate_date):
-                days.append("6")
-            print(days)
-
-            titel = None
-            titels = os.listdir("staffing-info")
-            all_staffing_titels = []
-            for x in titels:
-                all_staffing_titels.append(os.path.splitext(x)[0])
-
-            all_files = os.listdir("staffing-info")
-            now = datetime.datetime.now()
-            for day in days:
-                if now.weekday() == int(day):
-                    for file in all_files:
-                        titel = os.path.splitext(file)[0]
-                        main_position = await self._get_all_main_pos(titel)
-                        secondary_position = await self._get_all_secondary_pos(titel)
-                        regional_position = await self._get_all_regional_pos(titel)
-                        positions = []
-                        positions.extend(main_position + secondary_position + regional_position)
-
-                        avail_pos = []
-                        for line in fileinput.input(["staffing-info/" + file], inplace=True):
-                            if int(day) == 0:
-                                today = datetime.date.today()
-                                next_friday = today + \
-                                    datetime.timedelta(days=0-today.weekday(), weeks=1)
-                                date_formatted = next_friday.strftime("%A %d/%m/%Y")
-                                if line.startswith('Monday'):
-                                    line = date_formatted + '\n'
-                                sys.stdout.write(line)
-                        
-                            elif int(day) == 1:
-                                today = datetime.date.today()
-                                next_friday = today + \
-                                    datetime.timedelta(days=1-today.weekday(), weeks=1)
-                                date_formatted = next_friday.strftime("%A %d/%m/%Y")
-                                if line.startswith('Tuesday'):
-                                    line = date_formatted + '\n'
-                                sys.stdout.write(line)
-
-                            elif int(day) == 2:
-                                today = datetime.date.today()
-                                next_friday = today + \
-                                    datetime.timedelta(days=2-today.weekday(), weeks=1)
-                                date_formatted = next_friday.strftime("%A %d/%m/%Y")
-                                if line.startswith('Wednesday'):
-                                    line = date_formatted + '\n'
-                                sys.stdout.write(line)
-
-                            elif int(day) == 3:
-                                today = datetime.date.today()
-                                next_friday = today + \
-                                    datetime.timedelta(days=3-today.weekday(), weeks=1)
-                                date_formatted = next_friday.strftime("%A %d/%m/%Y")
-                                if line.startswith('Thursday'):
-                                    line = date_formatted + '\n'
-                                sys.stdout.write(line)
-
-                            elif int(day) == 4:
-                                today = datetime.date.today()
-                                next_friday = today + \
-                                    datetime.timedelta(days=4-today.weekday(), weeks=1)
-                                date_formatted = next_friday.strftime("%A %d/%m/%Y")
-                                if line.startswith('Friday'):
-                                    line = date_formatted + '\n'
-                                    for position in positions:
-                                        spline = position.rstrip()
-                                        result = re.sub(":.*.", ":", spline)
-                                        avail_pos.append(result)
-                                sys.stdout.write(line)
-
-                            elif int(day) == 5:
-                                today = datetime.date.today()
-                                next_friday = today + \
-                                    datetime.timedelta(days=5-today.weekday(), weeks=1)
-                                date_formatted = next_friday.strftime("%A %d/%m/%Y")
-                                if line.startswith('Saturday'):
-                                    line = date_formatted + '\n'
-                                sys.stdout.write(line)
-
-                            elif int(day) == 6:
-                                today = datetime.date.today()
-                                next_friday = today + \
-                                    datetime.timedelta(days=6-today.weekday(), weeks=1)
-                                date_formatted = next_friday.strftime("%A %d/%m/%Y")
-                                if line.startswith('Sunday'):
-                                    line = date_formatted + '\n'
-                                sys.stdout.write(line)
-                            else:
-                                pass
-                    print(avail_pos)
-                    if titel != None:
-                        await self._update_message(titel)
-                        channel_id = await self._get_channel_id(titel)
-                        channel = self.bot.get_channel(int(channel_id[0]))
-                        await channel.send("The chat is being automatically reset!")
-                        await asyncio.sleep(5)
-                        await channel.purge(limit=None, check=lambda msg: not msg.pinned)
-                    else:
-                        await ctx.send("Proccess Incomplete")
-        except Exception as exception:
-            await ctx.send(str(exception))
-            raise exception
-
-    async def _get_staffing_titel(self, file):
-        titel = []
-        start = 0
-        with open('staffing-info/' + file) as f:
-            for ln in f:
-                # append to heading list
-                if start == 1:
-                    # when the second dashed line is seen, stop appending
-                    if ln.startswith('---'):
-                        start = 0
-                        continue
-                    titel.append(ln.rstrip())
-                # first dashed line, indicate to start appending
-                if ln.startswith('------ Titel ------'):
-                    start = 1
-        return titel
-
-    @tasks.loop(seconds=60)
-    async def autoreset(self) -> None:
-        await self.bot.wait_until_ready()
-        get_autoupdate_date = await self._get_autoupdate_date()
-        days = []
-        if any('Monday' in match for match in get_autoupdate_date):
-            days.append("0")
-        elif any('Tuesday' in match for match in get_autoupdate_date):
-            days.append("1")
-        elif any('Wednesday' in match for match in get_autoupdate_date):
-            days.append("2")
-        elif any('Thursday' in match for match in get_autoupdate_date):
-            days.append("3")
-        elif any('Friday' in match for match in get_autoupdate_date):
-            days.append("4")
-        elif any('Saturday' in match for match in get_autoupdate_date):
-            days.append("5")
-        elif any('Sunday' in match for match in get_autoupdate_date):
-            days.append("6")
-
-        now = datetime.datetime.now()
-        showall = os.listdir("staffing-info")
-        all_staffing_files = []
-        for x in showall:
-            all_staffing_files.append(os.path.splitext(x)[0])
-        all_files = "\n" .join(files for files in all_staffing_files)
-
-        titels = []
-        for x in titels:
-            titels.append(os.path.splitext(x)[0])
-        for day in days:
-            if now.weekday() == int(day) and now.hour == 15 and 30 <= now.minute <= 35:
-                for files in all_files:
-                    for line in fileinput.input(["staffing-info/" + str(files)], inplace=True):
-                        if int(day) == 0:
-                            today = datetime.date.today()
-                            next_monday = today + \
-                                datetime.timedelta(days=0-today.weekday(), weeks=1)
-                            date_formatted = next_monday.strftime("%A %d/%m/%Y")
-                            if line.startswith('Monday'):
-                                line = date_formatted
-                            sys.stdout.write(line)
-                            for titel in titels:
-                                await self._update_message(titel)
-                                channel = await self._get_channel_id(titel)
-                            await channel.send("The chat is being automatically reset!")
-                            await asyncio.sleep(5)
-                            await channel.purge(limit=None, check=lambda msg: not msg.pinned)
-                        
-                        elif int(day) == 1:
-                            today = datetime.date.today()
-                            next_tuesday = today + \
-                                datetime.timedelta(days=1-today.weekday(), weeks=1)
-                            date_formatted = next_tuesday.strftime("%A %d/%m/%Y")
-                            if line.startswith('Tuesday'):
-                                line = date_formatted
-                            sys.stdout.write(line)
-                            for titel in titels:
-                                await self._update_message(titel)
-                                channel = await self._get_channel_id(titel)
-                            await channel.send("The chat is being automatically reset!")
-                            await asyncio.sleep(5)
-                            await channel.purge(limit=None, check=lambda msg: not msg.pinned)
-
-                        elif int(day) == 2:
-                            today = datetime.date.today()
-                            next_wednesday = today + \
-                                datetime.timedelta(days=2-today.weekday(), weeks=1)
-                            date_formatted = next_wednesday.strftime("%A %d/%m/%Y")
-                            if line.startswith('Wednesday'):
-                                line = date_formatted
-                            sys.stdout.write(line)
-                            await self._update_message(titel)
-                            channel = await self._get_channel_id(titel)
-                            await channel.send("The chat is being automatically reset!")
-                            await asyncio.sleep(5)
-                            await channel.purge(limit=None, check=lambda msg: not msg.pinned)
-
-                        elif int(day) == 3:
-                            today = datetime.date.today()
-                            next_thursday = today + \
-                                datetime.timedelta(days=3-today.weekday(), weeks=1)
-                            date_formatted = next_thursday.strftime("%A %d/%m/%Y")
-                            if line.startswith('Thursday'):
-                                line = date_formatted
-                            sys.stdout.write(line)
-                            await self._update_message(titel)
-                            channel = await self._get_channel_id(titel)
-                            await channel.send("The chat is being automatically reset!")
-                            await asyncio.sleep(5)
-                            await channel.purge(limit=None, check=lambda msg: not msg.pinned)
-
-                        elif int(day) == 4:
-                            today = datetime.date.today()
-                            next_friday = today + \
-                                datetime.timedelta(days=4-today.weekday(), weeks=1)
-                            date_formatted = next_friday.strftime("%A %d/%m/%Y")
-                            if line.startswith('Friday'):
-                                line = date_formatted
-                            sys.stdout.write(line)
-                            await self._update_message(titel)
-                            channel = await self._get_channel_id(titel)
-                            await channel.send("The chat is being automatically reset!")
-                            await asyncio.sleep(5)
-                            await channel.purge(limit=None, check=lambda msg: not msg.pinned)
-
-                        elif int(day) == 5:
-                            today = datetime.date.today()
-                            next_saturday = today + \
-                                datetime.timedelta(days=5-today.weekday(), weeks=1)
-                            date_formatted = next_saturday.strftime("%A %d/%m/%Y")
-                            if line.startswith('Saturday'):
-                                line = date_formatted
-                            sys.stdout.write(line)
-                            await self._update_message(titel)
-                            channel = await self._get_channel_id(titel)
-                            await channel.send("The chat is being automatically reset!")
-                            await asyncio.sleep(5)
-                            await channel.purge(limit=None, check=lambda msg: not msg.pinned)
-
-                        elif int(day) == 6:
-                            today = datetime.date.today()
-                            next_sunday = today + \
-                                datetime.timedelta(days=6-today.weekday(), weeks=1)
-                            date_formatted = next_sunday.strftime("%A %d/%m/%Y")
-                            if line.startswith('Sunday'):
-                                line = date_formatted
-                            sys.stdout.write(line)
-                            await self._update_message(titel)
-                            channel = await self._get_channel_id(titel)
-                            await channel.send("The chat is being automatically reset!")
-                            await asyncio.sleep(5)
-                            await channel.purge(limit=None, check=lambda msg: not msg.pinned)
-
-    async def _get_autoupdate_date(self):
-        all_files = os.listdir("staffing-info")
-        day = []
-        for files in all_files:
-            start = 0
-            with open('staffing-info/' + files, 'r') as f:
-                for ln in f:
-                    if start == 1:
-                        if ln.startswith('---'):
-                            start = 0
-                            continue
-                        day.append(ln.rstrip())
-                    if ln.startswith('------ Day of event ------'):
-                        start = 1
-        return day
+            return message.content
+        except Exception as e:
+            await ctx.send(f'Error getting message - {e}')
 
 def setup(bot):
     bot.add_cog(VTCcog(bot))
