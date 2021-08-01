@@ -70,7 +70,7 @@ class Event():
         is_recurring = self.is_recurring_event()
 
         # Change the start date if recurrence is the thing
-        if is_recurring:
+        if is_recurring == True:
             recurred_date = self._get_recurred_date(start, self.recurring, self.recurring_interval, self.recurring_end)
 
             # If today is notification day and we've not already notified
