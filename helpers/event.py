@@ -54,7 +54,7 @@ class Event():
         """
         Check if event is expired and no longer valid
         """
-        if self.is_recurring_event():
+        if self.is_recurring_event() == True:
             return datetime.utcnow() > self.recurring_end
         else:
             return datetime.utcnow() > self.start
