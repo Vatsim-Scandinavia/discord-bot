@@ -140,7 +140,7 @@ class EventsCog(commands.Cog):
                     footer=self.FOOTER
                 )
 
-                text = f'{role.mention}\n:clock2: **This event starts in two hours!**'
+                text = f'{role.mention}\n:clock2: **{event.name}** is starting in two hours!'
                 await channel.send(text, embed=msg)
 
                 event.mark_as_published()
@@ -264,7 +264,9 @@ class EventsCog(commands.Cog):
                 timestamp=e.start, 
                 footer=self.FOOTER
             )
-            await channel.send(embed=msg)
+
+            text = f':calendar_spiral: A new event has been scheduled.'
+            await channel.send(text, embed=msg)
 
 
 
