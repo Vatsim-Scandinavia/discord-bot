@@ -32,7 +32,6 @@ class VTCcog(commands.Cog):
     # SLASH COMMAND FUNCTIONS
     # ----------------------------------
     #
-
     @cog_ext.cog_slash(name="setupstaffing", guild_ids=guild_id, description="Bot setups staffing information")
     @commands.has_any_role(*staff_roles())
     async def setupstaffing(self, ctx) -> None:
@@ -75,8 +74,6 @@ class VTCcog(commands.Cog):
                 )
             )
 
-            mydb.commit()
-
             type = 'main'
             for position in main_position:
                 cursor.execute(
@@ -87,7 +84,6 @@ class VTCcog(commands.Cog):
                         title
                     )
                 )
-                mydb.commit()
 
             type = 'secondary'
             for position in secondary_position:
@@ -99,7 +95,6 @@ class VTCcog(commands.Cog):
                         title
                     )
                 )
-                mydb.commit()
 
             type = 'regional'
             for position in regional_position:
@@ -111,7 +106,7 @@ class VTCcog(commands.Cog):
                         title
                     )
                 )
-                mydb.commit()
+            mydb.commit()
 
     @cog_ext.cog_slash(name="showallstaffings", guild_ids=guild_id, description="Bot shows all staffings available")
     @commands.has_any_role(*staff_roles())
@@ -268,6 +263,7 @@ class VTCcog(commands.Cog):
                         message = await channel.fetch_message(int(message_id))
                         await message.delete()
                         cursor.execute(f"DELETE FROM staffing WHERE title = '{title}'")
+                        cursor.execute(f"DELETE FROM positions WHERE title = '{title}'")
                         mydb.commit()
 
                         await ctx.send(f'Staffing for `{title}` has been deleted')
@@ -355,7 +351,6 @@ class VTCcog(commands.Cog):
     # TASK LOOP FUNCTIONS
     # ----------------------------------
     #
-
     @tasks.loop(seconds=60)
     async def autoreset(self) -> None:
         await self.bot.wait_until_ready()
@@ -411,17 +406,11 @@ class VTCcog(commands.Cog):
                 await asyncio.sleep(5)
                 await channel.purge(limit=None, check=lambda msg: not msg.pinned)
 
-
-
-
-
-
     #
     # ----------------------------------
     # ASYNC DATA FUNCTIONS
     # ----------------------------------
     #
-
     async def _get_title(self, ctx):
         """
         Function gets the title from a message that'll be included in the staffing message
