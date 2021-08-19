@@ -1,9 +1,8 @@
 import datetime
 import asyncio
+from os import name
 
 from discord.ext import commands, tasks
-from discord.ext.commands import cog
-from discord.ext.commands.core import check
 from discord_slash import cog_ext
 from discord_slash.utils.manage_commands import create_choice, create_option
 
@@ -13,13 +12,14 @@ from helpers.database import db_connection
 
 guild_id = [GUILD_ID]
 
+
 class VTCcog(commands.Cog):
     #
     # ----------------------------------
     # COG FUNCTIONS
     # ----------------------------------
     #
-    
+
     def __init__(self, bot):
         self.bot = bot
         self.autoreset.start()
@@ -49,8 +49,10 @@ class VTCcog(commands.Cog):
             format_staffing_message += "\n"
 
         main_position_data = "\n" .join(position for position in main_position)
-        secondary_position_data = "\n" .join(position for position in secondary_position)
-        regional_position_data = "\n" .join(position for position in regional_position)
+        secondary_position_data = "\n" .join(
+            position for position in secondary_position)
+        regional_position_data = "\n" .join(
+            position for position in regional_position)
 
         formatted_date = date.strftime("%A %d/%m/%Y")
 
@@ -64,7 +66,7 @@ class VTCcog(commands.Cog):
             await msg.pin()
             await channel.purge(limit=None, check=lambda msg: not msg.pinned)
             cursor.execute(
-                'INSERT INTO staffing(title, date, description, channel_id, message_id) VALUES (%s, %s, %s, %s, %s)', 
+                'INSERT INTO staffing(title, date, description, channel_id, message_id) VALUES (%s, %s, %s, %s, %s)',
                 (
                     title,
                     date,
@@ -123,24 +125,7 @@ class VTCcog(commands.Cog):
         showalltitles = "\n" .join(titles for titles in titels)
         await ctx.send(f"All Staffings:\n**`{showalltitles}`**")
 
-    @cog_ext.cog_slash(name="updatestaffing", guild_ids=guild_id, description='Bot updates selected staffing', options=[
-        create_option(
-            name='title',
-            description='Select which event you want to update',
-            option_type=3,
-            required=True,
-            choices=[
-                create_choice(
-                    name='Vectors to Copenhagen',
-                    value='Vectors to Copenhagen'
-                ),
-                create_choice(
-                    name='VTC',
-                    value='VTC'
-                )
-            ]
-        )
-    ])
+    @cog_ext.cog_slash(name="updatestaffing", guild_ids=guild_id, description='Bot updates selected staffing')
     @commands.has_any_role(*staff_roles())
     async def updatestaffing(self, ctx, title) -> None:
         try:
@@ -153,9 +138,10 @@ class VTCcog(commands.Cog):
             titles = []
             for all in showall:
                 titles.append(all[0])
-            
+
             if title in titles:
-                options = ['Title', 'Day of event', 'Staffing message', 'Main Positions', 'Secondary Positions', 'Regional Positions', 'Delete Staffing', 'Exit Updater']
+                options = ['Title', 'Day of event', 'Staffing message', 'Main Positions',
+                           'Secondary Positions', 'Regional Positions', 'Delete Staffing', 'Exit Updater']
                 avail = "\n" .join(files for files in options)
                 await ctx.send(f'What would you like to update in staffing `{title}`? **FYI this command expires in 1 minute**\n\nAvailable options:\n{avail}')
                 message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
@@ -189,7 +175,7 @@ class VTCcog(commands.Cog):
                     await self._updatemessage(title)
                     formatted_date = newdate.strftime("%A %d/%m/%Y")
                     await ctx.send(f'Event date has been updated to - {formatted_date}')
-                
+
                 elif message.content == options[2]:
                     newdescription = await self._get_description(ctx)
                     cursor.execute(
@@ -205,48 +191,54 @@ class VTCcog(commands.Cog):
 
                 elif message.content == options[3]:
                     new_main_positions = await self._get_main_positions(ctx)
-                    formatted_main_positions = "\n" .join(position for position in new_main_positions)
+                    formatted_main_positions = "\n" .join(
+                        position for position in new_main_positions)
                     type = 'main'
-                    cursor.execute(f"DELETE FROM positions WHERE type = '{type}' and title = '{title}'")
+                    cursor.execute(
+                        f"DELETE FROM positions WHERE type = '{type}' and title = '{title}'")
                     for position in new_main_positions:
                         cursor.execute('INSERT INTO positions(position, user, type, title) VALUES (%s, "", %s, %s)',
-                        (
-                            position,
-                            type,
-                            title
-                        ))
+                                       (
+                                           position,
+                                           type,
+                                           title
+                                       ))
                     mydb.commit()
                     await self._updatemessage(title)
                     await ctx.send(f'Main Positions updated to:\n{formatted_main_positions}')
 
                 elif message.content == options[4]:
                     new_secondary_positions = await self._get_secondary_positions(ctx)
-                    formatted_secondary_positions = "\n" .join(position for position in new_secondary_positions)
+                    formatted_secondary_positions = "\n" .join(
+                        position for position in new_secondary_positions)
                     type = 'secondary'
-                    cursor.execute(f"DELETE FROM positions WHERE type = '{type}' and title = '{title}'")
+                    cursor.execute(
+                        f"DELETE FROM positions WHERE type = '{type}' and title = '{title}'")
                     for position in new_secondary_positions:
                         cursor.execute('INSERT INTO positions(position, user, type, title) VALUES (%s, "", %s, %s)',
-                        (
-                            position,
-                            type,
-                            title
-                        ))
+                                       (
+                                           position,
+                                           type,
+                                           title
+                                       ))
                     mydb.commit()
                     await self._updatemessage(title)
                     await ctx.send(f'Secondary Positions updated to:\n{formatted_secondary_positions}')
 
                 elif message.content == options[5]:
                     new_regional_positions = await self._get_regional_positions(ctx)
-                    formatted_regional_positions = "\n" .join(position for position in new_regional_positions)
+                    formatted_regional_positions = "\n" .join(
+                        position for position in new_regional_positions)
                     type = 'regional'
-                    cursor.execute(f"DELETE FROM positions WHERE type = '{type}' and title = '{title}'")
+                    cursor.execute(
+                        f"DELETE FROM positions WHERE type = '{type}' and title = '{title}'")
                     for position in new_regional_positions:
                         cursor.execute('INSERT INTO positions(position, user, type, title) VALUES (%s, "", %s, %s)',
-                        (
-                            position,
-                            type,
-                            title
-                        ))
+                                       (
+                                           position,
+                                           type,
+                                           title
+                                       ))
                     mydb.commit()
                     await self._updatemessage(title)
                     await ctx.send(f'Regional Positions updated to:\n{formatted_regional_positions}')
@@ -255,15 +247,18 @@ class VTCcog(commands.Cog):
                     confirm_delete = await self._getconfirmation(ctx, title)
 
                     if confirm_delete == title:
-                        cursor.execute(f"SELECT * FROM staffing WHERE title = '{title}'")
+                        cursor.execute(
+                            f"SELECT * FROM staffing WHERE title = '{title}'")
                         all_details = cursor.fetchone()
                         channel_id = all_details[4]
                         message_id = all_details[5]
                         channel = self.bot.get_channel(int(channel_id))
                         message = await channel.fetch_message(int(message_id))
                         await message.delete()
-                        cursor.execute(f"DELETE FROM staffing WHERE title = '{title}'")
-                        cursor.execute(f"DELETE FROM positions WHERE title = '{title}'")
+                        cursor.execute(
+                            f"DELETE FROM staffing WHERE title = '{title}'")
+                        cursor.execute(
+                            f"DELETE FROM positions WHERE title = '{title}'")
                         mydb.commit()
 
                         await ctx.send(f'Staffing for `{title}` has been deleted')
@@ -281,69 +276,81 @@ class VTCcog(commands.Cog):
             raise e
 
     @cog_ext.cog_slash(name="book", guild_ids=guild_id, description='Bot books selected position for selected staffing')
-    async def book(self, ctx, title, position) -> None:
+    async def book(self, ctx, position) -> None:
         try:
             mydb = db_connection()
             cursor = mydb.cursor()
-            cursor.execute(f"SELECT position, user FROM positions WHERE title ='{title}'")
 
+            cursor.execute(
+                f"SELECT channel_id FROM staffing")
+            event_channel = cursor.fetchall()
+            
+            cursor.execute(f"SELECT title FROM staffing WHERE channel_id = '{ctx.channel_id}'")
+            title = cursor.fetchone()
+
+            cursor.execute(
+                f"SELECT position, user FROM positions WHERE title ='{title[0]}'")
             positions = cursor.fetchall()
 
-            cursor.execute(f"SELECT channel_id FROM staffing WHERE title = '{title}'")
-            
-            event_data = cursor.fetchone()
             usernick = ctx.author.id
-            if ctx.channel.id == event_data[0]:
+            if any(ctx.channel_id in channel for channel in event_channel):
                 mydb.reconnect()
                 if any(f'<@{usernick}>' in match for match in positions):
                     await ctx.send(f"<@{usernick}> You already have a booking!")
                     await asyncio.sleep(5)
                     await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
                 elif any(position + ':' in match for match in positions):
-                    cursor.execute(f"UPDATE positions SET user = '<@{usernick}>' WHERE position = '{position}:' and title = '{title}'")
+                    cursor.execute(
+                        f"UPDATE positions SET user = '<@{usernick}>' WHERE position = '{position}:' and title = '{title[0]}'")
+
                     mydb.commit()
-                    await self._updatemessage(title)
-                    await ctx.send(f"<@{usernick}> Confirmed booking for position {position} for event {title}")
+                    await self._updatemessage(title[0])
+                    await ctx.send(f"<@{usernick}> Confirmed booking for position `{position}` for event `{title[0]}`")
                     await asyncio.sleep(5)
                     await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
             else:
-                await ctx.send(f"<@{usernick}> Please use the <#{event_data[0]}> channel")
+                await ctx.send(f"<@{usernick}> Please use the correct channel")
                 await asyncio.sleep(5)
                 await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+
         except Exception as e:
-            await ctx.send(f"Error booking position {position} for event {title} - {e}")
+            await ctx.send(f"Error booking position {position} - {e}")
             raise e
 
     @cog_ext.cog_slash(name="unbook", guild_ids=guild_id, description='Bot books selected position for selected staffing')
-    async def unbook(self, ctx, title) -> None:
+    async def unbook(self, ctx) -> None:
         try:
             mydb = db_connection()
             cursor = mydb.cursor()
 
-            cursor.execute(f"SELECT position, user FROM positions WHERE title = '{title}'")
+            cursor.execute(
+                f"SELECT channel_id FROM staffing")
+            event_channel = cursor.fetchall()
             
+            cursor.execute(f"SELECT title FROM staffing WHERE channel_id = '{ctx.channel_id}'")
+            title = cursor.fetchone()
+
+            cursor.execute(
+                f"SELECT position, user FROM positions WHERE title ='{title[0]}'")
             positions = cursor.fetchall()
 
-            cursor.execute(f"SELECT channel_id FROM staffing WHERE title = '{title}'")
-
-            event_data = cursor.fetchone()
-
             usernick = ctx.author.id
-            if ctx.channel.id == event_data[0]:
+            if any(ctx.channel_id in channel for channel in event_channel):
                 mydb.reconnect()
                 if any(f'<@{usernick}>' in match for match in positions):
-                    cursor.execute(f"UPDATE positions SET user = '' WHERE user = '<@{usernick}>' and title = '{title}'")
+                    cursor.execute(
+                        f"UPDATE positions SET user = '' WHERE user = '<@{usernick}>' and title = '{title[0]}'")
                     mydb.commit()
-                    await self._updatemessage(title)
+                    await self._updatemessage(title[0])
                     await ctx.send(f"<@{usernick}> Confirmed cancelling of your booking!")
                     await asyncio.sleep(5)
                     await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
             else:
-                await ctx.send(f"<@{usernick}> Please use the <#{event_data[0]}> channel")
+                await ctx.send(f"<@{usernick}> Please use the correct channel")
                 await asyncio.sleep(5)
                 await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
         except Exception as e:
-            await ctx.send(f"Error unbooking position for event {title} - {e}")
+            await ctx.send(f"Error unbooking position for event {title[0]} - {e}")
             raise e
 
     #
@@ -366,39 +373,22 @@ class VTCcog(commands.Cog):
             month = date.strftime("%m")
             year = date.strftime("%Y")
             formatted_date = datetime.datetime(int(year), int(month), int(day))
-            if now.date() == formatted_date.date() and now.hour == 1 and 15 <= now.minute <= 15:
+            if now.date() == formatted_date.date() and now.hour == 23 and 00 <= now.minute <= 00:
                 title = staffing[1]
-                cursor.execute(f"UPDATE positions SET user = '' WHERE title = '{title}'")
+                cursor.execute(
+                    f"UPDATE positions SET user = '' WHERE title = '{title}'")
                 newdate = ''
-                if formatted_date.weekday() == 0:
-                    today = datetime.date.today()
-                    newdate = today + datetime.timedelta(days=0-today.weekday(), weeks=1)
+                times = 7
+                i = -1
+                for _ in range(int(times)):
+                    i += 1
+                    if formatted_date.weekday() == i:
+                        today = datetime.date.today()
+                        newdate = today + \
+                            datetime.timedelta(days=i-today.weekday(), weeks=1)
 
-                elif formatted_date.weekday() == 1:
-                    today = datetime.date.today()
-                    newdate = today + datetime.timedelta(days=1-today.weekday(), weeks=1)
-
-                elif formatted_date.weekday() == 2:
-                    today = datetime.date.today()
-                    newdate = today + datetime.timedelta(days=2-today.weekday(), weeks=1)
-
-                elif formatted_date.weekday() == 3:
-                    today = datetime.date.today()
-                    newdate = today + datetime.timedelta(days=3-today.weekday(), weeks=1)
-
-                elif formatted_date.weekday() == 4:
-                    today = datetime.date.today()
-                    newdate = today + datetime.timedelta(days=4-today.weekday(), weeks=1)
-
-                elif formatted_date.weekday() == 5:
-                    today = datetime.date.today()
-                    newdate = today + datetime.timedelta(days=5-today.weekday(), weeks=1)
-
-                elif formatted_date.weekday() == 6:
-                    today = datetime.date.today()
-                    newdate = today + datetime.timedelta(days=6-today.weekday(), weeks=1)
-                
-                cursor.execute(f"UPDATE staffing SET date = '{newdate}' WHERE title = '{title}'")
+                cursor.execute(
+                    f"UPDATE staffing SET date = '{newdate}' WHERE title = '{title}'")
                 mydb.commit()
                 await self._updatemessage(title)
                 channel = self.bot.get_channel(int(staffing[4]))
@@ -453,33 +443,14 @@ class VTCcog(commands.Cog):
             await ctx.send('Event Day of the week? **FYI this command expires in 1 minute** Available days: ' + str(avail_days)[1:-1])
             message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
 
-            if message.content == avail_days[0]:
-                today = datetime.date.today()
-                event_day = today + datetime.timedelta(days=0-today.weekday(), weeks=1)
-
-            elif message.content == avail_days[1]:
-                today = datetime.date.today()
-                event_day = today + datetime.timedelta(days=1-today.weekday(), weeks=1)
-
-            elif message.content == avail_days[2]:
-                today = datetime.date.today()
-                event_day = today + datetime.timedelta(days=2-today.weekday(), weeks=1)
-
-            elif message.content == avail_days[3]:
-                today = datetime.date.today()
-                event_day = today + datetime.timedelta(days=3-today.weekday(), weeks=1)
-
-            elif message.content == avail_days[4]:
-                today = datetime.date.today()
-                event_day = today + datetime.timedelta(days=4-today.weekday(), weeks=1)
-
-            elif message.content == avail_days[5]:
-                today = datetime.date.today()
-                event_day = today + datetime.timedelta(days=5-today.weekday(), weeks=1)
-
-            elif message.content == avail_days[6]:
-                today = datetime.date.today()
-                event_day = today + datetime.timedelta(days=6-today.weekday(), weeks=1)
+            times = 7
+            i = -1
+            for _ in range(int(times)):
+                i += 1
+                if message.content == avail_days[i]:
+                    today = datetime.date.today()
+                    event_day = today + \
+                        datetime.timedelta(days=i-today.weekday(), weeks=1)
 
             if len(message.content) < 1:
                 await ctx.send('Setup cancelled. No message was provided.')
@@ -489,7 +460,7 @@ class VTCcog(commands.Cog):
         except Exception as e:
             await ctx.send(f'Error getting date of the event - {e}')
             raise e
-    
+
     async def _get_description(self, ctx):
         """
         Function gets the description of the event from a message that'll be included in the staffing message
@@ -508,7 +479,7 @@ class VTCcog(commands.Cog):
         except Exception as e:
             await ctx.send(f'Error getting the Staffing message - {e}')
             raise e
-        
+
     async def _get_main_positions(self, ctx):
         """
         Function gets the main positions of the event from a message that'll be included in the staffing message
@@ -527,8 +498,8 @@ class VTCcog(commands.Cog):
                 position.append(message.content + ':')
 
             if len(message.content) < 1:
-                    await ctx.send('Setup cancelled. No positions was provided.')
-                    raise ValueError
+                await ctx.send('Setup cancelled. No positions was provided.')
+                raise ValueError
 
             return position
         except Exception as e:
@@ -553,8 +524,8 @@ class VTCcog(commands.Cog):
                 position.append(message.content + ':')
 
             if len(message.content) < 1:
-                    await ctx.send('Setup cancelled. No positions was provided.')
-                    raise ValueError
+                await ctx.send('Setup cancelled. No positions was provided.')
+                raise ValueError
 
             return position
         except Exception as e:
@@ -579,8 +550,8 @@ class VTCcog(commands.Cog):
                 position.append(message.content + ':')
 
             if len(message.content) < 1:
-                    await ctx.send('Setup cancelled. No positions was provided.')
-                    raise ValueError
+                await ctx.send('Setup cancelled. No positions was provided.')
+                raise ValueError
 
             return position
         except Exception as e:
@@ -625,23 +596,6 @@ class VTCcog(commands.Cog):
             await ctx.send(f'Error getting channel - {e}')
             raise e
 
-    async def _read_titles(self):
-        try:
-            mydb = db_connection()
-            cursor = mydb.cursor()
-
-            cursor.execute(
-                'SELECT title FROM STAFFING'
-            )
-            titles = cursor.fetchall()
-            all_titles = []
-            for title in titles:
-                all_titles.append(title[0])
-            return all_titles
-        except Exception as e:
-            await print(f'Error reading titles - {e}')
-            raise e
-
     async def _updatemessage(self, title):
         try:
             mydb = db_connection()
@@ -657,28 +611,34 @@ class VTCcog(commands.Cog):
             message_id = events[5]
 
             type = 'main'
-            cursor.execute(f"SELECT * FROM positions WHERE title = '{title}' and type = '{type}'")
+            cursor.execute(
+                f"SELECT * FROM positions WHERE title = '{title}' and type = '{type}'")
             main_pos = cursor.fetchall()
             main_positions = []
             for position in main_pos:
                 main_positions.append(f'{position[1]} {position[2]}')
-                main_position_data = "\n" .join(position for position in main_positions)
+                main_position_data = "\n" .join(
+                    position for position in main_positions)
 
             type = 'secondary'
-            cursor.execute(f"SELECT * FROM positions WHERE title = '{title}' and type = '{type}'")
+            cursor.execute(
+                f"SELECT * FROM positions WHERE title = '{title}' and type = '{type}'")
             secondary_pos = cursor.fetchall()
             secondary_positions = []
             for position in secondary_pos:
                 secondary_positions.append(f'{position[1]} {position[2]}')
-                secondary_position_data = "\n" .join(position for position in secondary_positions)
+                secondary_position_data = "\n" .join(
+                    position for position in secondary_positions)
 
             type = 'regional'
-            cursor.execute(f"SELECT * FROM positions WHERE title = '{title}' and type = '{type}'")
+            cursor.execute(
+                f"SELECT * FROM positions WHERE title = '{title}' and type = '{type}'")
             regional_pos = cursor.fetchall()
             regional_positions = []
             for position in regional_pos:
                 regional_positions.append(f'{position[1]} {position[2]}')
-                regional_position_data = "\n" .join(position for position in regional_positions)
+                regional_position_data = "\n" .join(
+                    position for position in regional_positions)
 
             format_staffing_message = ""
 

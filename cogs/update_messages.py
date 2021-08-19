@@ -53,7 +53,7 @@ class UpdateCountryMessage(commands.Cog):
         :param message_id:
         :return:
         """
-        if option is "1":
+        if option == "1":
             channel = discord.utils.get(ctx.guild.channels, id=ROLES_CHANNEL)
             if channel:
                 author = {
@@ -84,7 +84,7 @@ class UpdateCountryMessage(commands.Cog):
                         except Exception as e:
                             print(e)
         
-        elif option is "2":
+        elif option == "2":
             """
             Function posts updated countries message
             :param ctx:
@@ -123,7 +123,7 @@ class UpdateCountryMessage(commands.Cog):
                             await message.edit(content=text, embed=msg)
                         except Exception as e:
                             print(e)
-        elif option is "3":
+        elif option == "3":
             """
             Function posts updated welcome and rules message
             :param ctx:
