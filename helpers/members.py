@@ -15,7 +15,7 @@ async def get_division_members():
     return result
     
 
-async def __fetch_page(result, url = "https://api.vatsim.net/api/subdivisions/SCA/members/"):
+async def __fetch_page(result, url = "https://api.vatsim.net/api/subdivisions/SCA/members/?paginated"):
     """
     Recursive functions to fetch each page's data
     """

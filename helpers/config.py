@@ -79,7 +79,7 @@ BOT_CHANNEL = int(os.getenv('BOT_CHANNEL'))
 
 CHECK_MEMBERS_INTERVAL = int(os.getenv('CHECK_MEMBERS_INTERVAL', 86400))
 POST_EVENTS_INTERVAL = int(os.getenv('POST_EVENTS_INTERVAL', 30))
-GET_EVENTS_INTERVAL = int(os.getenv('POST_EVENTS_INTERVAL', 900))
+GET_EVENTS_INTERVAL = int(os.getenv('GET_EVENTS_INTERVAL', 900))
 
 def prefix() -> list:
     return PREFIXES

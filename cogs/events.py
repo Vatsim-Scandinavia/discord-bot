@@ -127,7 +127,7 @@ class EventsCog(commands.Cog):
 
                 # Set the correct event start time to embed if its recurring
                 start_time = event.start
-                if event.is_recurring_event:
+                if event.is_recurring_event() == True:
                     start_time = event._get_recurred_date(event.start, event.recurring, event.recurring_interval, event.recurring_end)
 
                 # Create the embed message
@@ -140,7 +140,7 @@ class EventsCog(commands.Cog):
                     footer=self.FOOTER
                 )
 
-                text = f'{role.mention}\n:clock2: **This event starts in two hours!**'
+                text = f'{role.mention}\n:clock2: **{event.name}** is starting in two hours!'
                 await channel.send(text, embed=msg)
 
                 event.mark_as_published()
@@ -264,7 +264,9 @@ class EventsCog(commands.Cog):
                 timestamp=e.start, 
                 footer=self.FOOTER
             )
-            await channel.send(embed=msg)
+
+            text = f':calendar_spiral: A new event has been scheduled.'
+            await channel.send(text, embed=msg)
 
 
 
