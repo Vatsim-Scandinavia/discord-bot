@@ -13,17 +13,17 @@ CREATE TABLE `events` (
   `published` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id` (`id`) USING BTREE
-)
+);
 
 CREATE TABLE IF NOT EXISTS `staffing` (
-    `id` int(11) NOT NULL AUTO_INCREMENT,
-    `title` varchar(255) NOT NULL,
-    `date` date DEFAULT NULL,
-    `description` text NOT NULL,
-    `channel_id` bigint NOT NULL,
-    `message_id` bigint NOT NULL,
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `id` (`id`) USING BTREE
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `title` varchar(255) NOT NULL,
+  `date` date DEFAULT NULL,
+  `description` text NOT NULL,
+  `channel_id` bigint NOT NULL,
+  `message_id` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id` (`id`) USING BTREE
 );
 
 CREATE TABLE IF NOT EXISTS `positions` (

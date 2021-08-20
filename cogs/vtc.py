@@ -1,10 +1,8 @@
 import datetime
 import asyncio
-from os import name
 
 from discord.ext import commands, tasks
 from discord_slash import cog_ext
-from discord_slash.utils.manage_commands import create_choice, create_option
 
 from helpers.config import GUILD_ID, AVAILABLE_EVENT_DAYS
 from helpers.message import staff_roles
@@ -42,6 +40,8 @@ class VTCcog(commands.Cog):
         secondary_position = await self._get_secondary_positions(ctx)
         regional_position = await self._get_regional_positions(ctx)
         channels = await self._get_channel(ctx)
+
+        description = description + "\nTo book your position use `/book [callsign]` e.g. `/book EXXX_TWR`"
 
         format_staffing_message = ""
 
@@ -178,6 +178,7 @@ class VTCcog(commands.Cog):
 
                 elif message.content == options[2]:
                     newdescription = await self._get_description(ctx)
+                    newdescription = newdescription + "\nTo book your position use `/book [callsign]` e.g. `/book EXXX_TWR`"
                     cursor.execute(
                         'UPDATE staffing SET description = %s WHERE title = %s',
                         (
