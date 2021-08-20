@@ -4,14 +4,14 @@ import asyncio
 from discord.ext import commands, tasks
 from discord_slash import cog_ext
 
-from helpers.config import GUILD_ID, AVAILABLE_EVENT_DAYS
+from helpers.config import GUILD_ID, AVAILABLE_EVENT_DAYS, STAFFING_INTERVAL
 from helpers.message import staff_roles
 from helpers.database import db_connection
 
 guild_id = [GUILD_ID]
 
 
-class VTCcog(commands.Cog):
+class Staffingcog(commands.Cog):
     #
     # ----------------------------------
     # COG FUNCTIONS
@@ -32,7 +32,7 @@ class VTCcog(commands.Cog):
     #
     @cog_ext.cog_slash(name="setupstaffing", guild_ids=guild_id, description="Bot setups staffing information")
     @commands.has_any_role(*staff_roles())
-    async def setupstaffing(self, ctx) -> None:
+    async def setupstaffing(self, ctx):
         title = await self._get_title(ctx)
         date = await self._get_date(ctx)
         description = await self._get_description(ctx)
@@ -41,7 +41,7 @@ class VTCcog(commands.Cog):
         regional_position = await self._get_regional_positions(ctx)
         channels = await self._get_channel(ctx)
 
-        description = description + "\nTo book your position use `/book [callsign]` e.g. `/book EXXX_TWR`"
+        description = description + "\nTo book this position, write `/book`, press TAB and then write the callsign."
 
         format_staffing_message = ""
 
@@ -112,7 +112,7 @@ class VTCcog(commands.Cog):
 
     @cog_ext.cog_slash(name="showallstaffings", guild_ids=guild_id, description="Bot shows all staffings available")
     @commands.has_any_role(*staff_roles())
-    async def showallstaffings(self, ctx) -> None:
+    async def showallstaffings(self, ctx):
         mydb = db_connection()
         cursor = mydb.cursor()
         cursor.execute(
@@ -127,7 +127,7 @@ class VTCcog(commands.Cog):
 
     @cog_ext.cog_slash(name="updatestaffing", guild_ids=guild_id, description='Bot updates selected staffing')
     @commands.has_any_role(*staff_roles())
-    async def updatestaffing(self, ctx, title) -> None:
+    async def updatestaffing(self, ctx, title):
         try:
             mydb = db_connection()
             cursor = mydb.cursor()
@@ -178,7 +178,7 @@ class VTCcog(commands.Cog):
 
                 elif message.content == options[2]:
                     newdescription = await self._get_description(ctx)
-                    newdescription = newdescription + "\nTo book your position use `/book [callsign]` e.g. `/book EXXX_TWR`"
+                    newdescription = newdescription + "\nTo book this position, write `/book`, press TAB and then write the callsign."
                     cursor.execute(
                         'UPDATE staffing SET description = %s WHERE title = %s',
                         (
@@ -277,7 +277,7 @@ class VTCcog(commands.Cog):
             raise e
 
     @cog_ext.cog_slash(name="book", guild_ids=guild_id, description='Bot books selected position for selected staffing')
-    async def book(self, ctx, position) -> None:
+    async def book(self, ctx, position):
         try:
             mydb = db_connection()
             cursor = mydb.cursor()
@@ -300,15 +300,17 @@ class VTCcog(commands.Cog):
                     await ctx.send(f"<@{usernick}> You already have a booking!")
                     await asyncio.sleep(5)
                     await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
-                elif any(position + ':' in match for match in positions):
+                elif any(position.upper() + ':' in match for match in positions):
                     cursor.execute(
-                        f"UPDATE positions SET user = '<@{usernick}>' WHERE position = '{position}:' and title = '{title[0]}'")
+                        f"UPDATE positions SET user = '<@{usernick}>' WHERE position = '{position.upper()}:' and title = '{title[0]}'")
 
                     mydb.commit()
                     await self._updatemessage(title[0])
-                    await ctx.send(f"<@{usernick}> Confirmed booking for position `{position}` for event `{title[0]}`")
+                    await ctx.send(f"<@{usernick}> Confirmed booking for position `{position.upper()}` for event `{title[0]}`")
                     await asyncio.sleep(5)
                     await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                else:
+                    await ctx.send(f"<@{usernick}> The bot could not found the position you tried to book.")
             else:
                 await ctx.send(f"<@{usernick}> Please use the correct channel")
                 await asyncio.sleep(5)
@@ -319,7 +321,7 @@ class VTCcog(commands.Cog):
             raise e
 
     @cog_ext.cog_slash(name="unbook", guild_ids=guild_id, description='Bot books selected position for selected staffing')
-    async def unbook(self, ctx) -> None:
+    async def unbook(self, ctx):
         try:
             mydb = db_connection()
             cursor = mydb.cursor()
@@ -359,8 +361,8 @@ class VTCcog(commands.Cog):
     # TASK LOOP FUNCTIONS
     # ----------------------------------
     #
-    @tasks.loop(seconds=60)
-    async def autoreset(self) -> None:
+    @tasks.loop(seconds=STAFFING_INTERVAL)
+    async def autoreset(self):
         await self.bot.wait_until_ready()
         mydb = db_connection()
         cursor = mydb.cursor()
@@ -673,4 +675,4 @@ class VTCcog(commands.Cog):
             await ctx.send(f'Error getting message - {e}')
 
 def setup(bot):
-    bot.add_cog(VTCcog(bot))
+    bot.add_cog(Staffingcog(bot))

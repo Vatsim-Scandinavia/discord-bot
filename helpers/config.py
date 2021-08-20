@@ -20,7 +20,7 @@ COGS = [
     'cogs.tasks',
     'cogs.events',
     'cogs.update_messages',
-    'cogs.vtc'
+    'cogs.staffing'
 ]
 
 COGS_LOAD = {
@@ -30,7 +30,7 @@ COGS_LOAD = {
     'check_members': 'cogs.tasks',
     'events': 'cogs.events',
     'update': 'cogs.update_messages',
-    'vtc': 'cogs.vtc'
+    'staffing': 'cogs.staffing'
 }
 
 ADMIN_ROLES = [
@@ -80,6 +80,8 @@ BOT_CHANNEL = int(os.getenv('BOT_CHANNEL'))
 CHECK_MEMBERS_INTERVAL = int(os.getenv('CHECK_MEMBERS_INTERVAL', 86400))
 POST_EVENTS_INTERVAL = int(os.getenv('POST_EVENTS_INTERVAL', 30))
 GET_EVENTS_INTERVAL = int(os.getenv('GET_EVENTS_INTERVAL', 900))
+
+STAFFING_INTERVAL = int(os.getenv('STAFFING_INTERVAL'))
 
 def prefix() -> list:
     return PREFIXES
