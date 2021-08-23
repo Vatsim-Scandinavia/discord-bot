@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord_slash import cog_ext, SlashContext
 from discord_slash.utils.manage_commands import create_choice, create_option
 
-from helpers.config import ROLES_CHANNEL, GUILD_ID, RULES_CHANNEL
+from helpers.config import ROLES_CHANNEL, GUILD_ID, RULES_CHANNEL, DIVISION_URL
 from helpers.message import embed
 from helpers.message import roles
 
@@ -58,7 +58,7 @@ class UpdateCountryMessage(commands.Cog):
             if channel:
                 author = {
                     'name': self.bot.user.name,
-                    'url': 'https://vatsim-scandinavia.org',
+                    'url': DIVISION_URL,
                     'icon': self.bot.user.avatar_url,
                 }
                 if message_id is None:
@@ -96,7 +96,7 @@ class UpdateCountryMessage(commands.Cog):
             if channel:
                 author = {
                     'name': self.bot.user.name,
-                    'url': 'https://vatsim-scandinavia.org',
+                    'url': DIVISION_URL,
                     'icon': self.bot.user.avatar_url,
                 }
                 if message_id is None:
@@ -134,7 +134,7 @@ class UpdateCountryMessage(commands.Cog):
             if channel:
                 author = {
                     'name': self.bot.user.name,
-                    'url': 'https://vatsim-scandinavia.org',
+                    'url': DIVISION_URL,
                     'icon': self.bot.user.avatar_url,
                 }
                 if message_id is None:

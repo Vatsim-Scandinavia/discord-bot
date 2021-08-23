@@ -4,7 +4,7 @@ import datetime
 from discord.ext import commands, tasks
 from discord_slash import cog_ext, SlashContext
 from helpers.message import roles, embed
-from helpers.config import COGS_LOAD, GUILD_ID, BOT_CHANNEL
+from helpers.config import COGS_LOAD, GUILD_ID, BOT_CHANNEL, STAFFING_INTERVAL, DEBUG
 
 
 class AdminCog(commands.Cog):
@@ -62,7 +62,7 @@ class AdminCog(commands.Cog):
         else:
             await ctx.send('**`SUCCESS`**')
 
-    @tasks.loop(seconds=60)
+    @tasks.loop(seconds=STAFFING_INTERVAL)
     async def reload_vtc(self):
         """
             Command which Reloads a Module.
@@ -127,7 +127,7 @@ class AdminCog(commands.Cog):
         :return None:
         :raise Exception:
         """
-        if os.getenv('DEBUG') == 'True':
+        if DEBUG == 'True':
             try:
                 msg_delete = []
                 async for msg in ctx.channel.history(limit=number):

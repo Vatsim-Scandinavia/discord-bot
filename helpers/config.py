@@ -65,11 +65,29 @@ AVAILABLE_EVENT_DAYS = [
 ]
 
 # Environment variables
+DEBUG = os.getenv('DEBUG')
+
+BOT_TOKEN = str(os.getenv('BOT_TOKEN'))
+FORUM_API_TOKEN = os.getenv('FORUM_API_TOKEN')
+VATSIM_API_TOKEN = str(os.getenv('VATSIM_API_TOKEN'))
+
+EVENT_CALENDAR_URL = str(os.getenv('EVENT_CALENDAR_URL'))
+EVENT_CALENDAR_TYPE = int(os.getenv('EVENT_CALENDAR_TYPE'))
+
+VATSIM_CHECK_MEMBER_URL = str(os.getenv('VATSIM_CHECK_MEMBER_URL'))
+DIVISION_URL = str(os.getenv('DIVISION_URL'))
+
+BOT_DB_HOST = str(os.getenv('BOT_DB_HOST'))
+BOT_DB_USER = str(os.getenv('BOT_DB_USER'))
+BOT_DB_PASSWORD = str(os.getenv('BOT_DB_PASSWORD'))
+BOT_DB_NAME = str(os.getenv('BOT_DB_NAME'))
+
 VATSCA_MEMBER_ROLE = int(os.getenv('VATSCA_MEMBER_ROLE'))
 VATSIM_MEMBER_ROLE = int(os.getenv('VATSIM_MEMBER_ROLE'))
 EVENTS_ROLE = int(os.getenv('EVENTS_ROLE'))
 
 GUILD_ID = int(os.getenv('GUILD_ID'))
+STAFFING_INTERVAL = int(os.getenv('STAFFING_INTERVAL'))
 
 EVENTS_CHANNEL = int(os.getenv('EVENTS_CHANNEL'))
 RULES_CHANNEL = int(os.getenv('RULES_CHANNEL'))
@@ -80,8 +98,7 @@ BOT_CHANNEL = int(os.getenv('BOT_CHANNEL'))
 CHECK_MEMBERS_INTERVAL = int(os.getenv('CHECK_MEMBERS_INTERVAL', 86400))
 POST_EVENTS_INTERVAL = int(os.getenv('POST_EVENTS_INTERVAL', 30))
 GET_EVENTS_INTERVAL = int(os.getenv('GET_EVENTS_INTERVAL', 900))
-
-STAFFING_INTERVAL = int(os.getenv('STAFFING_INTERVAL'))
+DELETE_EVENTS_INTERVAL = int(os.getenv('DELETE_EVENTS_INTERVAL'))
 
 def prefix() -> list:
     return PREFIXES

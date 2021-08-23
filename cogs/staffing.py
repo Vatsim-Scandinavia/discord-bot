@@ -41,7 +41,7 @@ class Staffingcog(commands.Cog):
         regional_position = await self._get_regional_positions(ctx)
         channels = await self._get_channel(ctx)
 
-        description = description + "\nTo book this position, write `/book`, press TAB and then write the callsign."
+        description = description + "\nTo book a position, write `/book`, press TAB and then write the callsign.\n**To unbook a position, write `/unbook` press TAB and then send.**"
 
         format_staffing_message = ""
 
@@ -178,7 +178,7 @@ class Staffingcog(commands.Cog):
 
                 elif message.content == options[2]:
                     newdescription = await self._get_description(ctx)
-                    newdescription = newdescription + "\nTo book this position, write `/book`, press TAB and then write the callsign."
+                    newdescription = newdescription + "\nTo book a position, write `/book`, press TAB and then write the callsign."
                     cursor.execute(
                         'UPDATE staffing SET description = %s WHERE title = %s',
                         (

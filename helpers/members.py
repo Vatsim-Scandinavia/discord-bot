@@ -1,5 +1,6 @@
 import requests
 import os
+from helpers.config import VATSIM_CHECK_MEMBER_URL, VATSIM_API_TOKEN
 
 async def get_division_members():
     """
@@ -15,12 +16,12 @@ async def get_division_members():
     return result
     
 
-async def __fetch_page(result, url = "https://api.vatsim.net/api/subdivisions/SCA/members/?paginated"):
+async def __fetch_page(result, url = VATSIM_CHECK_MEMBER_URL):
     """
     Recursive functions to fetch each page's data
     """
 
-    request = requests.get(url, headers={'Authorization': 'Token ' + os.getenv('VATSIM_API_TOKEN')})
+    request = requests.get(url, headers={'Authorization': 'Token ' + VATSIM_API_TOKEN})
     if request.status_code == requests.codes.ok:
         feedback = request.json()
     

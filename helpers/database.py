@@ -1,6 +1,7 @@
 import mysql.connector
 from mysql.connector import Error
 import os
+from helpers.config import BOT_DB_HOST, BOT_DB_USER, BOT_DB_PASSWORD, BOT_DB_NAME
 
 _connection = None
 
@@ -13,10 +14,11 @@ def db_connection():
 
     try:
         _connection = mysql.connector.connect(
-            host=os.getenv('BOT_DB_HOST'),
-            user=os.getenv('BOT_DB_USER'),
-            password=os.getenv('BOT_DB_PASSWORD'),
-            database=os.getenv('BOT_DB_NAME'))
+            host=BOT_DB_HOST,
+            user=BOT_DB_USER,
+            password=BOT_DB_PASSWORD,
+            database=BOT_DB_NAME
+        )
 
         if _connection.is_connected():
             print("[MySQL] Connected! Server version:", _connection.get_server_info())
