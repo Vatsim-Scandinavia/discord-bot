@@ -368,7 +368,7 @@ class Staffingcog(commands.Cog):
         cursor = mydb.cursor()
         cursor.execute('SELECT * FROM staffing')
         staffings = cursor.fetchall()
-        now = datetime.datetime.today()
+        now = datetime.datetime.utcnow()
 
         for staffing in staffings:
             date = staffing[2]
@@ -376,7 +376,7 @@ class Staffingcog(commands.Cog):
             month = date.strftime("%m")
             year = date.strftime("%Y")
             formatted_date = datetime.datetime(int(year), int(month), int(day))
-            if now.date() == formatted_date.date() and now.hour == 23 and 00 <= now.minute <= 00:
+            if now.date() == formatted_date.date() and now.hour == 23 and 0 <= now.minute <= 5:
                 title = staffing[1]
                 cursor.execute(
                     f"UPDATE positions SET user = '' WHERE title = '{title}'")

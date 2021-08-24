@@ -11,10 +11,10 @@ class AdminCog(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.reload_vtc.start()
+        self.reload_staffing.start()
 
     def cog_unload(self):
-        self.reload_vtc.cancel()
+        self.reload_staffing.cancel()
 
     guild_ids = [GUILD_ID]
 
@@ -63,7 +63,7 @@ class AdminCog(commands.Cog):
             await ctx.send('**`SUCCESS`**')
 
     @tasks.loop(seconds=STAFFING_INTERVAL)
-    async def reload_vtc(self):
+    async def reload_staffing(self):
         """
             Command which Reloads a Module.
         """
@@ -73,8 +73,8 @@ class AdminCog(commands.Cog):
 
         try:
             if now.weekday() == 0 and now.hour == 23 and 00 <= now.minute <= 00:
-                self.bot.unload_extension(COGS_LOAD["vtc"])
-                self.bot.load_extension(COGS_LOAD["vtc"])
+                self.bot.unload_extension(COGS_LOAD["staffing"])
+                self.bot.load_extension(COGS_LOAD["staffing"])
         except Exception as e:
             await channel.send(f'**`ERROR:`** {type(e).__name__} - {e}')
 
