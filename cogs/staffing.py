@@ -41,7 +41,7 @@ class Staffingcog(commands.Cog):
         regional_position = await self._get_regional_positions(ctx)
         channels = await self._get_channel(ctx)
 
-        description = description + "\nTo book this position, write `/book`, press TAB and then write the callsign."
+        description = description + "\nTo book this position, write `/book`, press TAB and then write the callsign.\nTo unbook a position, write `/unbook`, press TAB and then send the message"
 
         format_staffing_message = ""
 
@@ -178,7 +178,7 @@ class Staffingcog(commands.Cog):
 
                 elif message.content == options[2]:
                     newdescription = await self._get_description(ctx)
-                    newdescription = newdescription + "\nTo book this position, write `/book`, press TAB and then write the callsign."
+                    newdescription = newdescription + "\nTo book this position, write `/book`, press TAB and then write the callsign.\nTo unbook a position, write `/unbook`, press TAB and then send the message"
                     cursor.execute(
                         'UPDATE staffing SET description = %s WHERE title = %s',
                         (
@@ -376,7 +376,7 @@ class Staffingcog(commands.Cog):
             month = date.strftime("%m")
             year = date.strftime("%Y")
             formatted_date = datetime.datetime(int(year), int(month), int(day))
-            if now.date() == formatted_date.date() and now.hour == 23 and 00 <= now.minute <= 00:
+            if now.date() == formatted_date.date() and now.hour == 21 and 00 <= now.minute <= 5:
                 title = staffing[1]
                 cursor.execute(
                     f"UPDATE positions SET user = '' WHERE title = '{title}'")
@@ -471,8 +471,8 @@ class Staffingcog(commands.Cog):
         :return:
         """
         try:
-            await ctx.send('Staffing message? **FYI this command expires in 1 minute**')
-            message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
+            await ctx.send('Staffing message? **FYI this command expires in 3 minutes*')
+            message = await self.bot.wait_for('message', timeout=180, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
 
             if len(message.content) < 1:
                 await ctx.send('Setup cancelled. No message was provided.')
