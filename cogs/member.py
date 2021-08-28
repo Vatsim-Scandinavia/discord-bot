@@ -23,7 +23,7 @@ class MemberCog(commands.Cog):
         :param ctx:
         :return:
         """
-        if DEBUG == 'True':
+        if DEBUG == True:
             message = embed(title='test', description='test')
             
             await ctx.send(embed=message)
