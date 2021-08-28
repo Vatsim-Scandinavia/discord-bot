@@ -40,8 +40,8 @@ class Staffingcog(commands.Cog):
         secondary_position = await self._get_secondary_positions(ctx)
         regional_position = await self._get_regional_positions(ctx)
         channels = await self._get_channel(ctx)
-
-        description = description + "\nTo book this position, write `/book`, press TAB and then write the callsign.\nTo unbook a position, write `/unbook`, press TAB and then send the message"
+        
+        description = description + "\n\nTo book a position, write `/book`, press TAB and then write the callsign.\nTo unbook a position, use `/unbook`.\n\n"
 
         format_staffing_message = ""
 
@@ -178,7 +178,8 @@ class Staffingcog(commands.Cog):
 
                 elif message.content == options[2]:
                     newdescription = await self._get_description(ctx)
-                    newdescription = newdescription + "\nTo book this position, write `/book`, press TAB and then write the callsign.\nTo unbook a position, write `/unbook`, press TAB and then send the message"
+                    newdescription = newdescription + "\n\nTo book a position, write `/book`, press TAB and then write the callsign.\nTo unbook a position, use `/unbook`.\n\n"
+
                     cursor.execute(
                         'UPDATE staffing SET description = %s WHERE title = %s',
                         (
@@ -376,7 +377,8 @@ class Staffingcog(commands.Cog):
             month = date.strftime("%m")
             year = date.strftime("%Y")
             formatted_date = datetime.datetime(int(year), int(month), int(day))
-            if now.date() == formatted_date.date() and now.hour == 21 and 00 <= now.minute <= 5:
+
+            if now.date() == formatted_date.date() and now.hour == 23 and 0 <= now.minute <= 5:
                 title = staffing[1]
                 cursor.execute(
                     f"UPDATE positions SET user = '' WHERE title = '{title}'")

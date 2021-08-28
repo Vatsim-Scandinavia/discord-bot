@@ -8,13 +8,11 @@ from discord import InvalidArgument
 from discord.ext import commands
 from discord_slash import SlashCommand
 from dotenv import load_dotenv
-from helpers.config import VATSCA_MEMBER_ROLE, VATSIM_MEMBER_ROLE, GUILD_ID
+from helpers.config import VATSCA_MEMBER_ROLE, VATSIM_MEMBER_ROLE, GUILD_ID, BOT_TOKEN
 from helpers.members import get_division_members
 from helpers import config
 
 load_dotenv('.env')
-
-BOT_TOKEN = str(os.getenv('BOT_TOKEN'))
 
 intents = discord.Intents.all()
 

@@ -1,4 +1,4 @@
-from helpers.config import GUILD_ID
+from helpers.config import GUILD_ID, DEBUG
 import discord
 from discord.ext import commands
 from discord_slash import cog_ext
@@ -23,7 +23,7 @@ class MemberCog(commands.Cog):
         :param ctx:
         :return:
         """
-        if os.getenv('DEBUG') == 'True':
+        if DEBUG == True:
             message = embed(title='test', description='test')
             
             await ctx.send(embed=message)

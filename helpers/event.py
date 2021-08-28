@@ -3,6 +3,7 @@ import os
 
 from datetime import datetime, timedelta
 from helpers.message import embed, event_description, get_image
+from helpers.config import EVENT_CALENDAR_URL, FORUM_API_TOKEN
 
 class Event():
 
@@ -12,9 +13,7 @@ class Event():
     # ----------------------------------
     #
 
-    API_URL = 'https://vatsim-scandinavia.org/api/calendar/events'
-
-    def __init__(self, id, name, img, url, desc, start: datetime, recurring, recurring_interval, recurring_end, published):
+    def __init__(self, id, name, img, url, desc, start: datetime, end: datetime, recurring, recurring_interval, recurring_end, published):
         """
         Create an Event object
         """
@@ -25,6 +24,7 @@ class Event():
         self.desc = desc
         
         self.start = start
+        self.end = end
         self.recurring = recurring
         self.recurring_interval = recurring_interval
         self.recurring_end = recurring_end
@@ -113,10 +113,10 @@ class Event():
         Fetch API updates for this object
         """
 
-        auth = aiohttp.BasicAuth(os.getenv('FORUM_API_TOKEN'), '')
-        
+        auth = aiohttp.BasicAuth(FORUM_API_TOKEN, '')
+
         async with aiohttp.ClientSession() as session:
-            async with session.get(self.API_URL + "/" + str(self.id), auth=auth) as resp:
+            async with session.get(EVENT_CALENDAR_URL + "/" + str(self.id), auth=auth) as resp:
                 
                 if resp.status == 404:
                     return False
@@ -132,6 +132,12 @@ class Event():
                 self.desc = event_description(updated_event.get('description'))
                 
                 self.start = datetime.strptime(updated_event.get('start'), "%Y-%m-%dT%H:%M:%SZ")
+
+                if updated_event.get('end') is None:
+                    self.end = datetime.strptime(updated_event.get('start'), "%Y-%m-%dT%H:%M:%SZ") + timedelta(hours=24)
+                else:
+                    self.end = datetime.strptime(updated_event.get('end'), "%Y-%m-%dT%H:%M:%SZ")
+
 
                 self.hidden = updated_event.get('hidden')
 

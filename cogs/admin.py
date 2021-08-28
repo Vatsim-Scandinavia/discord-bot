@@ -4,17 +4,17 @@ import datetime
 from discord.ext import commands, tasks
 from discord_slash import cog_ext, SlashContext
 from helpers.message import roles, embed
-from helpers.config import COGS_LOAD, GUILD_ID, BOT_CHANNEL
+from helpers.config import COGS_LOAD, GUILD_ID, BOT_CHANNEL, STAFFING_INTERVAL, DEBUG
 
 
 class AdminCog(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.reload_vtc.start()
+        self.reload_staffing.start()
 
     def cog_unload(self):
-        self.reload_vtc.cancel()
+        self.reload_staffing.cancel()
 
     guild_ids = [GUILD_ID]
 
@@ -62,8 +62,8 @@ class AdminCog(commands.Cog):
         else:
             await ctx.send('**`SUCCESS`**')
 
-    @tasks.loop(seconds=60)
-    async def reload_vtc(self):
+    @tasks.loop(seconds=STAFFING_INTERVAL)
+    async def reload_staffing(self):
         """
             Command which Reloads a Module.
         """
@@ -73,8 +73,8 @@ class AdminCog(commands.Cog):
 
         try:
             if now.weekday() == 0 and now.hour == 23 and 00 <= now.minute <= 00:
-                self.bot.unload_extension(COGS_LOAD["vtc"])
-                self.bot.load_extension(COGS_LOAD["vtc"])
+                self.bot.unload_extension(COGS_LOAD["staffing"])
+                self.bot.load_extension(COGS_LOAD["staffing"])
         except Exception as e:
             await channel.send(f'**`ERROR:`** {type(e).__name__} - {e}')
 
@@ -127,7 +127,7 @@ class AdminCog(commands.Cog):
         :return None:
         :raise Exception:
         """
-        if os.getenv('DEBUG') == 'True':
+        if DEBUG == True:
             try:
                 msg_delete = []
                 async for msg in ctx.channel.history(limit=number):
