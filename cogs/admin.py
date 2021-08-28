@@ -127,7 +127,7 @@ class AdminCog(commands.Cog):
         :return None:
         :raise Exception:
         """
-        if DEBUG == 'True':
+        if DEBUG == True:
             try:
                 msg_delete = []
                 async for msg in ctx.channel.history(limit=number):

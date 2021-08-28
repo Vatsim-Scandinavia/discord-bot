@@ -36,7 +36,7 @@ class TasksCog(commands.Cog):
 
         await self.bot.wait_until_ready()
 
-        if DEBUG == 'True' and override == False:
+        if DEBUG == True and override == False:
             print("check_members skipped due to DEBUG ON. You can start manually with command instead.")
             return
 

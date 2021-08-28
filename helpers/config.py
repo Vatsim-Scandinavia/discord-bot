@@ -1,6 +1,7 @@
 import discord
 import os
 from dotenv import load_dotenv
+from distutils.util import strtobool
 
 load_dotenv('.env')
 
@@ -65,7 +66,7 @@ AVAILABLE_EVENT_DAYS = [
 ]
 
 # Environment variables
-DEBUG = os.getenv('DEBUG')
+DEBUG = bool(strtobool(os.getenv('DEBUG', 'False')))
 
 BOT_TOKEN = str(os.getenv('BOT_TOKEN'))
 FORUM_API_TOKEN = os.getenv('FORUM_API_TOKEN')
