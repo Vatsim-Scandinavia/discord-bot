@@ -41,7 +41,7 @@ class Staffingcog(commands.Cog):
         regional_position = await self._get_regional_positions(ctx)
         channels = await self._get_channel(ctx)
 
-        description = description + "\nTo book a position, write `/book`, press TAB and then write the callsign.\n**To unbook a position, write `/unbook` press TAB and then send.**"
+        description = description + "\n\nTo book a position, write `/book`, press TAB and then write the callsign.\nTo unbook a position, use `/unbook`.\n\n"
 
         format_staffing_message = ""
 
