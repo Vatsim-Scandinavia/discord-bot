@@ -368,7 +368,7 @@ class Staffingcog(commands.Cog):
         cursor = mydb.cursor()
         cursor.execute('SELECT * FROM staffing')
         staffings = cursor.fetchall()
-        now = datetime.datetime.today()
+        now = datetime.datetime.utcnow()
 
         for staffing in staffings:
             date = staffing[2]
