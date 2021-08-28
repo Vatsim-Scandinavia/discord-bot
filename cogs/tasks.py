@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from helpers.message import roles
 from helpers.members import get_division_members
 
-from helpers.config import VATSIM_MEMBER_ROLE, CHECK_MEMBERS_INTERVAL, VATSCA_MEMBER_ROLE, ROLE_REASONS, GUILD_ID
+from helpers.config import VATSIM_MEMBER_ROLE, CHECK_MEMBERS_INTERVAL, VATSCA_MEMBER_ROLE, ROLE_REASONS, GUILD_ID, DEBUG
 
 load_dotenv('.env')
 
@@ -28,13 +28,18 @@ class TasksCog(commands.Cog):
     def cog_unload(self):
         self.check_members_loop.cancel()
 
-    async def check_members(self):
+    async def check_members(self, override=False):
         """
         Task checks guild members and assigns roles according to the data we've stored in our system
         :return:
         """
 
         await self.bot.wait_until_ready()
+
+        if DEBUG == 'True' and override == False:
+            print("check_members skipped due to DEBUG ON. You can start manually with command instead.")
+            return
+
         print("check_members started at " + str(datetime.datetime.now().isoformat()))
 
         guild = self.bot.get_guild(GUILD_ID)
@@ -87,7 +92,7 @@ class TasksCog(commands.Cog):
     @commands.has_any_role(*roles())
     async def user_check(self, ctx: SlashContext): 
         await ctx.send("Member refresh in progress")
-        await self.check_members()
+        await self.check_members(True)
         await ctx.send("Member refresh process finished")
 
 
