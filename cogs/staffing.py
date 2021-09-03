@@ -148,7 +148,7 @@ class Staffingcog(commands.Cog):
 
                 if message.content == options[0]:
                     newtitle = await self._get_title(ctx)
-                    cursor.execute(f'UPDATE staffing, positions SET staffing.title = {newtitle}, positions.title = {newtitle} WHERE staffing.title = {title} and positions.title = {title}')
+                    cursor.execute(f"UPDATE staffing, positions SET staffing.title = '{newtitle}', positions.title = '{newtitle}' WHERE staffing.title = '{title}' and positions.title = '{title}'")
                     mydb.commit()
                     title = newtitle
                     await self._updatemessage(title)
@@ -156,7 +156,7 @@ class Staffingcog(commands.Cog):
 
                 elif message.content == options[1]:
                     newdate = await self._get_date(ctx)
-                    cursor.execute(f'UPDATE staffing SET date = {newdate} WHERE title = {title}')
+                    cursor.execute(f"UPDATE staffing SET date = '{newdate}' WHERE title = '{title}'")
                     mydb.commit()
                     await self._updatemessage(title)
                     formatted_date = newdate.strftime("%A %d/%m/%Y")
@@ -166,7 +166,7 @@ class Staffingcog(commands.Cog):
                     newdescription = await self._get_description(ctx)
                     newdescription = newdescription + "\n\nTo book a position, write `/book`, press TAB and then write the callsign.\nTo unbook a position, use `/unbook`.\n\n"
 
-                    cursor.execute(f'UPDATE staffing SET description = {newdescription} WHERE title = {title}')
+                    cursor.execute(f"UPDATE staffing SET description = '{newdescription}' WHERE title = '{title}'")
                     mydb.commit()
                     await self._updatemessage(title)
                     await ctx.send(f'Event description/staffing message has been updated to:\n{newdescription}')
