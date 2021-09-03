@@ -2,7 +2,7 @@ import aiohttp
 import os
 
 from datetime import datetime, timedelta
-from helpers.message import embed, event_description, get_image
+from helpers.message import event_description, get_image
 from helpers.config import EVENT_CALENDAR_URL, FORUM_API_TOKEN
 
 class Event():

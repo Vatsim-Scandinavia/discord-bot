@@ -16,7 +16,7 @@ load_dotenv('.env')
 
 intents = discord.Intents.all()
 
-bot = commands.Bot(command_prefix=config.PREFIXES, description=config.DESCRIPTION, intents=intents, help_command=None, case_insensitive=True)
+bot = commands.Bot(command_prefix='/', description=config.DESCRIPTION, intents=intents, help_command=None, case_insensitive=True)
 
 slash = SlashCommand(bot, sync_commands=True)
 

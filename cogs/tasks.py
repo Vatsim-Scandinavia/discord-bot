@@ -7,7 +7,7 @@ import datetime
 from discord.ext import commands, tasks
 from discord_slash import cog_ext, SlashContext
 from dotenv import load_dotenv
-from helpers.message import roles
+from helpers.message import staff_roles
 from helpers.members import get_division_members
 
 from helpers.config import VATSIM_MEMBER_ROLE, CHECK_MEMBERS_INTERVAL, VATSCA_MEMBER_ROLE, ROLE_REASONS, GUILD_ID, DEBUG
@@ -89,7 +89,7 @@ class TasksCog(commands.Cog):
     guild_ids = [GUILD_ID]
     
     @cog_ext.cog_slash(name="checkusers", guild_ids=guild_ids, description="Refresh roles based on division membership.")
-    @commands.has_any_role(*roles())
+    @commands.has_any_role(*staff_roles())
     async def user_check(self, ctx: SlashContext): 
         await ctx.send("Member refresh in progress")
         await self.check_members(True)

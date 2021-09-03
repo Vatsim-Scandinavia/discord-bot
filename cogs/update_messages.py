@@ -5,7 +5,7 @@ from discord_slash.utils.manage_commands import create_choice, create_option
 
 from helpers.config import ROLES_CHANNEL, GUILD_ID, RULES_CHANNEL, DIVISION_URL
 from helpers.message import embed
-from helpers.message import roles
+from helpers.message import staff_roles
 
 
 class UpdateCountryMessage(commands.Cog):
@@ -45,7 +45,7 @@ class UpdateCountryMessage(commands.Cog):
         )
     ])
         
-    @commands.has_any_role(*roles())
+    @commands.has_any_role(*staff_roles())
     async def update(self, ctx, *, message_id: str = None, option: str):
         """
         Function posts updated countries message

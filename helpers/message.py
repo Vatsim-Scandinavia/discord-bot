@@ -2,7 +2,7 @@ import re
 import discord
 
 from markdownify import markdownify as md
-from helpers.config import ADMIN_ROLES, STAFF_ROLES, VATSCA_BLUE
+from helpers.config import STAFF_ROLES, VATSCA_BLUE
 
 
 def embed(description: str = None, colour=None, title: str = None, author: dict = None, url: str = None, image: str = None, footer: dict = None,
@@ -50,15 +50,6 @@ def embed(description: str = None, colour=None, title: str = None, author: dict 
         embed.set_footer(text=footer['text'], icon_url=footer['icon'])
 
     return embed
-
-
-def roles() -> str:
-    """
-    Function returns tuple of admin roles
-    :return:
-    """
-    admin_roles = tuple(ADMIN_ROLES)
-    return admin_roles
 
 def staff_roles() -> str:
     """

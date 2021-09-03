@@ -5,10 +5,6 @@ from distutils.util import strtobool
 
 load_dotenv('.env')
 
-PREFIXES = [
-    '!', '.', '?', '#'
-]
-
 DESCRIPTION = 'This is a new VATSCA Discord Bot'
 PRESENCE_TEXT = 'VATSCA Airspace'
 
@@ -17,7 +13,6 @@ VATSCA_BLUE = 0x43c6e7
 COGS = [
     'cogs.admin',
     'cogs.member',
-    #'cogs.announcement',
     'cogs.tasks',
     'cogs.events',
     'cogs.update_messages',
@@ -27,18 +22,11 @@ COGS = [
 COGS_LOAD = {
     'admin': 'cogs.admin',
     'member': 'cogs.member',
-    #'announcement': 'cogs.announcement',
     'check_members': 'cogs.tasks',
     'events': 'cogs.events',
     'update': 'cogs.update_messages',
     'staffing': 'cogs.staffing'
 }
-
-ADMIN_ROLES = [
-    'Web',
-    'Discord Moderator',
-    'Discord Administrator',
-]
 
 STAFF_ROLES = [
     'Web',
@@ -100,10 +88,6 @@ CHECK_MEMBERS_INTERVAL = int(os.getenv('CHECK_MEMBERS_INTERVAL', 86400))
 POST_EVENTS_INTERVAL = int(os.getenv('POST_EVENTS_INTERVAL', 30))
 GET_EVENTS_INTERVAL = int(os.getenv('GET_EVENTS_INTERVAL', 900))
 DELETE_EVENTS_INTERVAL = int(os.getenv('DELETE_EVENTS_INTERVAL'))
-
-def prefix() -> list:
-    return PREFIXES
-
 
 def activity() -> discord.Activity:
     return discord.Activity(type=discord.ActivityType.watching, name=PRESENCE_TEXT)

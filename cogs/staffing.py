@@ -148,29 +148,15 @@ class Staffingcog(commands.Cog):
 
                 if message.content == options[0]:
                     newtitle = await self._get_title(ctx)
-                    cursor.execute(
-                        'UPDATE staffing, positions SET staffing.title = %s, positions.title = %s WHERE staffing.title = %s and positions.title = %s',
-                        (
-                            newtitle,
-                            newtitle,
-                            title,
-                            title
-                        )
-                    )
+                    cursor.execute(f'UPDATE staffing, positions SET staffing.title = {newtitle}, positions.title = {newtitle} WHERE staffing.title = {title} and positions.title = {title}')
                     mydb.commit()
                     title = newtitle
                     await self._updatemessage(title)
-                    await ctx.send(f'Title updated to - {newtitle}')
+                    await ctx.send(f'Title updated to - {title}')
 
                 elif message.content == options[1]:
                     newdate = await self._get_date(ctx)
-                    cursor.execute(
-                        'UPDATE staffing SET date = %s WHERE title = %s',
-                        (
-                            newdate,
-                            title
-                        )
-                    )
+                    cursor.execute(f'UPDATE staffing SET date = {newdate} WHERE title = {title}')
                     mydb.commit()
                     await self._updatemessage(title)
                     formatted_date = newdate.strftime("%A %d/%m/%Y")
@@ -180,13 +166,7 @@ class Staffingcog(commands.Cog):
                     newdescription = await self._get_description(ctx)
                     newdescription = newdescription + "\n\nTo book a position, write `/book`, press TAB and then write the callsign.\nTo unbook a position, use `/unbook`.\n\n"
 
-                    cursor.execute(
-                        'UPDATE staffing SET description = %s WHERE title = %s',
-                        (
-                            newdescription,
-                            title
-                        )
-                    )
+                    cursor.execute(f'UPDATE staffing SET description = {newdescription} WHERE title = {title}')
                     mydb.commit()
                     await self._updatemessage(title)
                     await ctx.send(f'Event description/staffing message has been updated to:\n{newdescription}')
@@ -306,7 +286,7 @@ class Staffingcog(commands.Cog):
                     await self._updatemessage(title[0])
                     await ctx.send(f"<@{usernick}> Confirmed booking for position `{position.upper()}` for event `{title[0]}`", delete_after=5)
                 else:
-                    await ctx.send(f"<@{usernick}> The bot could not found the position you tried to book.")
+                    await ctx.send(f"<@{usernick}> The bot could not find the position you tried to book.")
             else:
                 await ctx.send(f"<@{usernick}> Please use the correct channel", delete_after=5)
 
@@ -461,8 +441,8 @@ class Staffingcog(commands.Cog):
         :return:
         """
         try:
-            await ctx.send('Staffing message? **FYI this command expires in 3 minutes*')
-            message = await self.bot.wait_for('message', timeout=180, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
+            await ctx.send('Staffing message? **FYI this command expires in 5 minutes*')
+            message = await self.bot.wait_for('message', timeout=300, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
 
             if len(message.content) < 1:
                 await ctx.send('Setup cancelled. No message was provided.')
