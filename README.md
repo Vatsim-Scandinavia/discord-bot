@@ -1,6 +1,6 @@
 # VATSIM Scandinavia Discord Bot
 
-VATSIM Scandinavia Bot is created by Created by and [Markus N.](https://github.com/Marko259) (1401513) and  [Daniel L.](https://github.com/blt950) (1352906).
+VATSIM Scandinavia Bot is created by and [Markus N.](https://github.com/Marko259) (1401513) and  [Daniel L.](https://github.com/blt950) (1352906).
 
 Open sourced for contributions, please read the license before you copy any of the code.
 
@@ -15,6 +15,7 @@ Our Discord bot is created to do the following task
 ## Prerequisites
 - Python 3.7+ recommended
 - MySQL Server v.8.0+
+- Invision Forum Calendar API for event functionality
 
 ## How to install
 - Make sure you've Python 3.7 or higher installed in your environment
