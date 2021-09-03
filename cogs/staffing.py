@@ -297,24 +297,18 @@ class Staffingcog(commands.Cog):
             usernick = ctx.author.id
             if any(ctx.channel_id in channel for channel in event_channel):
                 if any(f'<@{usernick}>' in match for match in positions):
-                    msg = await ctx.send(f"<@{usernick}> You already have a booking!")
-                    await asyncio.sleep(5)
-                    await msg.delete()
+                    await ctx.send(f"<@{usernick}> You already have a booking!", delete_after=5)
                 elif any(position.upper() + ':' in match for match in positions):
                     cursor.execute(
                         f"UPDATE positions SET user = '<@{usernick}>' WHERE position = '{position.upper()}:' and title = '{title[0]}'")
 
                     mydb.commit()
                     await self._updatemessage(title[0])
-                    msg = await ctx.send(f"<@{usernick}> Confirmed booking for position `{position.upper()}` for event `{title[0]}`")
-                    await asyncio.sleep(5)
-                    await msg.delete()
+                    await ctx.send(f"<@{usernick}> Confirmed booking for position `{position.upper()}` for event `{title[0]}`", delete_after=5)
                 else:
                     await ctx.send(f"<@{usernick}> The bot could not found the position you tried to book.")
             else:
-                msg = await ctx.send(f"<@{usernick}> Please use the correct channel")
-                await asyncio.sleep(5)
-                await msg.delete()
+                await ctx.send(f"<@{usernick}> Please use the correct channel", delete_after=5)
 
         except Exception as e:
             await ctx.send(f"Error booking position {position} - {e}")
@@ -344,13 +338,9 @@ class Staffingcog(commands.Cog):
                         f"UPDATE positions SET user = '' WHERE user = '<@{usernick}>' and title = '{title[0]}'")
                     mydb.commit()
                     await self._updatemessage(title[0])
-                    msg = await ctx.send(f"<@{usernick}> Confirmed cancelling of your booking!")
-                    await asyncio.sleep(5)
-                    await msg.delete()
+                    await ctx.send(f"<@{usernick}> Confirmed cancelling of your booking!", delete_after=5)
             else:
-                msg = await ctx.send(f"<@{usernick}> Please use the correct channel")
-                await asyncio.sleep(5)
-                await msg.delete()
+                await ctx.send(f"<@{usernick}> Please use the correct channel", delete_after=5)
         except Exception as e:
             await ctx.send(f"Error unbooking position for event {title[0]} - {e}")
             raise e

@@ -1,4 +1,3 @@
-import asyncio
 import discord
 from discord.ext import commands
 from discord_slash import cog_ext, SlashContext
@@ -64,9 +63,7 @@ class UpdateCountryMessage(commands.Cog):
                 }
                 if message_id is None:
                     try:
-                        msgs = await ctx.send("Message is being generated")
-                        await asyncio.sleep(5)
-                        await msgs.delete()
+                        await ctx.send("Message is being generated", delete_after=5)
                         text = self._read_file()
                         msg = embed(description=text, author=author)
                         await channel.send(embed=msg)
@@ -78,9 +75,7 @@ class UpdateCountryMessage(commands.Cog):
                     
                     if message:
                         try:
-                            msgs = await ctx.send("Message is being generated")
-                            await asyncio.sleep(5)
-                            await msgs.delete()
+                            await ctx.send("Message is being generated", delete_after=5)
                             text = self._read_file()
                             msg = embed(description=text, author=author)
                             await message.edit(embed=msg)
@@ -104,9 +99,7 @@ class UpdateCountryMessage(commands.Cog):
                 }
                 if message_id is None:
                     try:
-                        msgs = await ctx.send("Message is being generated")
-                        await asyncio.sleep(5)
-                        await msgs.delete()
+                        await ctx.send("Message is being generated", delete_after=5)
                         embd = self._read_embed__file()
                         text = self._read_message_file()
                         msg = embed(description=embd, author=author)
@@ -119,9 +112,7 @@ class UpdateCountryMessage(commands.Cog):
         
                     if message:
                         try:
-                            msgs = await ctx.send("Message is being generated")
-                            await asyncio.sleep(5)
-                            await msgs.delete()
+                            await ctx.send("Message is being generated", delete_after=5)
                             embd = self._read_embed__file()
                             text = self._read_message_file()
                             msg = embed(description=embd, author=author)
@@ -144,9 +135,7 @@ class UpdateCountryMessage(commands.Cog):
                 }
                 if message_id is None:
                     try:
-                        msgs = await ctx.send("Message is being generated")
-                        await asyncio.sleep(5)
-                        await msgs.delete()
+                        await ctx.send("Message is being generated", delete_after=5)
                         text = self._read_welcome_file()
                         msg = embed(title='Rules', description=text, author=author)
                         await channel.send(embed=msg)
@@ -158,9 +147,7 @@ class UpdateCountryMessage(commands.Cog):
     
                     if message:
                         try:
-                            msgs = await ctx.send("Message is being generated")
-                            await asyncio.sleep(5)
-                            await msgs.delete()
+                            await ctx.send("Message is being generated", delete_after=5)
                             text = self._read_welcome_file()
                             msg = embed(title='Rules', description=text, author=author)
                             await message.edit(embed=msg)
