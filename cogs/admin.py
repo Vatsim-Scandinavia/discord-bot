@@ -1,5 +1,6 @@
 import os
 import datetime
+import asyncio
 
 from discord.ext import commands, tasks
 from discord_slash import cog_ext, SlashContext
@@ -114,7 +115,8 @@ class AdminCog(commands.Cog):
         :return None:
         """
         msg = await ctx.send("Message is being generated")
-        await msg.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+        await asyncio.sleep(5)
+        await msg.delete()
         await ctx.send(content)
 
     @cog_ext.cog_slash(name="delete", guild_ids=guild_ids, description="Function deletes specific amount of messages.")

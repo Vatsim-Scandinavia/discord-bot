@@ -13,7 +13,7 @@ class Event():
     # ----------------------------------
     #
 
-    def __init__(self, id, name, img, url, desc, start: datetime, end: datetime, recurring, recurring_interval, recurring_end, published):
+    def __init__(self, id, name, img, url, desc, start: datetime, recurring, recurring_interval, recurring_end, published):
         """
         Create an Event object
         """
@@ -24,7 +24,6 @@ class Event():
         self.desc = desc
         
         self.start = start
-        self.end = end
         self.recurring = recurring
         self.recurring_interval = recurring_interval
         self.recurring_end = recurring_end
@@ -132,12 +131,6 @@ class Event():
                 self.desc = event_description(updated_event.get('description'))
                 
                 self.start = datetime.strptime(updated_event.get('start'), "%Y-%m-%dT%H:%M:%SZ")
-
-                if updated_event.get('end') is None:
-                    self.end = datetime.strptime(updated_event.get('start'), "%Y-%m-%dT%H:%M:%SZ") + timedelta(hours=24)
-                else:
-                    self.end = datetime.strptime(updated_event.get('end'), "%Y-%m-%dT%H:%M:%SZ")
-
 
                 self.hidden = updated_event.get('hidden')
 
@@ -247,3 +240,9 @@ class Event():
                     return False
         
         return False
+
+    def _get_expire_datetime(self):
+        if self.is_recurring_event() == False:
+            return self.start + timedelta(hours=24)
+        else:
+            return self._get_recurred_date(self.start, self.recurring, self.recurring_interval, self.recurring_end) + timedelta(hours=24)

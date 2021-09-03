@@ -296,26 +296,25 @@ class Staffingcog(commands.Cog):
 
             usernick = ctx.author.id
             if any(ctx.channel_id in channel for channel in event_channel):
-                mydb.reconnect()
                 if any(f'<@{usernick}>' in match for match in positions):
-                    await ctx.send(f"<@{usernick}> You already have a booking!")
+                    msg = await ctx.send(f"<@{usernick}> You already have a booking!")
                     await asyncio.sleep(5)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                    await msg.delete()
                 elif any(position.upper() + ':' in match for match in positions):
                     cursor.execute(
                         f"UPDATE positions SET user = '<@{usernick}>' WHERE position = '{position.upper()}:' and title = '{title[0]}'")
 
                     mydb.commit()
                     await self._updatemessage(title[0])
-                    await ctx.send(f"<@{usernick}> Confirmed booking for position `{position.upper()}` for event `{title[0]}`")
+                    msg = await ctx.send(f"<@{usernick}> Confirmed booking for position `{position.upper()}` for event `{title[0]}`")
                     await asyncio.sleep(5)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                    await msg.delete()
                 else:
                     await ctx.send(f"<@{usernick}> The bot could not found the position you tried to book.")
             else:
-                await ctx.send(f"<@{usernick}> Please use the correct channel")
+                msg = await ctx.send(f"<@{usernick}> Please use the correct channel")
                 await asyncio.sleep(5)
-                await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                await msg.delete()
 
         except Exception as e:
             await ctx.send(f"Error booking position {position} - {e}")
@@ -340,19 +339,18 @@ class Staffingcog(commands.Cog):
 
             usernick = ctx.author.id
             if any(ctx.channel_id in channel for channel in event_channel):
-                mydb.reconnect()
                 if any(f'<@{usernick}>' in match for match in positions):
                     cursor.execute(
                         f"UPDATE positions SET user = '' WHERE user = '<@{usernick}>' and title = '{title[0]}'")
                     mydb.commit()
                     await self._updatemessage(title[0])
-                    await ctx.send(f"<@{usernick}> Confirmed cancelling of your booking!")
+                    msg = await ctx.send(f"<@{usernick}> Confirmed cancelling of your booking!")
                     await asyncio.sleep(5)
-                    await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                    await msg.delete()
             else:
-                await ctx.send(f"<@{usernick}> Please use the correct channel")
+                msg = await ctx.send(f"<@{usernick}> Please use the correct channel")
                 await asyncio.sleep(5)
-                await ctx.channel.purge(limit=2, check=lambda msg: not msg.pinned)
+                await msg.delete()
         except Exception as e:
             await ctx.send(f"Error unbooking position for event {title[0]} - {e}")
             raise e
@@ -378,7 +376,7 @@ class Staffingcog(commands.Cog):
             year = date.strftime("%Y")
             formatted_date = datetime.datetime(int(year), int(month), int(day))
 
-            if now.date() == formatted_date.date() and now.hour == 23 and 0 <= now.minute <= 5:
+            if now.date() == formatted_date.date() and now.hour == 21 and 0 <= now.minute <= 5:
                 title = staffing[1]
                 cursor.execute(
                     f"UPDATE positions SET user = '' WHERE title = '{title}'")
@@ -649,8 +647,6 @@ class Staffingcog(commands.Cog):
 
             if format_staffing_message != "":
                 format_staffing_message += "\n"
-
-            mydb.reconnect()
 
             formatted_date = date.strftime("%A %d/%m/%Y")
             format_staffing_message += f'{title} staffing - {formatted_date}\n\n{description}\n\nMain Positions:\n{main_position_data}\n\nSecondary Positions:\n{secondary_position_data}\n\nRegional Positions:\n{regional_position_data}'

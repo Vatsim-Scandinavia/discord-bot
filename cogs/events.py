@@ -36,11 +36,10 @@ class EventsCog(commands.Cog):
     DB_URL = 3
     DB_DESCRIPTION = 4
     DB_START = 5
-    DB_END = 6
-    DB_RECURRING = 7
-    DB_RECURRING_INTERVAL = 8
-    DB_RECURRING_END = 9
-    DB_PUBLISHED = 10
+    DB_RECURRING = 6
+    DB_RECURRING_INTERVAL = 7
+    DB_RECURRING_END = 8
+    DB_PUBLISHED = 9
 
     # Embed parameters
     FOOTER = {
@@ -147,8 +146,7 @@ class EventsCog(commands.Cog):
                 message = await channel.send(text, embed=msg)
 
                 event.mark_as_published()
-                end_date = event.end_time
-                await self.store_message_expire(message, end_date)
+                await self.store_message_expire(message, event._get_expire_datetime())
 
     @tasks.loop(seconds=DELETE_EVENTS_INTERVAL)
     async def delete_event_messages(self):
@@ -203,7 +201,6 @@ class EventsCog(commands.Cog):
                 db_event[self.DB_URL],
                 db_event[self.DB_DESCRIPTION],
                 db_event[self.DB_START],
-                db_event[self.DB_END],
                 db_event[self.DB_RECURRING],
                 db_event[self.DB_RECURRING_INTERVAL],
                 db_event[self.DB_RECURRING_END],
@@ -258,11 +255,6 @@ class EventsCog(commands.Cog):
 
             if found_event:
                 continue
-
-            if new_event.get('end') is None:
-                end_date = self._convert_time(new_event.get('start')) + timedelta(hours=24)
-            else:
-                end_date= self._convert_time(new_event.get('end'))
             
             # Create the object
             self.events[new_event.get('id')] = Event(
@@ -272,7 +264,6 @@ class EventsCog(commands.Cog):
                 new_event.get('url'),
                 event_description(new_event.get('description')),
                 self._convert_time(new_event.get('start')),
-                end_date,
                 None,
                 None,
                 None,
@@ -299,17 +290,17 @@ class EventsCog(commands.Cog):
             text = f':calendar_spiral: A new event has been scheduled.'
             message = await channel.send(text, embed=msg)
 
-            await self.store_message_expire(message, end_date)
+            await self.store_message_expire(message, e._get_expire_datetime())
 
 
-    async def store_message_expire(self, message, end_date):
+    async def store_message_expire(self, message, expire_datetime):
         mydb = db_connection()
         cursor = mydb.cursor()
 
-        cursor.execute("INSERT event_messages (message_id, expire_date) VALUES (%s, %s)", 
+        cursor.execute("INSERT event_messages (message_id, expire_datetime) VALUES (%s, %s)", 
             (
                 message.id,
-                end_date
+                expire_datetime
             )
         )
         mydb.commit()
@@ -327,7 +318,7 @@ class EventsCog(commands.Cog):
             mydb = db_connection()
             cursor = mydb.cursor()
             cursor.execute(
-                "INSERT INTO events (id, name, img, url, description, start_time, end_time, recurring, recurring_interval, recurring_end, published) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE name = VALUES(name), img = VALUES(img), url = VALUES(url), description = VALUES(description), start_time = VALUES(start_time), end_time = VALUES(end_time), recurring = VALUES(recurring), recurring_interval = VALUES(recurring_interval), recurring_end = VALUES(recurring_end), published = VALUES(published)",
+                "INSERT INTO events (id, name, img, url, description, start_time, recurring, recurring_interval, recurring_end, published) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE name = VALUES(name), img = VALUES(img), url = VALUES(url), description = VALUES(description), start_time = VALUES(start_time), recurring = VALUES(recurring), recurring_interval = VALUES(recurring_interval), recurring_end = VALUES(recurring_end), published = VALUES(published)",
                 (
                     event.id,
                     event.name,
@@ -336,7 +327,6 @@ class EventsCog(commands.Cog):
                     event.desc,
                     
                     event.start,
-                    event.end,
                     event.recurring,
                     event.recurring_interval,
                     event.recurring_end,
