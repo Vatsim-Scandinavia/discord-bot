@@ -7,7 +7,6 @@ CREATE TABLE `events` (
   `url` varchar(600) NOT NULL,
   `description` text NOT NULL,
   `start_time` datetime NOT NULL,
-  `end_time` datetime NOT NULL,
   `recurring` varchar(255) DEFAULT NULL,
   `recurring_interval` smallint(6) DEFAULT NULL,
   `recurring_end` datetime DEFAULT NULL,
@@ -18,7 +17,7 @@ CREATE TABLE `events` (
 
 CREATE TABLE `event_messages` (
   `message_id` bigint NOT NULL,
-  `expire_date` datetime DEFAULT NULL,
+  `expire_datetime` datetime DEFAULT NULL,
   primary key (`message_id`),
   UNIQUE KEY `message_id` (`message_id`) USING BTREE
 );
