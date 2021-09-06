@@ -160,12 +160,16 @@ class EventsCog(commands.Cog):
         for event in event_details:
             if now >= event[1]:
                 channel = self.bot.get_channel(int(EVENTS_CHANNEL))
-                message = await channel.fetch_message(int(event[0]))
-                await message.delete()
-                cursor.execute(f"DELETE FROM event_messages WHERE message_id = {message.id}")
 
-            
-
+                try:
+                    message = await channel.fetch_message(int(event[0]))
+                    await message.delete()
+                    cursor.execute(f"DELETE FROM event_messages WHERE message_id = {message.id}")
+                except:
+                    print("Did not find message id " + str(event[0]) + ". Deleting from database.")
+                    cursor.execute(f"DELETE FROM event_messages WHERE message_id = {int(event[0])}")
+                    return
+                
                 
 
 
