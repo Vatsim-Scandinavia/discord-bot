@@ -175,7 +175,7 @@ class Event():
     #
 
 
-    def _get_upcoming_recurrence_datetime(self, proposed_date, recurring, interval, recurring_end):
+    def _get_upcoming_recurrence_datetime(self, proposed_date, recurring, interval, recurring_end, return_last_date_instead_of_false = False):
         """
         Function to return back the date of next reccurence or False
         """
@@ -200,8 +200,9 @@ class Event():
                     proposed_date = proposed_date + timedelta(months=interval)
                 else:
                     return False
-        
-        return False
+                    
+        if return_last_date_instead_of_false == False:
+            return False
 
     def __get_last_reccurence_datetime(self):
 
