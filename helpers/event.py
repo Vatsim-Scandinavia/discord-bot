@@ -175,7 +175,7 @@ class Event():
     #
 
 
-    def _get_upcoming_recurrence_datetime(self, proposed_date, recurring, interval, recurring_end, return_last_date_instead_of_false = False):
+    def _get_upcoming_recurrence_datetime(self, proposed_date, recurring, interval, recurring_end, return_date = False):
         """
         Function to return back the date of next reccurence or False
         """
@@ -200,34 +200,23 @@ class Event():
                     proposed_date = proposed_date + timedelta(months=interval)
                 else:
                     return False
-                    
-        if return_last_date_instead_of_false == False:
-            return False
+        
+        # Return the latest date instead of False if requested. Used for recording deletion time of recurring events.
+        if return_date == True:
+            return proposed_date
 
-    def __get_last_reccurence_datetime(self):
+        return False
 
-        calculated_date = self.start
-
-        while(calculated_date <= self.recurring_end):
-
-            if self.recurring == "DAILY":
-                calculated_date = calculated_date + timedelta(days=int(self.recurring_interval))
-            elif self.recurring == "WEEKLY":
-                calculated_date = calculated_date + timedelta(weeks=int(self.recurring_interval))
-            elif self.recurring == "MONTHLY":
-                calculated_date = calculated_date + timedelta(months=int(self.recurring_interval))
-            else:
-                return False
-    
-        return calculated_date
 
     def _get_expire_datetime(self):
+        """
+        Return the expire datetime for message deletion for selected event
+        """
+
         if self.is_recurring_event() == False:
             return self.start + timedelta(hours=24)
         else:
-            return self.__get_last_reccurence_datetime() + timedelta(hours=24)
-
-
+            return self._get_upcoming_recurrence_datetime(self.start, self.recurring, self.recurring_interval, self.recurring_end, True) + timedelta(hours=24)
 
 
 
