@@ -70,7 +70,7 @@ class Event():
 
         # Change the start date if recurrence is the thing
         if is_recurring == True:
-            recurred_date = self._get_recurred_date(start, self.recurring, self.recurring_interval, self.recurring_end)
+            recurred_date = self._get_upcoming_recurrence_datetime(start, self.recurring, self.recurring_interval, self.recurring_end)
 
             # If today is notification day and we've not already notified
             if recurred_date is not False:
@@ -168,6 +168,66 @@ class Event():
 
 
 
+    #
+    # ----------------------------------
+    #   RECURRING RELATED FUNCTIONS
+    # ----------------------------------
+    #
+
+
+    def _get_upcoming_recurrence_datetime(self, proposed_date, recurring, interval, recurring_end):
+        """
+        Function to return back the date of next reccurence or False
+        """
+
+        interval = int(interval) or 1
+
+        while(proposed_date <= recurring_end):
+
+                # Is the proposed datetime happening between 2h and 1.75h? It's today then
+                if proposed_date <= datetime.utcnow() + timedelta(hours=2) and proposed_date >= datetime.utcnow() + timedelta(hours=1.75) :
+                    return proposed_date
+
+                # Break if we're past today
+                if proposed_date.date() > datetime.utcnow().date():
+                    break
+
+                if recurring == "DAILY":
+                    proposed_date = proposed_date + timedelta(days=interval)
+                elif recurring == "WEEKLY":
+                    proposed_date = proposed_date + timedelta(weeks=interval)
+                elif recurring == "MONTHLY":
+                    proposed_date = proposed_date + timedelta(months=interval)
+                else:
+                    return False
+        
+        return False
+
+    def __get_last_reccurence_datetime(self):
+
+        calculated_date = self.start
+
+        while(calculated_date <= self.recurring_end):
+
+            if self.recurring == "DAILY":
+                calculated_date = calculated_date + timedelta(days=int(self.recurring_interval))
+            elif self.recurring == "WEEKLY":
+                calculated_date = calculated_date + timedelta(weeks=int(self.recurring_interval))
+            elif self.recurring == "MONTHLY":
+                calculated_date = calculated_date + timedelta(months=int(self.recurring_interval))
+            else:
+                return False
+    
+        return calculated_date
+
+    def _get_expire_datetime(self):
+        if self.is_recurring_event() == False:
+            return self.start + timedelta(hours=24)
+        else:
+            return self.__get_last_reccurence_datetime() + timedelta(hours=24)
+
+
+
 
 
 
@@ -212,37 +272,3 @@ class Event():
         # If no timestamp selected, none can be calculated, then this is probably an event without end date
         return start_time + timedelta(days=(365*10))
 
-
-    def _get_recurred_date(self, proposed_date, recurring, interval, recurring_end):
-        """
-        Function to return back the date of next reccurence or False
-        """
-
-        interval = int(interval) or 1
-
-        while(proposed_date <= recurring_end):
-
-                # Is the proposed datetime happening between 2h and 1.75h? It's today then
-                if proposed_date <= datetime.utcnow() + timedelta(hours=2) and proposed_date >= datetime.utcnow() + timedelta(hours=1.75) :
-                    return proposed_date
-
-                # Break if we're past today
-                if proposed_date.date() > datetime.utcnow().date():
-                    break
-
-                if recurring == "DAILY":
-                    proposed_date = proposed_date + timedelta(days=interval)
-                elif recurring == "WEEKLY":
-                    proposed_date = proposed_date + timedelta(weeks=interval)
-                elif recurring == "MONTHLY":
-                    proposed_date = proposed_date + timedelta(months=interval)
-                else:
-                    return False
-        
-        return False
-
-    def _get_expire_datetime(self):
-        if self.is_recurring_event() == False:
-            return self.start + timedelta(hours=24)
-        else:
-            return self._get_recurred_date(self.start, self.recurring, self.recurring_interval, self.recurring_end) + timedelta(hours=24)

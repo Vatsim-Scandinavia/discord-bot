@@ -130,7 +130,7 @@ class EventsCog(commands.Cog):
                 # Set the correct event start time to embed if its recurring
                 start_time = event.start
                 if event.is_recurring_event() == True:
-                    start_time = event._get_recurred_date(event.start, event.recurring, event.recurring_interval, event.recurring_end)
+                    start_time = event._get_upcoming_recurrence_datetime(event.start, event.recurring, event.recurring_interval, event.recurring_end)
 
                 # Create the embed message
                 msg = embed(
