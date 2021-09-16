@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from helpers.message import staff_roles
 from helpers.members import get_division_members
 
-from helpers.config import VATSIM_MEMBER_ROLE, CHECK_MEMBERS_INTERVAL, VATSCA_MEMBER_ROLE, ROLE_REASONS, GUILD_ID, DEBUG
+from helpers.config import VATSIM_MEMBER_ROLE, VATSIM_SUBDIVISION, CHECK_MEMBERS_INTERVAL, VATSCA_MEMBER_ROLE, ROLE_REASONS, GUILD_ID, DEBUG
 
 load_dotenv('.env')
 
@@ -64,9 +64,9 @@ class TasksCog(commands.Cog):
 
                 for entry in memberlist:
                     if entry['id'] == cid[0]:
-                        if vatsca_member not in user.roles and entry["subdivision"] == 'SCA':
+                        if vatsca_member not in user.roles and entry["subdivision"] == VATSIM_SUBDIVISION:
                             await user.add_roles(vatsca_member, reason=self.VATSCA_ROLE_ADD_REASON)
-                        elif vatsca_member in user.roles and entry["subdivision"] != 'SCA':
+                        elif vatsca_member in user.roles and entry["subdivision"] != VATSIM_SUBDIVISION:
                             await user.remove_roles(vatsca_member, reason=self.VATSCA_ROLE_REMOVE_REASON)
                         
                         break
