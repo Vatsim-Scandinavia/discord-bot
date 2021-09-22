@@ -29,6 +29,10 @@ CREATE TABLE IF NOT EXISTS `staffing` (
   `description` text NOT NULL,
   `channel_id` bigint NOT NULL,
   `message_id` bigint NOT NULL,
+  `week_interval` int(11) NOT NULL,
+  `main_pos_title` text NOT NULL,
+  `secondary_pos_title` text NOT NULL,
+  `regional_pos_title` text NOT NULL
   PRIMARY KEY (`id`),
   UNIQUE KEY `id` (`id`) USING BTREE
 );
