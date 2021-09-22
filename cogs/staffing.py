@@ -34,14 +34,18 @@ class Staffingcog(commands.Cog):
     @commands.has_any_role(*staff_roles())
     async def setupstaffing(self, ctx):
         title = await self._get_title(ctx)
-        date = await self._get_date(ctx)
+        week_int = await self._get_week(ctx)
+        date = await self._get_date(ctx, week_int)
         description = await self._get_description(ctx)
-        main_position = await self._get_main_positions(ctx)
-        secondary_position = await self._get_secondary_positions(ctx)
-        regional_position = await self._get_regional_positions(ctx)
+        section_1_title = await self._get_first_section(ctx)
+        section_2_title = await self._get_second_section(ctx)
+        section_3_title = await self._get_third_section(ctx)
+        main_position = await self._get_main_positions(ctx, section_1_title)
+        secondary_position = await self._get_secondary_positions(ctx, section_2_title)
+        regional_position = await self._get_regional_positions(ctx, section_3_title)
         channels = await self._get_channel(ctx)
         
-        description = description + "\n\nTo book a position, write `/book`, press TAB and then write the callsign.\nTo unbook a position, use `/unbook`.\n\n"
+        description = description + "\n\nTo book a position, write `/book`, press TAB and then write the callsign.\nTo unbook a position, use `/unbook`."
 
         format_staffing_message = ""
 
@@ -56,7 +60,7 @@ class Staffingcog(commands.Cog):
 
         formatted_date = date.strftime("%A %d/%m/%Y")
 
-        format_staffing_message += f'{title} staffing - {formatted_date}\n\n{description}\n\nMain Positions:\n{main_position_data}\n\nSecondary Positions:\n{secondary_position_data}\n\nRegional Positions:\n{regional_position_data}'
+        format_staffing_message += f'{title} staffing - {formatted_date}\n\n{description}\n\n{section_1_title}:\n{main_position_data}\n\n{section_2_title}:\n{secondary_position_data}\n\n{section_3_title}:\n{regional_position_data}'
 
         mydb = db_connection()
         cursor = mydb.cursor()
@@ -66,22 +70,27 @@ class Staffingcog(commands.Cog):
             await msg.pin()
             await channel.purge(limit=None, check=lambda msg: not msg.pinned)
             cursor.execute(
-                'INSERT INTO staffing(title, date, description, channel_id, message_id) VALUES (%s, %s, %s, %s, %s)',
+                'INSERT INTO staffing(title, date, description, channel_id, message_id, week_interval, main_pos_title, secondary_pos_title, regional_pos_title) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)',
                 (
                     title,
                     date,
                     description,
                     channel.id,
-                    msg.id
+                    msg.id,
+                    week_int,
+                    section_1_title,
+                    section_2_title,
+                    section_3_title
                 )
             )
 
             type = 'main'
             for position in main_position:
                 cursor.execute(
-                    'INSERT INTO positions(position, user, type, title) VALUES (%s, "", %s, %s)',
+                    'INSERT INTO positions(position, user, type, title) VALUES (%s, %s, %s, %s)',
                     (
                         position,
+                        "",
                         type,
                         title
                     )
@@ -90,9 +99,10 @@ class Staffingcog(commands.Cog):
             type = 'secondary'
             for position in secondary_position:
                 cursor.execute(
-                    'INSERT INTO positions(position, user, type, title) VALUES (%s, "", %s, %s)',
+                    'INSERT INTO positions(position, user, type, title) VALUES (%s, %s, %s, %s)',
                     (
                         position,
+                        "",
                         type,
                         title
                     )
@@ -101,9 +111,10 @@ class Staffingcog(commands.Cog):
             type = 'regional'
             for position in regional_position:
                 cursor.execute(
-                    'INSERT INTO positions(position, user, type, title) VALUES (%s, "", %s, %s)',
+                    'INSERT INTO positions(position, user, type, title) VALUES (%s, %s, %s, %s)',
                     (
                         position,
+                        "",
                         type,
                         title
                     )
@@ -140,107 +151,112 @@ class Staffingcog(commands.Cog):
                 titles.append(all[0])
 
             if title in titles:
-                options = ['Title', 'Day of event', 'Staffing message', 'Main Positions',
-                           'Secondary Positions', 'Regional Positions', 'Delete Staffing', 'Exit Updater']
+                options = ['Title', 'Day of event', 'Staffing message', 'First Section',
+                           'Second Section', 'Third Section', 'Delete Staffing', 'Exit Updater']
                 avail = "\n" .join(files for files in options)
                 await ctx.send(f'What would you like to update in staffing `{title}`? **FYI this command expires in 1 minute**\n\nAvailable options:\n{avail}')
                 message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
 
                 if message.content == options[0]:
                     newtitle = await self._get_title(ctx)
-                    cursor.execute(f"UPDATE staffing, positions SET staffing.title = '{newtitle}', positions.title = '{newtitle}' WHERE staffing.title = '{title}' and positions.title = '{title}'")
+                    cursor.execute("UPDATE staffing, positions SET staffing.title = %s, positions.title = %s WHERE staffing.title = %s and positions.title = %s", (newtitle, newtitle, title, title))
                     mydb.commit()
                     title = newtitle
                     await self._updatemessage(title)
                     await ctx.send(f'Title updated to - {title}')
 
                 elif message.content == options[1]:
-                    newdate = await self._get_date(ctx)
-                    cursor.execute(f"UPDATE staffing SET date = '{newdate}' WHERE title = '{title}'")
+                    week_int = await self._get_week(ctx)
+                    newdate = await self._get_date(ctx, week_int)
+                    cursor.execute("UPDATE staffing SET date = %s, week_interval = %s WHERE title = %s", (newdate, week_int, title))
                     mydb.commit()
                     await self._updatemessage(title)
                     formatted_date = newdate.strftime("%A %d/%m/%Y")
-                    await ctx.send(f'Event date has been updated to - {formatted_date}')
+                    await ctx.send(f'Event date has been updated to - `{formatted_date}` & Week interval updated to - `{week_int}`')
 
                 elif message.content == options[2]:
                     newdescription = await self._get_description(ctx)
-                    newdescription = newdescription + "\n\nTo book a position, write `/book`, press TAB and then write the callsign.\nTo unbook a position, use `/unbook`.\n\n"
+                    newdescription = newdescription + "\n\nTo book a position, write `/book`, press TAB and then write the callsign.\nTo unbook a position, use `/unbook`."
 
-                    cursor.execute(f"UPDATE staffing SET description = '{newdescription}' WHERE title = '{title}'")
+                    cursor.execute("UPDATE staffing SET description = %s WHERE title = %s", (newdescription, title))
                     mydb.commit()
                     await self._updatemessage(title)
                     await ctx.send(f'Event description/staffing message has been updated to:\n{newdescription}')
 
                 elif message.content == options[3]:
-                    new_main_positions = await self._get_main_positions(ctx)
+                    first_section = await self._get_first_section(ctx)
+                    new_main_positions = await self._get_main_positions(ctx, first_section)
                     formatted_main_positions = "\n" .join(
                         position for position in new_main_positions)
+                    cursor.execute("UPDATE staffing SET main_pos_title = %s WHERE title = %s", (first_section, title))
                     type = 'main'
                     cursor.execute(
-                        f"DELETE FROM positions WHERE type = '{type}' and title = '{title}'")
+                        "DELETE FROM positions WHERE type = %s and title = %s", (type, title))
                     for position in new_main_positions:
-                        cursor.execute('INSERT INTO positions(position, user, type, title) VALUES (%s, "", %s, %s)',
+                        cursor.execute('INSERT INTO positions(position, user, type, title) VALUES (%s, %s, %s, %s)',
                                        (
                                            position,
+                                           "",
                                            type,
                                            title
                                        ))
                     mydb.commit()
                     await self._updatemessage(title)
-                    await ctx.send(f'Main Positions updated to:\n{formatted_main_positions}')
+                    await ctx.send(f'Main Positions updated to:\n{formatted_main_positions}\n\nFirst Section Title updated to `{first_section}`')
 
                 elif message.content == options[4]:
-                    new_secondary_positions = await self._get_secondary_positions(ctx)
+                    second_section = await self._get_second_section(ctx)
+                    new_secondary_positions = await self._get_secondary_positions(ctx, second_section)
                     formatted_secondary_positions = "\n" .join(
                         position for position in new_secondary_positions)
+                    cursor.execute("UPDATE staffing SET secondary_pos_title = %s WHERE title = %s", (second_section, title))
                     type = 'secondary'
-                    cursor.execute(
-                        f"DELETE FROM positions WHERE type = '{type}' and title = '{title}'")
+                    cursor.execute("DELETE FROM positions WHERE type = %s and title = %s", (type, title))
                     for position in new_secondary_positions:
-                        cursor.execute('INSERT INTO positions(position, user, type, title) VALUES (%s, "", %s, %s)',
+                        cursor.execute('INSERT INTO positions(position, user, type, title) VALUES (%s, %s, %s, %s)',
                                        (
                                            position,
+                                           "",
                                            type,
                                            title
                                        ))
                     mydb.commit()
                     await self._updatemessage(title)
-                    await ctx.send(f'Secondary Positions updated to:\n{formatted_secondary_positions}')
+                    await ctx.send(f'Secondary Positions updated to:\n{formatted_secondary_positions}\n\nSecond Section Title updated to `{second_section}`')
 
                 elif message.content == options[5]:
-                    new_regional_positions = await self._get_regional_positions(ctx)
+                    third_section = await self._get_third_section(ctx)
+                    new_regional_positions = await self._get_regional_positions(ctx, third_section)
                     formatted_regional_positions = "\n" .join(
                         position for position in new_regional_positions)
+                    cursor.execute("UPDATE staffing SET regional_pos_title = %s WHERE title = %s", (third_section, title))
                     type = 'regional'
-                    cursor.execute(
-                        f"DELETE FROM positions WHERE type = '{type}' and title = '{title}'")
+                    cursor.execute("DELETE FROM positions WHERE type = %s and title = %s", (type, title))
                     for position in new_regional_positions:
-                        cursor.execute('INSERT INTO positions(position, user, type, title) VALUES (%s, "", %s, %s)',
+                        cursor.execute('INSERT INTO positions(position, user, type, title) VALUES (%s, %s, %s, %s)',
                                        (
                                            position,
+                                           "",
                                            type,
                                            title
                                        ))
                     mydb.commit()
                     await self._updatemessage(title)
-                    await ctx.send(f'Regional Positions updated to:\n{formatted_regional_positions}')
+                    await ctx.send(f'Regional Positions updated to:\n{formatted_regional_positions}\n\nThird Section Title updated to `{third_section}`')
 
                 elif message.content == options[6]:
                     confirm_delete = await self._getconfirmation(ctx, title)
 
                     if confirm_delete == title:
-                        cursor.execute(
-                            f"SELECT * FROM staffing WHERE title = '{title}'")
+                        cursor.execute("SELECT * FROM staffing WHERE title = %s", (title,))
                         all_details = cursor.fetchone()
                         channel_id = all_details[4]
                         message_id = all_details[5]
                         channel = self.bot.get_channel(int(channel_id))
                         message = await channel.fetch_message(int(message_id))
                         await message.delete()
-                        cursor.execute(
-                            f"DELETE FROM staffing WHERE title = '{title}'")
-                        cursor.execute(
-                            f"DELETE FROM positions WHERE title = '{title}'")
+                        cursor.execute("DELETE FROM staffing WHERE title = %s", (title,))
+                        cursor.execute("DELETE FROM positions WHERE title = %s", (title,))
                         mydb.commit()
 
                         await ctx.send(f'Staffing for `{title}` has been deleted')
@@ -263,15 +279,13 @@ class Staffingcog(commands.Cog):
             mydb = db_connection()
             cursor = mydb.cursor()
 
-            cursor.execute(
-                f"SELECT channel_id FROM staffing")
+            cursor.execute("SELECT channel_id FROM staffing")
             event_channel = cursor.fetchall()
             
-            cursor.execute(f"SELECT title FROM staffing WHERE channel_id = '{ctx.channel_id}'")
+            cursor.execute("SELECT title FROM staffing WHERE channel_id = %s", (ctx.channel_id,))
             title = cursor.fetchone()
 
-            cursor.execute(
-                f"SELECT position, user FROM positions WHERE title ='{title[0]}'")
+            cursor.execute("SELECT position, user FROM positions WHERE title = %s", (title[0],))
             positions = cursor.fetchall()
 
             usernick = ctx.author.id
@@ -279,8 +293,7 @@ class Staffingcog(commands.Cog):
                 if any(f'<@{usernick}>' in match for match in positions):
                     await ctx.send(f"<@{usernick}> You already have a booking!", delete_after=5)
                 elif any(position.upper() + ':' in match for match in positions):
-                    cursor.execute(
-                        f"UPDATE positions SET user = '<@{usernick}>' WHERE position = '{position.upper()}:' and title = '{title[0]}'")
+                    cursor.execute("UPDATE positions SET user = %s WHERE position = %s and title = %s", (f'<@{usernick}>', f'{position.upper()}:', title[0]))
 
                     mydb.commit()
                     await self._updatemessage(title[0])
@@ -300,22 +313,19 @@ class Staffingcog(commands.Cog):
             mydb = db_connection()
             cursor = mydb.cursor()
 
-            cursor.execute(
-                f"SELECT channel_id FROM staffing")
+            cursor.execute("SELECT channel_id FROM staffing")
             event_channel = cursor.fetchall()
             
-            cursor.execute(f"SELECT title FROM staffing WHERE channel_id = '{ctx.channel_id}'")
+            cursor.execute("SELECT title FROM staffing WHERE channel_id = %s", (ctx.channel_id,))
             title = cursor.fetchone()
 
-            cursor.execute(
-                f"SELECT position, user FROM positions WHERE title ='{title[0]}'")
+            cursor.execute("SELECT position, user FROM positions WHERE title = %s", (title[0],))
             positions = cursor.fetchall()
 
             usernick = ctx.author.id
             if any(ctx.channel_id in channel for channel in event_channel):
                 if any(f'<@{usernick}>' in match for match in positions):
-                    cursor.execute(
-                        f"UPDATE positions SET user = '' WHERE user = '<@{usernick}>' and title = '{title[0]}'")
+                    cursor.execute("UPDATE positions SET user = %s WHERE user = %s and title = %s", ("", f'<@{usernick}>', title[0]))
                     mydb.commit()
                     await self._updatemessage(title[0])
                     await ctx.send(f"<@{usernick}> Confirmed cancelling of your booking!", delete_after=5)
@@ -341,6 +351,7 @@ class Staffingcog(commands.Cog):
 
         for staffing in staffings:
             date = staffing[2]
+            week = staffing[6]
             day = date.strftime("%d")
             month = date.strftime("%m")
             year = date.strftime("%Y")
@@ -348,20 +359,19 @@ class Staffingcog(commands.Cog):
 
             if now.date() == formatted_date.date() and now.hour == 21 and 0 <= now.minute <= 5:
                 title = staffing[1]
-                cursor.execute(
-                    f"UPDATE positions SET user = '' WHERE title = '{title}'")
-                newdate = ''
+                cursor.execute("UPDATE positions SET user = %s WHERE title = %s", ("", title))
+                newdate = None
                 times = 7
                 i = -1
+                w = week
                 for _ in range(int(times)):
                     i += 1
                     if formatted_date.weekday() == i:
                         today = datetime.date.today()
                         newdate = today + \
-                            datetime.timedelta(days=i-today.weekday(), weeks=1)
+                            datetime.timedelta(days=i-today.weekday(), weeks=int(w))
 
-                cursor.execute(
-                    f"UPDATE staffing SET date = '{newdate}' WHERE title = '{title}'")
+                cursor.execute("UPDATE staffing SET date = %s WHERE title = %s", (newdate, title))
                 mydb.commit()
                 await self._updatemessage(title)
                 channel = self.bot.get_channel(int(staffing[4]))
@@ -404,7 +414,7 @@ class Staffingcog(commands.Cog):
             await ctx.send(f'Error getting the title - {e}')
             raise e
 
-    async def _get_date(self, ctx):
+    async def _get_date(self, ctx, week_int):
         """
         Function gets the date of the event from a message that'll be included in the staffing message
         :param ctx:
@@ -418,12 +428,13 @@ class Staffingcog(commands.Cog):
 
             times = 7
             i = -1
+            w = int(week_int)
             for _ in range(int(times)):
                 i += 1
                 if message.content == avail_days[i]:
                     today = datetime.date.today()
                     event_day = today + \
-                        datetime.timedelta(days=i-today.weekday(), weeks=1)
+                        datetime.timedelta(days=i-today.weekday(), weeks=w)
 
             if len(message.content) < 1:
                 await ctx.send('Setup cancelled. No message was provided.')
@@ -434,6 +445,26 @@ class Staffingcog(commands.Cog):
             await ctx.send(f'Error getting date of the event - {e}')
             raise e
 
+    async def _get_week(self, ctx):
+        """
+        Function gets the week interval the day of the event is in.
+        :param ctx:
+        :return:
+        """
+        try:
+            await ctx.send(f'What is the week interval of the event? If reply is `1` the date will be selected each week. if reply is `2` then its each second week and so on. **FYI this command expires in 1 minute**')
+            message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
+
+            if len(message.content) < 1:
+                await ctx.send('Setup cancelled. No message was provided.')
+                raise ValueError
+
+            return message.content
+
+        except Exception as e:
+            await ctx.send(f'Error getting date of the event - {e}')
+            raise
+
     async def _get_description(self, ctx):
         """
         Function gets the description of the event from a message that'll be included in the staffing message
@@ -441,7 +472,7 @@ class Staffingcog(commands.Cog):
         :return:
         """
         try:
-            await ctx.send('Staffing message? **FYI this command expires in 5 minutes*')
+            await ctx.send('Staffing message? **FYI this command expires in 5 minutes**')
             message = await self.bot.wait_for('message', timeout=300, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
 
             if len(message.content) < 1:
@@ -453,7 +484,64 @@ class Staffingcog(commands.Cog):
             await ctx.send(f'Error getting the Staffing message - {e}')
             raise e
 
-    async def _get_main_positions(self, ctx):
+    async def _get_first_section(self, ctx):
+        """
+        Function gets the title for positions of the event from a message that'll be included in the staffing message
+        :param ctx:
+        :return:
+        """
+        try:
+            await ctx.send('First section title? **FYI this command expires in 1 minute**')
+            message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
+
+            if len(message.content) < 1:
+                await ctx.send('Setup cancelled. No message was provided.')
+                raise ValueError
+
+            return message.content
+        except Exception as e:
+            await ctx.send(f'Error getting the first section title - {e}')
+            raise e
+
+    async def _get_second_section(self, ctx):
+        """
+        Function gets the title for positions of the event from a message that'll be included in the staffing message
+        :param ctx:
+        :return:
+        """
+        try:
+            await ctx.send('Second section title? **FYI this command expires in 1 minute**')
+            message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
+
+            if len(message.content) < 1:
+                await ctx.send('Setup cancelled. No message was provided.')
+                raise ValueError
+
+            return message.content
+        except Exception as e:
+            await ctx.send(f'Error getting the second section title - {e}')
+            raise e
+
+    async def _get_third_section(self, ctx):
+        """
+        Function gets the title for positions of the event from a message that'll be included in the staffing message
+        :param ctx:
+        :return:
+        """
+        try:
+            await ctx.send('Third section title? **FYI this command expires in 1 minute**')
+            message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
+
+            if len(message.content) < 1:
+                await ctx.send('Setup cancelled. No message was provided.')
+                raise ValueError
+
+            return message.content
+        except Exception as e:
+            await ctx.send(f'Error getting the third section title - {e}')
+            raise e
+
+    async def _get_main_positions(self, ctx, first_section):
         """
         Function gets the main positions of the event from a message that'll be included in the staffing message
         :param ctx:
@@ -466,7 +554,7 @@ class Staffingcog(commands.Cog):
             num = 0
             for _ in range(int(times)):
                 num += 1
-                await ctx.send(f'Main position nr. {num}? **FYI this command expires in 1 minute**')
+                await ctx.send(f'{first_section} nr. {num}? **FYI this command expires in 1 minute**')
                 message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
                 position.append(message.content + ':')
 
@@ -476,10 +564,10 @@ class Staffingcog(commands.Cog):
 
             return position
         except Exception as e:
-            await ctx.send(f'Error getting main positions - {e}')
+            await ctx.send(f'Error getting {first_section} - {e}')
             raise e
 
-    async def _get_secondary_positions(self, ctx):
+    async def _get_secondary_positions(self, ctx, second_section):
         """
         Function gets the main positions of the event from a message that'll be included in the staffing message
         :param ctx:
@@ -492,7 +580,7 @@ class Staffingcog(commands.Cog):
             num = 0
             for _ in range(int(times)):
                 num += 1
-                await ctx.send(f'Secondary position nr. {num}? **FYI this command expires in 1 minute**')
+                await ctx.send(f'{second_section} nr. {num}? **FYI this command expires in 1 minute**')
                 message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
                 position.append(message.content + ':')
 
@@ -502,10 +590,10 @@ class Staffingcog(commands.Cog):
 
             return position
         except Exception as e:
-            await ctx.send(f'Error getting secondary positions - {e}')
+            await ctx.send(f'Error getting {second_section} - {e}')
             raise e
 
-    async def _get_regional_positions(self, ctx):
+    async def _get_regional_positions(self, ctx, third_section):
         """
         Function gets the main positions of the event from a message that'll be included in the staffing message
         :param ctx:
@@ -518,7 +606,7 @@ class Staffingcog(commands.Cog):
             num = 0
             for _ in range(int(times)):
                 num += 1
-                await ctx.send(f'Regional position nr. {num}? **FYI this command expires in 1 minute**')
+                await ctx.send(f'{third_section} nr. {num}? **FYI this command expires in 1 minute**')
                 message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
                 position.append(message.content + ':')
 
@@ -528,7 +616,7 @@ class Staffingcog(commands.Cog):
 
             return position
         except Exception as e:
-            await ctx.send(f'Error getting regional positions - {e}')
+            await ctx.send(f'Error getting {third_section} - {e}')
             raise e
 
     async def get_howmanypositions(self, ctx, type):
@@ -573,7 +661,7 @@ class Staffingcog(commands.Cog):
         try:
             mydb = db_connection()
             cursor = mydb.cursor()
-            cursor.execute(f"SELECT * FROM staffing WHERE title = '{title}'")
+            cursor.execute("SELECT * FROM staffing WHERE title = %s", (title,))
 
             events = cursor.fetchone()
 
@@ -582,10 +670,13 @@ class Staffingcog(commands.Cog):
             description = events[3]
             channel_id = events[4]
             message_id = events[5]
+            first_section = events[7]
+            second_section = events[8]
+            third_section = events[9]
 
             type = 'main'
             cursor.execute(
-                f"SELECT * FROM positions WHERE title = '{title}' and type = '{type}'")
+                "SELECT * FROM positions WHERE title = %s and type = %s", (title, type))
             main_pos = cursor.fetchall()
             main_positions = []
             for position in main_pos:
@@ -595,7 +686,7 @@ class Staffingcog(commands.Cog):
 
             type = 'secondary'
             cursor.execute(
-                f"SELECT * FROM positions WHERE title = '{title}' and type = '{type}'")
+                "SELECT * FROM positions WHERE title = %s and type = %s", (title, type))
             secondary_pos = cursor.fetchall()
             secondary_positions = []
             for position in secondary_pos:
@@ -605,7 +696,7 @@ class Staffingcog(commands.Cog):
 
             type = 'regional'
             cursor.execute(
-                f"SELECT * FROM positions WHERE title = '{title}' and type = '{type}'")
+                "SELECT * FROM positions WHERE title = %s and type = %s", (title, type))
             regional_pos = cursor.fetchall()
             regional_positions = []
             for position in regional_pos:
@@ -619,7 +710,7 @@ class Staffingcog(commands.Cog):
                 format_staffing_message += "\n"
 
             formatted_date = date.strftime("%A %d/%m/%Y")
-            format_staffing_message += f'{title} staffing - {formatted_date}\n\n{description}\n\nMain Positions:\n{main_position_data}\n\nSecondary Positions:\n{secondary_position_data}\n\nRegional Positions:\n{regional_position_data}'
+            format_staffing_message += f'{title} staffing - {formatted_date}\n\n{description}\n\n{first_section}:\n{main_position_data}\n\n{second_section}:\n{secondary_position_data}\n\n{third_section}:\n{regional_position_data}'
 
             channel = self.bot.get_channel(int(channel_id))
             message = await channel.fetch_message(int(message_id))
