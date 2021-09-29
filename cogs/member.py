@@ -58,7 +58,7 @@ class MemberCog(commands.Cog):
                 metar_data = await resp.text()
 
                 message = embed(title='METAR for ' + str.upper(airport), description=metar_data)
-                await ctx.send(embed=message)
+                await ctx.author.send(embed=message)
 
 
 def setup(bot):
