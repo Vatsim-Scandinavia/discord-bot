@@ -5,6 +5,7 @@ services:
     container_name: discord-bot
     image: vatsca/python:latest
     command: bash -c "pip3 install -r requirements.txt && python3 bot.py"
+    restart: unless-stopped
     volumes:
       - ./:/app
     network_mode: host
