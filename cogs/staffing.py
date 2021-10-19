@@ -136,6 +136,40 @@ class Staffingcog(commands.Cog):
         showalltitles = "\n" .join(titles for titles in titels)
         await ctx.send(f"All Staffings:\n**`{showalltitles}`**")
 
+    @cog_ext.cog_slash(name="manreset", guild_ids=guild_id, description="Bot manually resets specific staffing")
+    @commands.has_any_role(*staff_roles())
+    async def man_reset(self, ctx, title):
+        await self.bot.wait_until_ready()
+        mydb = db_connection()
+        cursor = mydb.cursor()
+        cursor.execute('SELECT * FROM staffing WHERE title = %s', (title,))
+        staffing = cursor.fetchone()
+        date = staffing[2]
+        week = staffing[6]
+        day = date.strftime("%d")
+        month = date.strftime("%m")
+        year = date.strftime("%Y")
+        formatted_date = datetime.datetime(int(year), int(month), int(day))
+        cursor.execute("UPDATE positions SET user = %s WHERE title = %s", ("", title))
+        newdate = None
+        times = 7
+        i = -1
+        w = week
+        for _ in range(int(times)):
+            i += 1
+            if formatted_date.weekday() == i:
+                today = datetime.date.today()
+                newdate = today + \
+                    datetime.timedelta(days=i-today.weekday(), weeks=int(w))
+
+                cursor.execute("UPDATE staffing SET date = %s WHERE title = %s", (newdate, title))
+                mydb.commit()
+                await self._updatemessage(title)
+                channel = self.bot.get_channel(int(staffing[4]))
+                await channel.send("The chat is being manually reset!")
+                await asyncio.sleep(5)
+                await channel.purge(limit=None, check=lambda msg: not msg.pinned)
+
     @cog_ext.cog_slash(name="updatestaffing", guild_ids=guild_id, description='Bot updates selected staffing')
     @commands.has_any_role(*staff_roles())
     async def updatestaffing(self, ctx, title):
