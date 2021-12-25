@@ -3,12 +3,14 @@ import asyncio
 from aiohttp.client import request
 
 import re
+import discord
 
 from discord.ext import commands, tasks
 from discord_slash import cog_ext
+from requests.api import delete
 from helpers.booking import Booking
 
-from helpers.config import GUILD_ID, AVAILABLE_EVENT_DAYS, STAFFING_INTERVAL
+from helpers.config import GUILD_ID, AVAILABLE_EVENT_DAYS, STAFFING_INTERVAL, VATSCA_BLUE
 from helpers.message import staff_roles
 from helpers.database import db_connection
 
@@ -143,11 +145,30 @@ class Staffingcog(commands.Cog):
     @cog_ext.cog_slash(name="getbookings", guild_ids=guild_id, description="Bot shows all bookings from CC")
     async def getbookings(self, ctx):
         bookings = await Booking.get_bookings(self)
-        BookingInfo = []
+        BookingCallsign = []
+        BookingUser = []
+        BookingTime = []
         for booking in bookings:
-            BookingInfo.append(booking["callsign"] + " - " + booking["name"] + " " + str(booking["cid"]) + " - " + booking["time_start"])
-        BookingDisplay = "\n" .join(booking for booking in BookingInfo)
-        await ctx.send(f"All Bookings:\n**`{BookingDisplay}`**")
+            time_start = datetime.datetime.strptime(booking["time_start"], '%Y-%m-%d %H:%M:%S')
+            time_end = datetime.datetime.strptime(booking["time_end"], '%Y-%m-%d %H:%M:%S')
+            BookingCallsign.append(booking["callsign"])
+            BookingUser.append(booking["name"] + " " + str(booking["cid"]))
+            BookingTime.append(time_start.strftime("%d-%m-%Y %H:%M") + " - " + time_end.strftime("%d-%m-%Y %H:%M"))
+            
+        BookingTimeDisplay = "\n" .join(time for time in BookingTime)
+        BookingUserDisplay = "\n" .join(user for user in BookingUser)
+        BookingCSDisplay = "\n" .join(callsign for callsign in BookingCallsign)
+
+        if len(BookingCallsign) == 0:
+            BookingTimeDisplay = "No bookings found"
+            BookingUserDisplay = "No bookings found"
+            BookingCSDisplay = "No bookings found"
+
+        embedVar = discord.Embed(title="All active bookings in CC", description="This is all active bookings there is stored in CC", color=VATSCA_BLUE)
+        embedVar.add_field(name="Callsign", value=BookingCSDisplay, inline=True)
+        embedVar.add_field(name="User", value=BookingUserDisplay, inline=True)
+        embedVar.add_field(name="Start and end time", value=BookingTimeDisplay, inline=True)
+        await ctx.send(embed=embedVar)
 
     @cog_ext.cog_slash(name="manreset", guild_ids=guild_id, description="Bot manually resets specific staffing")
     @commands.has_any_role(*staff_roles())
@@ -347,26 +368,11 @@ class Staffingcog(commands.Cog):
                     
                     cursor.execute("SELECT start_time FROM events WHERE name = %s", (title[0],))
                     start = cursor.fetchone()
+                    start_formatted = datetime.datetime.strptime(str(start[0]), '%Y-%m-%d %H:%M:%S')
+                    start_time = start_formatted.strftime("%H:%M")
 
-                    now = datetime.datetime.now()
-                    year = now.strftime("%Y")
-                    nexty = now + datetime.timedelta(days=52)
-                    nextyear = nexty.strftime("%Y")
-                    winter_start = datetime.datetime(int(year), 10, 31)
-                    winter_end = datetime.datetime(int(nextyear), 3, 27)
-                    if winter_start <= now <= winter_end:
-                        start_formatted = datetime.datetime.strptime(str(start[0]), '%Y-%m-%d %H:%M:%S')
-                        start_formatted = start_formatted + datetime.timedelta(hours=1)
-                        start_time = start_formatted.strftime("%H:%M")
-
-                        end_formatted = start_formatted + datetime.timedelta(hours=2)
-                        end_time = end_formatted.strftime("%H:%M")
-                    else:
-                        start_formatted = datetime.datetime.strptime(str(start[0]), '%Y-%m-%d %H:%M:%S')
-                        start_time = start_formatted.strftime("%H:%M")
-
-                        end_formatted = start_formatted + datetime.timedelta(hours=2)
-                        end_time = end_formatted.strftime("%H:%M")
+                    end_formatted = start_formatted + datetime.timedelta(hours=2)
+                    end_time = end_formatted.strftime("%H:%M")
 
                     tag = 3
 
