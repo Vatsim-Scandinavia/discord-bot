@@ -116,6 +116,9 @@ class Event():
 
         async with aiohttp.ClientSession() as session:
             async with session.get(EVENT_CALENDAR_URL + "/" + str(self.id), auth=auth) as resp:
+
+                print(resp.status)
+                print(resp.json())
                 
                 if resp.status == 404:
                     return False
