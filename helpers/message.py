@@ -82,6 +82,10 @@ def get_image(text: str) -> str:
     :return:
     """
 
+    print("----------------")
+    print(text)
+
+
     # Process the text and only convert the image
     markdown = md(text, convert=['img'])
 
