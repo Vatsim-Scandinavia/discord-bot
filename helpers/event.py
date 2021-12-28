@@ -125,6 +125,7 @@ class Event():
                 if updated_event.get('hidden'):
                     return False
 
+                print(self.id)
                 self.name = updated_event.get('title')
                 print(self.name)
                 self.img = get_image(updated_event.get('description'))
