@@ -86,10 +86,16 @@ def get_image(text: str) -> str:
     markdown = md(text, convert=['img'])
 
     # Regex the URL of the image from the markdown
-    img = re.findall('(?:!\[(?:.*?)\]\((.*?)\))', markdown)
+    img = re.findall('(?:!\[(?:.*?)\]\((.*)\))', markdown)
 
     # If image is found, return the first or return null
     if len(img) > 0:
-        return img[0]
+
+        img = img[0]
+
+        # In case of title atribute remove everything after and including whitespace
+        img = img.split(' ')[0]
+
+        return img
 
     return ''
