@@ -116,21 +116,19 @@ class Event():
 
         async with aiohttp.ClientSession() as session:
             async with session.get(EVENT_CALENDAR_URL + "/" + str(self.id), auth=auth) as resp:
-
-                print(resp.status)
-                print(resp.json())
                 
                 if resp.status == 404:
                     return False
+
+                if resp.status != 200:
+                    print("Response from API was not OK. Status: " + resp.status)
                 
                 updated_event = await resp.json()
 
                 if updated_event.get('hidden'):
                     return False
 
-                print(self.id)
                 self.name = updated_event.get('title')
-                print(self.name)
                 self.img = get_image(updated_event.get('description'))
                 self.url = updated_event.get('url')
                 self.desc = event_description(updated_event.get('description'))
