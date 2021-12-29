@@ -9,7 +9,7 @@ from discord.ext import commands, tasks
 from discord_slash import cog_ext
 from helpers.booking import Booking
 
-from helpers.config import GUILD_ID, AVAILABLE_EVENT_DAYS, STAFFING_INTERVAL, VATSCA_BLUE, VATSIM_MEMBER_ROLE, OBS_RATING_ROLE
+from helpers.config import GUILD_ID, AVAILABLE_EVENT_DAYS, STAFFING_INTERVAL, VATSCA_BLUE, VATSIM_MEMBER_ROLE, VATSCA_MEMBER_ROLE, OBS_RATING_ROLE
 from helpers.message import staff_roles
 from helpers.database import db_connection
 
@@ -344,9 +344,10 @@ class Staffingcog(commands.Cog):
     async def book(self, ctx, position):
         try:
             vatsim_member = discord.utils.get(ctx.guild.roles, id=VATSIM_MEMBER_ROLE)
+            vatsca_member = discord.utils.get(ctx.guild.roles, id=VATSCA_MEMBER_ROLE)
             OBS_rating = discord.utils.get(ctx.guild.roles, id=OBS_RATING_ROLE)
             usernick = ctx.author.id
-            if not vatsim_member and not OBS_rating in ctx.author.roles:
+            if vatsim_member in ctx.author.roles or vatsca_member in ctx.author.roles and OBS_rating not in ctx.author.roles:
                 mydb = db_connection()
                 cursor = mydb.cursor()
 
@@ -376,12 +377,12 @@ class Staffingcog(commands.Cog):
                         end_formatted = start_formatted + datetime.timedelta(hours=2)
                         end_time = end_formatted.strftime("%H:%M")
 
-                        tag = 3
+                        #tag = 3
 
                         date = datetime.datetime.strptime(str(eventDetails[0]), '%Y-%m-%d')
                         date = date.strftime("%d/%m/%Y")
 
-                        request = await Booking.post_booking(self, int(cid), str(date), str(start_time), str(end_time), str(position), int(tag))
+                        request = await Booking.post_booking(self, int(cid), str(date), str(start_time), str(end_time), str(position))
 
                         if request == 200:
                             cursor.execute("UPDATE positions SET user = %s WHERE position = %s and title = %s", (f'<@{usernick}>', f'{position.upper()}:', title[0]))

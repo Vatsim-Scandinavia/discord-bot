@@ -29,18 +29,17 @@ class Booking():
             feedback = request.json()
             return feedback["bookings"]
 
-    async def post_booking(self, cid: int, date: str, start_at: str, end_at: str, position: str, tag: int):
+    async def post_booking(self, cid: int, date: str, start_at: str, end_at: str, position: str):
         """
         Post a new booking to the API
         """
-        
+
         data = {
             'cid': cid,
             'date': date,
             'start_at': start_at,
             'end_at': end_at,
-            'position': position,
-            'tag': tag
+            'position': position
         }
 
         request = requests.post(url=BOOKING_API_URL + "/create", headers={'Authorization': 'Bearer ' + BOOKING_API_TOKEN, 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json'}, data=data)
