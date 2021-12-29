@@ -79,6 +79,8 @@ VATSCA_MEMBER_ROLE = int(os.getenv('VATSCA_MEMBER_ROLE'))
 VATSIM_MEMBER_ROLE = int(os.getenv('VATSIM_MEMBER_ROLE'))
 EVENTS_ROLE = int(os.getenv('EVENTS_ROLE'))
 
+OBS_RATING_ROLE = int(os.getenv('OBS_RATING_ROLE'))
+
 GUILD_ID = int(os.getenv('GUILD_ID'))
 STAFFING_INTERVAL = int(os.getenv('STAFFING_INTERVAL'))
 
