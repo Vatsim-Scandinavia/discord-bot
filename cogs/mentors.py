@@ -40,28 +40,26 @@ class MentorsCog(commands.Cog):
 
         mentors = await Mentor.get_mentors(self)
 
-        for user in users:
-            if mentor_role not in user.roles:
-                if mentor_role in user.roles:
-                    await user.remove_roles(mentor_role, reason=self.MENTOR_ROLE_REMOVE_REASON)
-                    print("Removed mentor role from " + str(user.name) + "Debug")
-                
-                
+        for user in users:            
             try:
                 cid = re.findall('\d+', str(user.nick))
 
                 if len(cid) < 1:
                     raise ValueError
 
+                should_be_mentor = False
+
                 for mentor in mentors:
-                    if int(mentor["id"]) == int(cid[0]):
-                        if mentor_role not in user.roles:
-                            await user.add_roles(mentor_role, reason=self.MENTOR_ROLE_ADD_REASON)
-                    elif mentor_role in user.roles and mentor["id"] != cid[0]:
-                        await user.remove_roles(mentor_role, reason=self.MENTOR_ROLE_REMOVE_REASON)
+                    if int(mentor['id']) == int(cid[0]):
+                        should_be_mentor = True
+                        
+                if mentor_role not in user.roles and should_be_mentor == True:
+                    await user.add_roles(mentor_role, reason=self.MENTOR_ROLE_ADD_REASON)
+                elif mentor_role in user.roles and should_be_mentor == False:
+                    await user.remove_roles(mentor_role, reason=self.MENTOR_ROLE_REMOVE_REASON)
+              
 
             except ValueError as e:
-                print(e)
                 if mentor_role in user.roles:
                     await user.remove_roles(mentor_role, reason=self.NO_CID_REMOVE_REASON)
                     
