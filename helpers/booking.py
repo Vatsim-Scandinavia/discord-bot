@@ -21,7 +21,7 @@ class Booking():
         request = requests.get(CC_API_URL + '/bookings', headers={'Authorization': 'Bearer ' + CC_API_TOKEN, 'Accept': 'application/json'})
         if request.status_code == requests.codes.ok:
             feedback = request.json()
-            return feedback
+            return feedback["data"]
 
     async def post_booking(self, cid: int, date: str, start_at: str, end_at: str, position: str):
         """
