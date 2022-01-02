@@ -21,6 +21,6 @@ class Mentor():
         request = requests.get(CC_API_URL + '/mentors', headers={'Authorization': 'Bearer ' + CC_API_TOKEN, 'Accept': 'application/json'})
         if request.status_code == requests.codes.ok:
             feedback = request.json()
-            return feedback["mentors"]
+            return feedback["data"]
         else:
             return False
