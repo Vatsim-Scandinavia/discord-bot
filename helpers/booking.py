@@ -50,11 +50,11 @@ class Booking():
         """
         Delete a booking from the API
         """
-        booking = requests.get(CC_API_URL + '/bookings', headers={'Authorization': 'Bearer ' + CC_API_TOKEN, 'Accept': 'application/json'})
-        if booking.status_code == requests.codes.ok:
-            feedback = booking.json()
-            for booking in feedback:
-                if booking["cid"] == cid and booking["callsign"] + ":" == position:
+        bookings = requests.get(CC_API_URL + '/bookings', headers={'Authorization': 'Bearer ' + CC_API_TOKEN, 'Accept': 'application/json'})
+        if bookings.status_code == requests.codes.ok:
+            feedback = bookings.json()
+            for booking in feedback["data"]:
+                if int(booking["cid"]) == cid and str(booking["callsign"]) + ":" == position:
                     request = requests.delete(url=CC_API_URL + "/bookings/" + str(booking["id"]), headers={'Authorization': 'Bearer ' + CC_API_TOKEN, 'Accept': 'application/json'})
                     if request.status_code == requests.codes.ok:
                         return 200
@@ -62,6 +62,6 @@ class Booking():
                         return request.status_code
             return 404
         else:
-            return booking.status_code
+            return bookings.status_code
 
         return False

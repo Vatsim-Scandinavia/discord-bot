@@ -36,10 +36,11 @@ class EventsCog(commands.Cog):
     DB_URL = 3
     DB_DESCRIPTION = 4
     DB_START = 5
-    DB_RECURRING = 6
-    DB_RECURRING_INTERVAL = 7
-    DB_RECURRING_END = 8
-    DB_PUBLISHED = 9
+    DB_END = 6
+    DB_RECURRING = 7
+    DB_RECURRING_INTERVAL = 8
+    DB_RECURRING_END = 9
+    DB_PUBLISHED = 10
 
     # Embed parameters
     FOOTER = {
@@ -205,6 +206,7 @@ class EventsCog(commands.Cog):
                 db_event[self.DB_URL],
                 db_event[self.DB_DESCRIPTION],
                 db_event[self.DB_START],
+                db_event[self.DB_END],
                 db_event[self.DB_RECURRING],
                 db_event[self.DB_RECURRING_INTERVAL],
                 db_event[self.DB_RECURRING_END],
@@ -322,7 +324,7 @@ class EventsCog(commands.Cog):
             mydb = db_connection()
             cursor = mydb.cursor()
             cursor.execute(
-                "INSERT INTO events (id, name, img, url, description, start_time, recurring, recurring_interval, recurring_end, published) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE name = VALUES(name), img = VALUES(img), url = VALUES(url), description = VALUES(description), start_time = VALUES(start_time), recurring = VALUES(recurring), recurring_interval = VALUES(recurring_interval), recurring_end = VALUES(recurring_end), published = VALUES(published)",
+                "INSERT INTO events (id, name, img, url, description, start_time, end_time, recurring, recurring_interval, recurring_end, published) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE name = VALUES(name), img = VALUES(img), url = VALUES(url), description = VALUES(description), start_time = VALUES(start_time), end_time = VALUES(end_time), recurring = VALUES(recurring), recurring_interval = VALUES(recurring_interval), recurring_end = VALUES(recurring_end), published = VALUES(published)",
                 (
                     event.id,
                     event.name,
@@ -331,6 +333,7 @@ class EventsCog(commands.Cog):
                     event.desc,
                     
                     event.start,
+                    event.end,
                     event.recurring,
                     event.recurring_interval,
                     event.recurring_end,

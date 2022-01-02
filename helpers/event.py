@@ -13,7 +13,7 @@ class Event():
     # ----------------------------------
     #
 
-    def __init__(self, id, name, img, url, desc, start: datetime, recurring, recurring_interval, recurring_end, published):
+    def __init__(self, id, name, img, url, desc, start: datetime, end: datetime, recurring, recurring_interval, recurring_end, published):
         """
         Create an Event object
         """
@@ -24,6 +24,7 @@ class Event():
         self.desc = desc
         
         self.start = start
+        self.end = end
         self.recurring = recurring
         self.recurring_interval = recurring_interval
         self.recurring_end = recurring_end
@@ -134,6 +135,7 @@ class Event():
                 self.desc = event_description(updated_event.get('description'))
                 
                 self.start = datetime.strptime(updated_event.get('start'), "%Y-%m-%dT%H:%M:%SZ")
+                self.end = datetime.strptime(updated_event.get('end'), "%Y-%m-%dT%H:%M:%SZ")
 
                 self.hidden = updated_event.get('hidden')
 

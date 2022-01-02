@@ -374,8 +374,14 @@ class Staffingcog(commands.Cog):
                         start_formatted = datetime.datetime.strptime(str(start[0]), '%Y-%m-%d %H:%M:%S')
                         start_time = start_formatted.strftime("%H:%M")
 
-                        end_formatted = start_formatted + datetime.timedelta(hours=2)
-                        end_time = end_formatted.strftime("%H:%M")
+                        cursor.execute("SELECT end_time FROM events WHERE name = %s", (title[0],))
+                        end = cursor.fetchone()
+                        if end[0] is not None:
+                            end_formatted = datetime.datetime.strptime(str(end[0]), '%Y-%m-%d %H:%M:%S')
+                            end_time = end_formatted.strftime("%H:%M")
+                        else:
+                            end_formatted = start_formatted + datetime.timedelta(hours=2)
+                            end_time = end_formatted.strftime("%H:%M")
 
                         #tag = 3
 
@@ -422,12 +428,12 @@ class Staffingcog(commands.Cog):
             if any(ctx.channel_id in channel for channel in event_channel):
                 if any(f'<@{usernick}>' in match for match in positions):
 
-                    cid = re.findall("\d+", str(ctx.author.nick))[0]
+                    cid = re.findall("\d+", str(ctx.author.nick))
 
                     cursor.execute("SELECT position FROM positions WHERE user = %s and title = %s", (f'<@{usernick}>', title[0]))
                     position = cursor.fetchone()
 
-                    request = await Booking.delete_booking(self, int(cid), str(position[0]))
+                    request = await Booking.delete_booking(self, int(cid[0]), str(position[0]))
                     if request == 200:
                         cursor.execute("UPDATE positions SET user = %s WHERE user = %s and title = %s", ("", f'<@{usernick}>', title[0]))
                         mydb.commit()
@@ -780,6 +786,20 @@ class Staffingcog(commands.Cog):
             second_section = events[8]
             third_section = events[9]
 
+            cursor.execute("SELECT start_time FROM events WHERE name = %s", (title,))
+            start = cursor.fetchone()
+            start_formatted = datetime.datetime.strptime(str(start[0]), '%Y-%m-%d %H:%M:%S')
+            start_time = start_formatted.strftime("%H:%M")
+
+            cursor.execute("SELECT end_time FROM events WHERE name = %s", (title,))
+            end = cursor.fetchone()
+            if end[0] is not None:
+                end_formatted = datetime.datetime.strptime(str(end[0]), '%Y-%m-%d %H:%M:%S')
+                end_time = end_formatted.strftime("%H:%M")
+            else:
+                end_formatted = start_formatted + datetime.timedelta(hours=2)
+                end_time = end_formatted.strftime("%H:%M")
+
             type = 'main'
             cursor.execute(
                 "SELECT * FROM positions WHERE title = %s and type = %s", (title, type))
@@ -816,7 +836,7 @@ class Staffingcog(commands.Cog):
                 format_staffing_message += "\n"
 
             formatted_date = date.strftime("%A %d/%m/%Y")
-            format_staffing_message += f'{title} staffing - {formatted_date}\n\n{description}\n\n{first_section}:\n{main_position_data}\n\n{second_section}:\n{secondary_position_data}\n\n{third_section}:\n{regional_position_data}'
+            format_staffing_message += f'{title} staffing - {formatted_date} {start_time} - {end_time}z\n\n{description}\n\n{first_section}:\n{main_position_data}\n\n{second_section}:\n{secondary_position_data}\n\n{third_section}:\n{regional_position_data}'
 
             channel = self.bot.get_channel(int(channel_id))
             message = await channel.fetch_message(int(message_id))
