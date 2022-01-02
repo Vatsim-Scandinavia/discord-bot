@@ -1,10 +1,15 @@
 import datetime
 import asyncio
+from aiohttp.client import request
+
+import re
+import discord
 
 from discord.ext import commands, tasks
 from discord_slash import cog_ext
+from helpers.booking import Booking
 
-from helpers.config import GUILD_ID, AVAILABLE_EVENT_DAYS, STAFFING_INTERVAL
+from helpers.config import GUILD_ID, AVAILABLE_EVENT_DAYS, STAFFING_INTERVAL, VATSCA_BLUE, VATSIM_MEMBER_ROLE, VATSCA_MEMBER_ROLE, OBS_RATING_ROLE
 from helpers.message import staff_roles
 from helpers.database import db_connection
 
@@ -135,6 +140,34 @@ class Staffingcog(commands.Cog):
             titels.append(each[0])
         showalltitles = "\n" .join(titles for titles in titels)
         await ctx.send(f"All Staffings:\n**`{showalltitles}`**")
+
+    @cog_ext.cog_slash(name="getbookings", guild_ids=guild_id, description="Bot shows all bookings from CC")
+    async def getbookings(self, ctx):
+        bookings = await Booking.get_bookings(self)
+        BookingCallsign = []
+        BookingUser = []
+        BookingTime = []
+        for booking in bookings:
+            time_start = datetime.datetime.strptime(booking["time_start"], '%Y-%m-%d %H:%M:%S')
+            time_end = datetime.datetime.strptime(booking["time_end"], '%Y-%m-%d %H:%M:%S')
+            BookingCallsign.append(booking["callsign"])
+            BookingUser.append(booking["name"] + " " + str(booking["cid"]))
+            BookingTime.append(time_start.strftime("%d-%m-%Y %H:%M") + " - " + time_end.strftime("%d-%m-%Y %H:%M"))
+            
+        BookingTimeDisplay = "\n" .join(time for time in BookingTime)
+        BookingUserDisplay = "\n" .join(user for user in BookingUser)
+        BookingCSDisplay = "\n" .join(callsign for callsign in BookingCallsign)
+
+        if len(BookingCallsign) == 0:
+            BookingTimeDisplay = "No bookings found"
+            BookingUserDisplay = "No bookings found"
+            BookingCSDisplay = "No bookings found"
+
+        embedVar = discord.Embed(title="All active bookings in CC", description="This is all active bookings there is stored in CC", color=VATSCA_BLUE)
+        embedVar.add_field(name="Callsign", value=BookingCSDisplay, inline=True)
+        embedVar.add_field(name="User", value=BookingUserDisplay, inline=True)
+        embedVar.add_field(name="Start and end time", value=BookingTimeDisplay, inline=True)
+        await ctx.send(embed=embedVar)
 
     @cog_ext.cog_slash(name="manreset", guild_ids=guild_id, description="Bot manually resets specific staffing")
     @commands.has_any_role(*staff_roles())
@@ -310,32 +343,61 @@ class Staffingcog(commands.Cog):
     @cog_ext.cog_slash(name="book", guild_ids=guild_id, description='Bot books selected position for selected staffing')
     async def book(self, ctx, position):
         try:
-            mydb = db_connection()
-            cursor = mydb.cursor()
-
-            cursor.execute("SELECT channel_id FROM staffing")
-            event_channel = cursor.fetchall()
-            
-            cursor.execute("SELECT title FROM staffing WHERE channel_id = %s", (ctx.channel_id,))
-            title = cursor.fetchone()
-
-            cursor.execute("SELECT position, user FROM positions WHERE title = %s", (title[0],))
-            positions = cursor.fetchall()
-
+            vatsim_member = discord.utils.get(ctx.guild.roles, id=VATSIM_MEMBER_ROLE)
+            vatsca_member = discord.utils.get(ctx.guild.roles, id=VATSCA_MEMBER_ROLE)
+            OBS_rating = discord.utils.get(ctx.guild.roles, id=OBS_RATING_ROLE)
             usernick = ctx.author.id
-            if any(ctx.channel_id in channel for channel in event_channel):
-                if any(f'<@{usernick}>' in match for match in positions):
-                    await ctx.send(f"<@{usernick}> You already have a booking!", delete_after=5)
-                elif any(position.upper() + ':' in match for match in positions):
-                    cursor.execute("UPDATE positions SET user = %s WHERE position = %s and title = %s", (f'<@{usernick}>', f'{position.upper()}:', title[0]))
+            if vatsim_member in ctx.author.roles or vatsca_member in ctx.author.roles and OBS_rating not in ctx.author.roles:
+                mydb = db_connection()
+                cursor = mydb.cursor()
 
-                    mydb.commit()
-                    await self._updatemessage(title[0])
-                    await ctx.send(f"<@{usernick}> Confirmed booking for position `{position.upper()}` for event `{title[0]}`", delete_after=5)
+                cursor.execute("SELECT channel_id FROM staffing")
+                event_channel = cursor.fetchall()
+            
+                cursor.execute("SELECT title FROM staffing WHERE channel_id = %s", (ctx.channel_id,))
+                title = cursor.fetchone()
+
+                cursor.execute("SELECT position, user FROM positions WHERE title = %s", (title[0],))
+                positions = cursor.fetchall()
+
+                cursor.execute("SELECT date FROM staffing WHERE title = %s", (title[0],))
+                eventDetails = cursor.fetchone()
+
+                if any(ctx.channel_id in channel for channel in event_channel):
+                    if any(f'<@{usernick}>' in match for match in positions):
+                        await ctx.send(f"<@{usernick}> You already have a booking!", delete_after=5)
+                    elif any(position.upper() + ':' in match for match in positions):
+                        cid = re.findall("\d+", str(ctx.author.nick))[0]
+                    
+                        cursor.execute("SELECT start_time FROM events WHERE name = %s", (title[0],))
+                        start = cursor.fetchone()
+                        start_formatted = datetime.datetime.strptime(str(start[0]), '%Y-%m-%d %H:%M:%S')
+                        start_time = start_formatted.strftime("%H:%M")
+
+                        end_formatted = start_formatted + datetime.timedelta(hours=2)
+                        end_time = end_formatted.strftime("%H:%M")
+
+                        #tag = 3
+
+                        date = datetime.datetime.strptime(str(eventDetails[0]), '%Y-%m-%d')
+                        date = date.strftime("%d/%m/%Y")
+
+                        request = await Booking.post_booking(self, int(cid), str(date), str(start_time), str(end_time), str(position))
+
+                        if request == 200:
+                            cursor.execute("UPDATE positions SET user = %s WHERE position = %s and title = %s", (f'<@{usernick}>', f'{position.upper()}:', title[0]))
+                            mydb.commit()
+
+                            await self._updatemessage(title[0])
+                            await ctx.send(f"<@{usernick}> Confirmed booking for position `{position.upper()}` for event `{title[0]}`", delete_after=5)
+                        else:
+                            await ctx.send(f"<@{usernick}> Booking failed, Control Center responded with error {request}, please try again later", delete_after=5)
+                    else:
+                        await ctx.send(f"<@{usernick}> The bot could not find the position you tried to book.")
                 else:
-                    await ctx.send(f"<@{usernick}> The bot could not find the position you tried to book.")
+                    await ctx.send(f"<@{usernick}> Please use the correct channel", delete_after=5)
             else:
-                await ctx.send(f"<@{usernick}> Please use the correct channel", delete_after=5)
+                await ctx.send(f"<@{usernick}> You do not have the required role to book positions", delete_after=5)
 
         except Exception as e:
             await ctx.send(f"Error booking position {position} - {e}")
@@ -359,10 +421,20 @@ class Staffingcog(commands.Cog):
             usernick = ctx.author.id
             if any(ctx.channel_id in channel for channel in event_channel):
                 if any(f'<@{usernick}>' in match for match in positions):
-                    cursor.execute("UPDATE positions SET user = %s WHERE user = %s and title = %s", ("", f'<@{usernick}>', title[0]))
-                    mydb.commit()
-                    await self._updatemessage(title[0])
-                    await ctx.send(f"<@{usernick}> Confirmed cancelling of your booking!", delete_after=5)
+
+                    cid = re.findall("\d+", str(ctx.author.nick))[0]
+
+                    cursor.execute("SELECT position FROM positions WHERE user = %s and title = %s", (f'<@{usernick}>', title[0]))
+                    position = cursor.fetchone()
+
+                    request = await Booking.delete_booking(self, int(cid), str(position[0]))
+                    if request == 200:
+                        cursor.execute("UPDATE positions SET user = %s WHERE user = %s and title = %s", ("", f'<@{usernick}>', title[0]))
+                        mydb.commit()
+                        await self._updatemessage(title[0])
+                        await ctx.send(f"<@{usernick}> Confirmed cancelling of your booking!", delete_after=5)
+                    else:
+                        await ctx.send(f"<@{usernick}> Cancelling failed, Control Center responded with error {request}, please try again later", delete_after=5)
             else:
                 await ctx.send(f"<@{usernick}> Please use the correct channel", delete_after=5)
         except Exception as e:
