@@ -16,7 +16,8 @@ COGS = [
     'cogs.tasks',
     'cogs.events',
     'cogs.update_messages',
-    'cogs.staffing'
+    'cogs.staffing',
+    'cogs.mentors'
 ]
 
 COGS_LOAD = {
@@ -25,7 +26,8 @@ COGS_LOAD = {
     'check_members': 'cogs.tasks',
     'events': 'cogs.events',
     'update': 'cogs.update_messages',
-    'staffing': 'cogs.staffing'
+    'staffing': 'cogs.staffing',
+    'check_mentors': 'cogs.mentors'
 }
 
 STAFF_ROLES = [
@@ -41,6 +43,8 @@ ROLE_REASONS = {
     'vatsca_remove': 'Member is no longer part of VATSCA',
     'no_cid': 'User does not have a VATSIM ID in his/her nickname.',
     'no_auth': 'User did not authenticate via the Community Website',
+    'mentor_add': 'Member is now a mentor',
+    'mentor_remove': 'Member is no longer a mentor',
 }
 
 AVAILABLE_EVENT_DAYS = [
@@ -63,8 +67,8 @@ VATSIM_API_TOKEN = str(os.getenv('VATSIM_API_TOKEN'))
 EVENT_CALENDAR_URL = str(os.getenv('EVENT_CALENDAR_URL'))
 EVENT_CALENDAR_TYPE = int(os.getenv('EVENT_CALENDAR_TYPE'))
 
-BOOKING_API_URL = str(os.getenv('BOOKING_API_URL'))
-BOOKING_API_TOKEN = str(os.getenv('BOOKING_API_TOKEN'))
+CC_API_URL = str(os.getenv('CC_API_URL'))
+CC_API_TOKEN = str(os.getenv('CC_API_TOKEN'))
 
 VATSIM_CHECK_MEMBER_URL = str(os.getenv('VATSIM_CHECK_MEMBER_URL'))
 VATSIM_SUBDIVISION = str(os.getenv('VATSIM_SUBDIVISION'))
@@ -78,11 +82,13 @@ BOT_DB_NAME = str(os.getenv('BOT_DB_NAME'))
 VATSCA_MEMBER_ROLE = int(os.getenv('VATSCA_MEMBER_ROLE'))
 VATSIM_MEMBER_ROLE = int(os.getenv('VATSIM_MEMBER_ROLE'))
 EVENTS_ROLE = int(os.getenv('EVENTS_ROLE'))
-
 OBS_RATING_ROLE = int(os.getenv('OBS_RATING_ROLE'))
+MENTOR_ROLE = int(os.getenv('MENTOR_ROLE'))
 
 GUILD_ID = int(os.getenv('GUILD_ID'))
 STAFFING_INTERVAL = int(os.getenv('STAFFING_INTERVAL'))
+
+CHECK_MENTORS_INTERVAL = int(os.getenv('CHECK_MENTORS_INTERVAL'))
 
 EVENTS_CHANNEL = int(os.getenv('EVENTS_CHANNEL'))
 RULES_CHANNEL = int(os.getenv('RULES_CHANNEL'))

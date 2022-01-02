@@ -5,7 +5,7 @@ import json
 
 import requests
 
-from helpers.config import BOOKING_API_URL, BOOKING_API_TOKEN
+from helpers.config import CC_API_URL, CC_API_TOKEN
 
 class Booking():
     
@@ -13,18 +13,12 @@ class Booking():
         """
         Create a Booking object
         """
-        """self.cid = cid
-        self.date = date
-        self.start_at = start_at
-        self.end_at = end_at
-        self.position = position
-        self.tag = tag"""
     
     async def get_bookings(self):
         """
         Get all bookings from the API
         """
-        request = requests.get(BOOKING_API_URL, headers={'Authorization': 'Bearer ' + BOOKING_API_TOKEN, 'Accept': 'application/json'})
+        request = requests.get(CC_API_URL + '/bookings', headers={'Authorization': 'Bearer ' + CC_API_TOKEN, 'Accept': 'application/json'})
         if request.status_code == requests.codes.ok:
             feedback = request.json()
             return feedback["bookings"]
@@ -42,7 +36,7 @@ class Booking():
             'position': position
         }
 
-        request = requests.post(url=BOOKING_API_URL + "/create", headers={'Authorization': 'Bearer ' + BOOKING_API_TOKEN, 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json'}, data=data)
+        request = requests.post(url=CC_API_URL + "/bookings/create", headers={'Authorization': 'Bearer ' + CC_API_TOKEN, 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json'}, data=data)
         if request.status_code == requests.codes.ok:
             return 200
         else:
@@ -54,13 +48,13 @@ class Booking():
         """
         Delete a booking from the API
         """
-        booking = requests.get(BOOKING_API_URL, headers={'Authorization': 'Bearer ' + BOOKING_API_TOKEN, 'Accept': 'application/json'})
+        booking = requests.get(CC_API_URL + '/bookings', headers={'Authorization': 'Bearer ' + CC_API_TOKEN, 'Accept': 'application/json'})
 
         if booking.status_code == requests.codes.ok:
             feedback = booking.json()
             for booking in feedback["bookings"]:
                 if booking["cid"] == cid and booking["callsign"] + ":" == position:
-                    request = requests.delete(url=BOOKING_API_URL + "/" + str(booking["id"]), headers={'Authorization': 'Bearer ' + BOOKING_API_TOKEN, 'Accept': 'application/json'})
+                    request = requests.delete(url=CC_API_URL + "/" + str(booking["id"]), headers={'Authorization': 'Bearer ' + CC_API_TOKEN, 'Accept': 'application/json'})
                     if request.status_code == requests.codes.ok:
                         return 200
                     else:
