@@ -383,12 +383,12 @@ class Staffingcog(commands.Cog):
                             end_formatted = start_formatted + datetime.timedelta(hours=2)
                             end_time = end_formatted.strftime("%H:%M")
 
-                        #tag = 3
+                        tag = 3
 
                         date = datetime.datetime.strptime(str(eventDetails[0]), '%Y-%m-%d')
                         date = date.strftime("%d/%m/%Y")
 
-                        request = await Booking.post_booking(self, int(cid), str(date), str(start_time), str(end_time), str(position))
+                        request = await Booking.post_booking(self, int(cid), str(date), str(start_time), str(end_time), str(position), int(tag))
 
                         if request == 200:
                             cursor.execute("UPDATE positions SET user = %s WHERE position = %s and title = %s", (f'<@{usernick}>', f'{position.upper()}:', title[0]))

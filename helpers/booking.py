@@ -23,7 +23,7 @@ class Booking():
             feedback = request.json()
             return feedback["data"]
 
-    async def post_booking(self, cid: int, date: str, start_at: str, end_at: str, position: str):
+    async def post_booking(self, cid: int, date: str, start_at: str, end_at: str, position: str, tag: int):
         """
         Post a new booking to the API
         """
@@ -34,6 +34,7 @@ class Booking():
             'start_at': start_at,
             'end_at': end_at,
             'position': position,
+            'tag': tag,
             'source': 'DISCORD'
         }
 
