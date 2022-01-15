@@ -64,12 +64,12 @@ class MentorsCog(commands.Cog):
                 elif mentor_role in user.roles and should_be_mentor == False:
                     await user.remove_roles(mentor_role, reason=self.MENTOR_ROLE_REMOVE_REASON)
 
-                if len(belong_to) > 0:
-                    for fir in belong_to:
-                        if discord.utils.get(guild.roles, id=int(FIR_MENTORS[fir])) not in user.roles and should_be_mentor == True:
-                            await user.add_roles(discord.utils.get(guild.roles, id=int(FIR_MENTORS[fir])), reason=self.MENTOR_ROLE_ADD_REASON)
-                        elif discord.utils.get(guild.roles, id=int(FIR_MENTORS[fir])) in user.roles and should_be_mentor == False:
-                            await user.remove_roles(discord.utils.get(guild.roles, id=int(FIR_MENTORS[fir])), reason=self.MENTOR_ROLE_REMOVE_REASON)
+                for fir in FIR_MENTORS:
+                    FIR_ROLE = discord.utils.get(guild.roles, id=int(FIR_MENTORS[fir]))
+                    if FIR_ROLE not in user.roles and fir in belong_to and should_be_mentor == True:
+                        await user.add_roles(FIR_ROLE, reason=self.MENTOR_ROLE_ADD_REASON)
+                    elif FIR_ROLE in user.roles and fir not in belong_to and should_be_mentor == False:
+                        await user.remove_roles(FIR_ROLE, reason=self.MENTOR_ROLE_REMOVE_REASON)
               
 
             except ValueError as e:
