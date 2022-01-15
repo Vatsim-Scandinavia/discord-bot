@@ -270,6 +270,7 @@ class EventsCog(commands.Cog):
                 new_event.get('url'),
                 event_description(new_event.get('description')),
                 self._convert_time(new_event.get('start')),
+                self._convert_time(new_event.get('end')),
                 None,
                 None,
                 None,
