@@ -4,7 +4,7 @@ import re
 from discord.ext import commands, tasks
 from discord_slash import cog_ext
 import datetime
-from helpers.config import CHECK_MENTORS_INTERVAL, DEBUG, GUILD_ID, MENTOR_ROLE, ROLE_REASONS
+from helpers.config import CHECK_MENTORS_INTERVAL, DEBUG, GUILD_ID, MENTOR_ROLE, ROLE_REASONS, FIR_MENTORS
 from helpers.mentor import Mentor
 from helpers.message import staff_roles
 
@@ -49,14 +49,27 @@ class MentorsCog(commands.Cog):
 
                 should_be_mentor = False
 
+                belong_to = []
+
                 for mentor in mentors:
                     if int(mentor['id']) == int(cid[0]):
                         should_be_mentor = True
+                        for fir in mentor['fir']:
+                            belong_to.append(fir)
+
+                        
                         
                 if mentor_role not in user.roles and should_be_mentor == True:
                     await user.add_roles(mentor_role, reason=self.MENTOR_ROLE_ADD_REASON)
                 elif mentor_role in user.roles and should_be_mentor == False:
                     await user.remove_roles(mentor_role, reason=self.MENTOR_ROLE_REMOVE_REASON)
+
+                if len(belong_to) > 0:
+                    for fir in belong_to:
+                        if discord.utils.get(guild.roles, id=int(FIR_MENTORS[fir])) not in user.roles and should_be_mentor == True:
+                            await user.add_roles(discord.utils.get(guild.roles, id=int(FIR_MENTORS[fir])), reason=self.MENTOR_ROLE_ADD_REASON)
+                        elif discord.utils.get(guild.roles, id=int(FIR_MENTORS[fir])) in user.roles and should_be_mentor == False:
+                            await user.remove_roles(discord.utils.get(guild.roles, id=int(FIR_MENTORS[fir])), reason=self.MENTOR_ROLE_REMOVE_REASON)
               
 
             except ValueError as e:

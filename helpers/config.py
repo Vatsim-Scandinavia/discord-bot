@@ -85,6 +85,15 @@ EVENTS_ROLE = int(os.getenv('EVENTS_ROLE'))
 OBS_RATING_ROLE = int(os.getenv('OBS_RATING_ROLE'))
 MENTOR_ROLE = int(os.getenv('MENTOR_ROLE'))
 
+FIR_DATA = str(os.getenv('FIR_DATA')).split(',')
+FIRS = []
+FIR_ROLES = []
+for fir in FIR_DATA:
+    FIRS.append(fir.split(':')[0])
+    FIR_ROLES.append(fir.split(':')[1])
+
+FIR_MENTORS = dict(zip(FIRS, FIR_ROLES))
+
 GUILD_ID = int(os.getenv('GUILD_ID'))
 STAFFING_INTERVAL = int(os.getenv('STAFFING_INTERVAL'))
 
