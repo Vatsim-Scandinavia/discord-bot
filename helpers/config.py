@@ -45,6 +45,8 @@ ROLE_REASONS = {
     'no_auth': 'User did not authenticate via the Community Website',
     'mentor_add': 'Member is now a mentor',
     'mentor_remove': 'Member is no longer a mentor',
+    'reaction_add': 'Member reacted to a message',
+    'reaction_remove': 'Member removed a reaction from a message',
 }
 
 AVAILABLE_EVENT_DAYS = [
@@ -93,6 +95,17 @@ for fir in FIR_DATA:
     FIR_ROLES.append(fir.split(':')[1])
 
 FIR_MENTORS = dict(zip(FIRS, FIR_ROLES))
+
+REACTION_ROLE_DATA = str(os.getenv('REACTION_ROLE_DATA')).split(',')
+REACTION_EMOJI = []
+REACTION_MESSAGE_IDS = []
+REACTION_ROLE_IDS = []
+for reaction_role in REACTION_ROLE_DATA:
+    REACTION_EMOJI.append(reaction_role.split('|')[0])
+    REACTION_MESSAGE_IDS.append(reaction_role.split('|')[1])
+    REACTION_ROLE_IDS.append(reaction_role.split('|')[2])
+
+REACTION_ROLES = dict(zip(REACTION_EMOJI, REACTION_ROLE_IDS))
 
 GUILD_ID = int(os.getenv('GUILD_ID'))
 STAFFING_INTERVAL = int(os.getenv('STAFFING_INTERVAL'))

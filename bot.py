@@ -3,12 +3,13 @@ import os
 import discord
 import requests
 import re
+import emoji
 
 from discord import InvalidArgument
 from discord.ext import commands
 from discord_slash import SlashCommand
 from dotenv import load_dotenv
-from helpers.config import VATSCA_MEMBER_ROLE, VATSIM_MEMBER_ROLE, VATSIM_SUBDIVISION, GUILD_ID, BOT_TOKEN
+from helpers.config import VATSCA_MEMBER_ROLE, VATSIM_MEMBER_ROLE, VATSIM_SUBDIVISION, GUILD_ID, BOT_TOKEN, REACTION_ROLES, REACTION_MESSAGE_IDS, REACTION_EMOJI, ROLE_REASONS
 from helpers.members import get_division_members
 from helpers import config
 
@@ -49,10 +50,6 @@ async def on_member_update(before_update, user: discord.User):
 
     vatsca_member = discord.utils.get(guild.roles, id=VATSCA_MEMBER_ROLE)
     vatsim_member = discord.utils.get(guild.roles, id=VATSIM_MEMBER_ROLE)
-
-    if vatsim_member not in user.roles:
-        if vatsca_member in user.roles:
-            await user.remove_roles(vatsca_member)
     try:
 
         cid = re.findall('\d+', str(user.nick))
@@ -62,14 +59,19 @@ async def on_member_update(before_update, user: discord.User):
 
         api_data = await get_division_members()
 
+        should_have_vatsca = False
+
         for entry in api_data:
-            if entry['id'] == str(cid[0]):
-                if vatsca_member not in user.roles and entry["subdivision"] == VATSIM_SUBDIVISION:
-                    await user.add_roles(vatsca_member)
-                elif vatsca_member in user.roles and entry["subdivision"] != VATSIM_SUBDIVISION:
-                    await user.remove_roles(vatsca_member)
-                
-                break
+            if int(entry['id']) == int(cid[0]) and str(entry["subdivision"]) == str(VATSIM_SUBDIVISION):
+                should_have_vatsca = True
+
+        if vatsim_member in user.roles:
+            if vatsca_member not in user.roles and should_have_vatsca == True:
+                await user.add_roles(vatsca_member)
+            elif vatsca_member in user.roles and should_have_vatsca == False:
+                await user.remove_roles(vatsca_member)
+        elif vatsim_member not in user.roles and vatsca_member in user.roles:
+            await user.remove_roles(vatsca_member)
 
     except ValueError as e:
         # This happens when a CID is not found, ignore it
@@ -78,6 +80,33 @@ async def on_member_update(before_update, user: discord.User):
     except Exception as e:
         print(e)
 
+@bot.event
+async def on_raw_reaction_add(payload):
+    channel = bot.get_channel(payload.channel_id)
+    msg = await channel.fetch_message(payload.message_id)
+    guild = bot.get_guild(GUILD_ID)
+    emojies = emoji.demojize(payload.emoji.name)
+    for message in REACTION_MESSAGE_IDS:
+        if int(msg.id) == int(message) and emojies in REACTION_EMOJI:
+            role = discord.utils.get(guild.roles, id=int(REACTION_ROLES[emojies]))
+            user = guild.get_member(payload.user_id)
+            if role not in user.roles:
+                await user.add_roles(role, reason=ROLE_REASONS['reaction_add'])
+                await user.send(f'You have been given the `{role.name}` role because you reacted with {payload.emoji}')
+
+@bot.event
+async def on_raw_reaction_remove(payload):
+    channel = bot.get_channel(payload.channel_id)
+    msg = await channel.fetch_message(payload.message_id)
+    guild = bot.get_guild(GUILD_ID)
+    emojies = emoji.demojize(payload.emoji.name)
+    for message in REACTION_MESSAGE_IDS:
+        if int(msg.id) == int(message) and emojies in REACTION_EMOJI:
+            role = discord.utils.get(guild.roles, id=int(REACTION_ROLES[emojies]))
+            user = guild.get_member(payload.user_id)
+            if role in user.roles:
+                await user.remove_roles(role, reason=ROLE_REASONS['reaction_remove'])
+                await user.send(f'You no longer have the `{role.name}` role because you removed your reaction.')
     
 
 @bot.event

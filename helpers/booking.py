@@ -43,7 +43,7 @@ class Booking():
         if request.status_code == requests.codes.ok:
             return 200
         else:
-            return request.status_code
+            return request.json()
 
         return False
 

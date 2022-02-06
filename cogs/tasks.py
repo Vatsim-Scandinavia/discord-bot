@@ -50,34 +50,34 @@ class TasksCog(commands.Cog):
 
         memberlist = await get_division_members()
             
-        for user in users:
-            if vatsim_member not in user.roles:
-                if vatsca_member in user.roles:
-                    await user.remove_roles(vatsca_member, reason=self.NO_AUTH_REMOVE_REASON)
-                continue
-
+        for user in users:            
             try:
                 cid = re.findall('\d+', str(user.nick))
 
                 if len(cid) < 1:
                     raise ValueError
 
+                should_have_vatsca = False
+
                 for entry in memberlist:
-                    if entry['id'] == cid[0]:
-                        if vatsca_member not in user.roles and entry["subdivision"] == VATSIM_SUBDIVISION:
-                            await user.add_roles(vatsca_member, reason=self.VATSCA_ROLE_ADD_REASON)
-                        elif vatsca_member in user.roles and entry["subdivision"] != VATSIM_SUBDIVISION:
-                            await user.remove_roles(vatsca_member, reason=self.VATSCA_ROLE_REMOVE_REASON)
-                        
-                        break
+                    if int(entry['id']) == int(cid[0]) and str(entry["subdivision"]) == str(VATSIM_SUBDIVISION):
+                        should_have_vatsca = True
+
+                if vatsim_member in user.roles:
+                    if vatsca_member not in user.roles and should_have_vatsca == True:
+                        await user.add_roles(vatsca_member, reason=self.VATSCA_ROLE_ADD_REASON)
+                    elif vatsca_member in user.roles and should_have_vatsca == False:
+                        await user.remove_roles(vatsca_member, reason=self.VATSCA_ROLE_REMOVE_REASON)
+                elif vatsim_member not in user.roles and vatsca_member in user.roles:
+                    await user.remove_roles(vatsca_member, reason=self.NO_AUTH_REMOVE_REASON)
 
             except ValueError as e:
                 if vatsca_member in user.roles:
                     await user.remove_roles(vatsca_member, reason=self.NO_CID_REMOVE_REASON)
-
             except Exception as e:
                 print(e)
                 continue
+
 
         print("check_members finished at " + str(datetime.datetime.now().isoformat()))
 

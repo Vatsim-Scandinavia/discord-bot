@@ -397,7 +397,7 @@ class Staffingcog(commands.Cog):
                             await self._updatemessage(title[0])
                             await ctx.send(f"<@{usernick}> Confirmed booking for position `{position.upper()}` for event `{title[0]}`", delete_after=5)
                         else:
-                            await ctx.send(f"<@{usernick}> Booking failed, Control Center responded with error {request}, please try again later", delete_after=5)
+                            await ctx.send(f"<@{usernick}> Booking failed, Control Center responded with error `{request['error']}`, please try again later", delete_after=5)
                     else:
                         await ctx.send(f"<@{usernick}> The bot could not find the position you tried to book.")
                 else:
