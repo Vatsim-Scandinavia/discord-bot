@@ -356,6 +356,9 @@ class Staffingcog(commands.Cog):
             
                 cursor.execute("SELECT title FROM staffing WHERE channel_id = %s", (ctx.channel_id,))
                 title = cursor.fetchone()
+                
+                print(ctx.channel_id)
+                print(title[0])
 
                 cursor.execute("SELECT position, user FROM positions WHERE title = %s", (title[0],))
                 positions = cursor.fetchall()
@@ -397,7 +400,7 @@ class Staffingcog(commands.Cog):
                             await self._updatemessage(title[0])
                             await ctx.send(f"<@{usernick}> Confirmed booking for position `{position.upper()}` for event `{title[0]}`", delete_after=5)
                         else:
-                            await ctx.send(f"<@{usernick}> Booking failed, Control Center responded with error `{request['error']}`, please try again later", delete_after=5)
+                            await ctx.send(f"<@{usernick}> Booking failed, Control Center responded with error `{request.json()['message']}` code `{request.status_code}`, please try again later", delete_after=5)
                     else:
                         await ctx.send(f"<@{usernick}> The bot could not find the position you tried to book.")
                 else:
