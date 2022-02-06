@@ -9,8 +9,24 @@ def db_connection():
 
     global _connection
 
+    # Return connection
     if _connection is not None:
+
+          # Check if connection is still alive
+        try:
+            _connection.ping(reconnect=False, attempts=3, delay=5)
+        except mysql.connector.InterfaceError as err:
+            print("[MySQL] Connection lost. Reconnecting...")
+            _connection = init_connection()
+
         return _connection
+    else:
+        _connection = init_connection()
+        return _connection
+
+def init_connection():
+
+    global _connection
 
     try:
         _connection = mysql.connector.connect(
