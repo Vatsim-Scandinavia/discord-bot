@@ -356,9 +356,6 @@ class Staffingcog(commands.Cog):
             
                 cursor.execute("SELECT title FROM staffing WHERE channel_id = %s", (ctx.channel_id,))
                 title = cursor.fetchone()
-                
-                print(ctx.channel_id)
-                print(title[0])
 
                 cursor.execute("SELECT position, user FROM positions WHERE title = %s", (title[0],))
                 positions = cursor.fetchall()

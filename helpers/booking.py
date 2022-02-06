@@ -45,8 +45,6 @@ class Booking():
         else:
             return request
 
-        return False
-
     async def delete_booking(self, cid: int, position: str):
         """
         Delete a booking from the API
@@ -64,5 +62,3 @@ class Booking():
             return 404
         else:
             return bookings.status_code
-
-        return False
