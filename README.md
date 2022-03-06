@@ -26,12 +26,12 @@ Our Discord bot is created to do the following task
 ### Configuration
 Since not all lines of the environment file, here's an explanation for a few
 
-`VATSIM_CHECK_MEMBER_URL` is the VATSIM API memberlist for your subdivision, e.g, `https://api.vatsim.net/api/subdivisions/SCA/members/?paginated`
-`VATSIM_SUBDIVISION` is the short abbriviation of your subdivision e.g. `SCA`
-`DIVISION_URL` is the full url to your homepage e.g `https://vatsim-scandinavia.org`
-`EVENT_CALENDAR_URL` is the API URL for your Invision Forum installation if you have any
-`CC_API_URL` and TOKEN is the [Control Center](https://github.com/Vatsim-Scandinavia/controlcenter) API connection if you use it.
-`*_ROLE` are your Discord Role ID's for the respective ratings.
+- `VATSIM_CHECK_MEMBER_URL` is the VATSIM API memberlist for your subdivision, e.g, `https://api.vatsim.net/api/subdivisions/SCA/members/?paginated`
+- `VATSIM_SUBDIVISION` is the short abbriviation of your subdivision e.g. `SCA`
+- `DIVISION_URL` is the full url to your homepage e.g `https://vatsim-scandinavia.org`
+- `EVENT_CALENDAR_URL` is the API URL for your Invision Forum installation if you have any
+- `CC_API_URL` and TOKEN is the [Control Center](https://github.com/Vatsim-Scandinavia/controlcenter) API connection if you use it.
+- `*_ROLE` are your Discord Role ID's for the respective ratings.
 
 ## Contribution and conventions
 Contributions are much appreciated to help everyone move this service forward with fixes and functionalities. We recommend you to fork this repository here on GitHub so you can easily create pull requests back to the main project.
