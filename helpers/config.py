@@ -17,7 +17,7 @@ COGS = [
     'cogs.events',
     'cogs.update_messages',
     'cogs.staffing',
-    'cogs.mentors'
+    'cogs.roles'
 ]
 
 COGS_LOAD = {
@@ -27,7 +27,7 @@ COGS_LOAD = {
     'events': 'cogs.events',
     'update': 'cogs.update_messages',
     'staffing': 'cogs.staffing',
-    'check_mentors': 'cogs.mentors'
+    'check_roles': 'cogs.roles'
 }
 
 STAFF_ROLES = [
@@ -45,6 +45,8 @@ ROLE_REASONS = {
     'no_auth': 'User did not authenticate via the Community Website',
     'mentor_add': 'Member is now a mentor',
     'mentor_remove': 'Member is no longer a mentor',
+    'training_staff_add': 'Member is now Traning Staff',
+    'training_staff_remove': 'Member is no longer Training Staff',
     'reaction_add': 'Member reacted to a message',
     'reaction_remove': 'Member removed a reaction from a message',
 }
@@ -86,6 +88,7 @@ VATSIM_MEMBER_ROLE = int(os.getenv('VATSIM_MEMBER_ROLE'))
 EVENTS_ROLE = int(os.getenv('EVENTS_ROLE'))
 OBS_RATING_ROLE = int(os.getenv('OBS_RATING_ROLE'))
 MENTOR_ROLE = int(os.getenv('MENTOR_ROLE'))
+TRAINING_STAFF_ROLE = int(os.getenv('TRAINING_STAFF_ROLE'))
 
 FIR_DATA = str(os.getenv('FIR_DATA')).split(',')
 FIRS = []
