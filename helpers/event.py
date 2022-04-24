@@ -116,7 +116,7 @@ class Event():
         auth = aiohttp.BasicAuth(FORUM_API_TOKEN, '')
 
         async with aiohttp.ClientSession() as session:
-            async with session.get(EVENT_CALENDAR_URL + "/" + str(self.id), auth=auth) as resp:
+            async with session.get(f'{EVENT_CALENDAR_URL}/{str(self.id)}', auth=auth) as resp:
                 
                 if resp.status == 404:
                     return False

@@ -65,7 +65,11 @@ class Staffingcog(commands.Cog):
 
         formatted_date = date.strftime("%A %d/%m/%Y")
 
-        format_staffing_message += f'{title} staffing - {formatted_date}\n\n{description}\n\n{section_1_title}:\n{main_position_data}\n\n{section_2_title}:\n{secondary_position_data}\n\n{section_3_title}:\n{regional_position_data}'
+        time = await self._geteventtime(title)
+        start_time = time[0]
+        end_time = time[1]
+
+        format_staffing_message += f'{title} staffing - {formatted_date} {start_time} - {end_time}z\n\n{description}\n\n{section_1_title}:\n{main_position_data}\n\n{section_2_title}:\n{secondary_position_data}\n\n{section_3_title}:\n{regional_position_data}'
 
         mydb = db_connection()
         cursor = mydb.cursor()
@@ -218,13 +222,13 @@ class Staffingcog(commands.Cog):
                 titles.append(all[0])
 
             if title in titles:
-                options = ['Title', 'Day of event', 'Staffing message', 'First Section',
-                           'Second Section', 'Third Section', 'Delete Staffing', 'Exit Updater']
+                options = ['1. Title', '2. Day of event', '3. Staffing message', '4. First Section',
+                           '5. Second Section', '6. Third Section', '7. Delete Staffing', '8. Exit Updater']
                 avail = "\n" .join(files for files in options)
                 await ctx.send(f'What would you like to update in staffing `{title}`? **FYI this command expires in 1 minute**\n\nAvailable options:\n{avail}')
                 message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
 
-                if message.content == options[0]:
+                if message.content == '1':
                     newtitle = await self._get_title(ctx)
                     cursor.execute("UPDATE staffing, positions SET staffing.title = %s, positions.title = %s WHERE staffing.title = %s and positions.title = %s", (newtitle, newtitle, title, title))
                     mydb.commit()
@@ -232,7 +236,7 @@ class Staffingcog(commands.Cog):
                     await self._updatemessage(title)
                     await ctx.send(f'Title updated to - {title}')
 
-                elif message.content == options[1]:
+                elif message.content == '2':
                     week_int = await self._get_week(ctx)
                     newdate = await self._get_date(ctx, week_int)
                     cursor.execute("UPDATE staffing SET date = %s, week_interval = %s WHERE title = %s", (newdate, week_int, title))
@@ -241,7 +245,7 @@ class Staffingcog(commands.Cog):
                     formatted_date = newdate.strftime("%A %d/%m/%Y")
                     await ctx.send(f'Event date has been updated to - `{formatted_date}` & Week interval updated to - `{week_int}`')
 
-                elif message.content == options[2]:
+                elif message.content == '3':
                     newdescription = await self._get_description(ctx)
                     newdescription = newdescription + "\n\nTo book a position, write `/book`, press TAB and then write the callsign.\nTo unbook a position, use `/unbook`."
 
@@ -250,7 +254,7 @@ class Staffingcog(commands.Cog):
                     await self._updatemessage(title)
                     await ctx.send(f'Event description/staffing message has been updated to:\n{newdescription}')
 
-                elif message.content == options[3]:
+                elif message.content == '4':
                     first_section = await self._get_first_section(ctx)
                     new_main_positions = await self._get_main_positions(ctx, first_section)
                     formatted_main_positions = "\n" .join(
@@ -271,7 +275,7 @@ class Staffingcog(commands.Cog):
                     await self._updatemessage(title)
                     await ctx.send(f'Main Positions updated to:\n{formatted_main_positions}\n\nFirst Section Title updated to `{first_section}`')
 
-                elif message.content == options[4]:
+                elif message.content == '5':
                     second_section = await self._get_second_section(ctx)
                     new_secondary_positions = await self._get_secondary_positions(ctx, second_section)
                     formatted_secondary_positions = "\n" .join(
@@ -291,7 +295,7 @@ class Staffingcog(commands.Cog):
                     await self._updatemessage(title)
                     await ctx.send(f'Secondary Positions updated to:\n{formatted_secondary_positions}\n\nSecond Section Title updated to `{second_section}`')
 
-                elif message.content == options[5]:
+                elif message.content == '6':
                     third_section = await self._get_third_section(ctx)
                     new_regional_positions = await self._get_regional_positions(ctx, third_section)
                     formatted_regional_positions = "\n" .join(
@@ -311,7 +315,7 @@ class Staffingcog(commands.Cog):
                     await self._updatemessage(title)
                     await ctx.send(f'Regional Positions updated to:\n{formatted_regional_positions}\n\nThird Section Title updated to `{third_section}`')
 
-                elif message.content == options[6]:
+                elif message.content == '7':
                     confirm_delete = await self._getconfirmation(ctx, title)
 
                     if confirm_delete == title:
@@ -330,7 +334,7 @@ class Staffingcog(commands.Cog):
                     elif confirm_delete == 'CANCEL':
                         await ctx.send(f'Deletion of `{title}` has been cancelled.')
 
-                elif message.content == options[7]:
+                elif message.content == '8':
                     now = datetime.datetime.now()
                     now = now.strftime("%d-%m-%Y %H:%M:%S %p")
                     await ctx.send(f'Staffing updater for `{title}` exited at - {now}')
@@ -447,6 +451,11 @@ class Staffingcog(commands.Cog):
             await ctx.send(f"Error unbooking position for event {title[0]} - {e}")
             raise e
 
+    @cog_ext.cog_slash(name="refreshevent", guild_ids=guild_id, description='Bot refreshes selected event')
+    async def refreshevent(self, ctx, title):
+        await self._updatemessage(title)
+        await ctx.send(f"<@{ctx.author.id}> Event `{title}` has been refreshed", delete_after=5)
+
     #
     # ----------------------------------
     # TASK LOOP FUNCTIONS
@@ -503,7 +512,7 @@ class Staffingcog(commands.Cog):
         :return:
         """
         try:
-            await ctx.send('Event Title? **FYI this command expires in 1 minute**')
+            await ctx.send('Event Title? Note: This title has to be identical to the event from the Calendar **FYI this command expires in 1 minute**')
             message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
 
             if len(message.content) < 1:
@@ -520,6 +529,12 @@ class Staffingcog(commands.Cog):
                 if message.content == each[0]:
                     await ctx.send(f'The event `{message.content}` already exists.')
                     raise ValueError
+
+            cursor.execute('SELECT name FROM events')
+            realEvents = cursor.fetchall()
+            if not message.content in realEvents:
+                await ctx.send(f'The event `{message.content}` already exists.')
+                raise ValueError
 
             return message.content
         except Exception as e:
@@ -786,19 +801,9 @@ class Staffingcog(commands.Cog):
             second_section = events[8]
             third_section = events[9]
 
-            cursor.execute("SELECT start_time FROM events WHERE name = %s", (title,))
-            start = cursor.fetchone()
-            start_formatted = datetime.datetime.strptime(str(start[0]), '%Y-%m-%d %H:%M:%S')
-            start_time = start_formatted.strftime("%H:%M")
-
-            cursor.execute("SELECT end_time FROM events WHERE name = %s", (title,))
-            end = cursor.fetchone()
-            if end[0] is not None:
-                end_formatted = datetime.datetime.strptime(str(end[0]), '%Y-%m-%d %H:%M:%S')
-                end_time = end_formatted.strftime("%H:%M")
-            else:
-                end_formatted = start_formatted + datetime.timedelta(hours=2)
-                end_time = end_formatted.strftime("%H:%M")
+            time = await self._geteventtime(title)
+            start_time = time[0]
+            end_time = time[1]
 
             type = 'main'
             cursor.execute(
@@ -858,6 +863,25 @@ class Staffingcog(commands.Cog):
             return message.content
         except Exception as e:
             await ctx.send(f'Error getting message - {e}')
+
+    async def _geteventtime(self, title):
+        mydb = db_connection()
+        cursor = mydb.cursor()
+        cursor.execute("SELECT start_time FROM events WHERE name = %s", (title,))
+        start = cursor.fetchone()
+        start_formatted = datetime.datetime.strptime(str(start[0]), '%Y-%m-%d %H:%M:%S')
+        start_time = start_formatted.strftime("%H:%M")
+
+        cursor.execute("SELECT end_time FROM events WHERE name = %s", (title,))
+        end = cursor.fetchone()
+        if end[0] is not None:
+            end_formatted = datetime.datetime.strptime(str(end[0]), '%Y-%m-%d %H:%M:%S')
+            end_time = end_formatted.strftime("%H:%M")
+        else:
+            end_formatted = start_formatted + datetime.timedelta(hours=2)
+            end_time = end_formatted.strftime("%H:%M")
+
+        return start_time, end_time
 
 def setup(bot):
     bot.add_cog(Staffingcog(bot))
