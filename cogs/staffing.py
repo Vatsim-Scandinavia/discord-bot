@@ -533,7 +533,7 @@ class Staffingcog(commands.Cog):
             cursor.execute('SELECT name FROM events')
             realEvents = cursor.fetchall()
             if not message.content in realEvents:
-                await ctx.send(f'The event `{message.content}` already exists.')
+                await ctx.send(f'The event `{message.content}` does not exists.')
                 raise ValueError
 
             return message.content
