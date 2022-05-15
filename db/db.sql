@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS `staffing` (
   `main_pos_title` text NOT NULL,
   `secondary_pos_title` text NOT NULL,
   `regional_pos_title` text NOT NULL,
+  `restrict_bookings` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id` (`id`) USING BTREE
 );
