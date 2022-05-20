@@ -57,18 +57,19 @@ class RolesCog(commands.Cog):
 
                 belong_to = []
 
-                if mentors != False:
-                    for mentor in mentors:
-                        if int(mentor['id']) == int(cid[0]):
-                            should_be_mentor = True
-                            for fir in mentor['fir']:
-                                belong_to.append(fir)
+                if mentors == False or moderators == None:
+                    continue
+
+                for mentor in mentors:
+                    if int(mentor['id']) == int(cid[0]):
+                        should_be_mentor = True
+                        for fir in mentor['fir']:
+                            belong_to.append(fir)
 
                 should_be_training_staff = False            
-                if moderators != False:
-                    for moderator in moderators:
-                        if int(moderator['id']) == int(cid[0]):
-                            should_be_training_staff = True
+                for moderator in moderators:
+                    if int(moderator['id']) == int(cid[0]):
+                        should_be_training_staff = True
                         
 
                 if mentor_role not in user.roles and should_be_mentor == True:
