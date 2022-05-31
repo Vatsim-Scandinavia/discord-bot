@@ -133,7 +133,7 @@ class Staffingcog(commands.Cog):
 
     @cog_ext.cog_slash(name="manreset", guild_ids=guild_id, description="Bot manually resets specific staffing")
     @commands.has_any_role(*staff_roles())
-    async def man_reset(self, title):
+    async def man_reset(self, ctx, title: str):
         await self.bot.wait_until_ready()
         staffing = StaffingDB.select(self=self, table='staffing', columns=['*'], where=['title'], value={'title': title})
         date = staffing[2]
@@ -438,6 +438,7 @@ class Staffingcog(commands.Cog):
             formatted_date = datetime.datetime(int(year), int(month), int(day))
 
             if now.date() == formatted_date.date() and now.hour == 21 and 0 <= now.minute <= 5:
+                print(f'Resetting {staffing[1]} staffing')
                 title = staffing[1]
                 StaffingDB.update(self=self, table='positions', columns=['user'], values={'user': ''}, where=['title'], value={'title': title})
                 newdate = None
