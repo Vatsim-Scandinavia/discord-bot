@@ -1,5 +1,7 @@
 Welcome to the Discord server of VATSIM Scandinavia!
 
+▫️▫️▫️
+
 :one: To gain access to this server, please follow the instructions sent by the Vatsim Bot or log in here: https://community.vatsim.net/
 
 :two: If you want to access country specific channels or be added to the notification list, visit the #role-selection channel after verifying your account
