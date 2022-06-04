@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord_slash import cog_ext, SlashContext
 from discord_slash.utils.manage_commands import create_choice, create_option
 
-from helpers.config import ROLES_CHANNEL, GUILD_ID, RULES_CHANNEL, DIVISION_URL
+from helpers.config import ROLES_CHANNEL, GUILD_ID, RULES_CHANNEL, DIVISION_URL, WELCOME_CHANNEL
 from helpers.message import embed
 from helpers.message import staff_roles
 
@@ -35,6 +35,10 @@ class UpdateCountryMessage(commands.Cog):
             create_choice(
             name="Welcome",
             value="3"
+            ),
+            create_choice(
+            name="Rules",
+            value="4"
             )]
         ),
         create_option(
@@ -121,7 +125,41 @@ class UpdateCountryMessage(commands.Cog):
                             print(e)
         elif option == "3":
             """
-            Function posts updated welcome and rules message
+            Function posts updated welcome
+            :param ctx:
+            :param message_id:
+            :return:
+            """
+            channel = discord.utils.get(ctx.guild.channels, id=WELCOME_CHANNEL)
+            if channel:
+                author = {
+                    'name': self.bot.user.name,
+                    'url': DIVISION_URL,
+                    'icon': self.bot.user.avatar_url,
+                }
+                if message_id is None:
+                    try:
+                        await ctx.send("Message is being generated", delete_after=5)
+                        text = self._read_welcome_file()
+                        msg = embed(title='Welcome', description=text, author=author)
+                        await channel.send(embed=msg)
+                    except Exception as e:
+                        print(e)
+                else:
+                    message_id = int(message_id)
+                    message = discord.utils.get(await channel.history(limit=100).flatten(), id=message_id)
+    
+                    if message:
+                        try:
+                            await ctx.send("Message is being generated", delete_after=5)
+                            text = self._read_welcome_file()
+                            msg = embed(title='Welcome', description=text, author=author)
+                            await message.edit(embed=msg)
+                        except Exception as e:
+                            print(e)
+        elif option == "4":
+            """
+            Function posts updated rules
             :param ctx:
             :param message_id:
             :return:
@@ -136,7 +174,7 @@ class UpdateCountryMessage(commands.Cog):
                 if message_id is None:
                     try:
                         await ctx.send("Message is being generated", delete_after=5)
-                        text = self._read_welcome_file()
+                        text = self._read_rules_file()
                         msg = embed(title='Rules', description=text, author=author)
                         await channel.send(embed=msg)
                     except Exception as e:
@@ -148,11 +186,12 @@ class UpdateCountryMessage(commands.Cog):
                     if message:
                         try:
                             await ctx.send("Message is being generated", delete_after=5)
-                            text = self._read_welcome_file()
+                            text = self._read_rules_file()
                             msg = embed(title='Rules', description=text, author=author)
                             await message.edit(embed=msg)
                         except Exception as e:
                             print(e)
+
 
     def _read_file(self) -> str:
         """
@@ -185,10 +224,19 @@ class UpdateCountryMessage(commands.Cog):
         return data
     def _read_welcome_file(self) -> str:
         """
-        Function reads and returns welcome and rules message stored in welcome_rules.md
+        Function reads and returns welcome and welcome message stored in welcome.md
         :return:
         """
-        file = open('messages/welcome_rules.md', mode='r')
+        file = open('messages/welcome.md', mode='r')
+        data = file.read()
+        file.close()
+        return data
+    def _read_rules_file(self) -> str:
+        """
+        Function reads and returns welcome and rules message stored in rules.md
+        :return:
+        """
+        file = open('messages/rules.md', mode='r')
         data = file.read()
         file.close()
         return data
