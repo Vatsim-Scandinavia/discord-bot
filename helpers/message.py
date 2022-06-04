@@ -5,7 +5,7 @@ from markdownify import markdownify as md
 from helpers.config import STAFF_ROLES, VATSCA_BLUE
 
 
-def embed(description: str = None, colour=None, title: str = None, author: dict = None, url: str = None, image: str = None, footer: dict = None,
+def embed(description: str = None, colour=None, title: str = None, author: dict = None, url: str = discord.embeds.EmptyEmbed, image: str = None, footer: dict = None,
           fields: list = None, timestamp=None) -> discord.Embed:
     """
     Function returns embeded styled message
