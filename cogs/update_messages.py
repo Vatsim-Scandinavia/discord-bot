@@ -62,7 +62,7 @@ class UpdateCountryMessage(commands.Cog):
             if channel:
                 author = {
                     'name': self.bot.user.name,
-                    'url': DIVISION_URL,
+                    'url': 'https://vatsim-scandinavia.org',
                     'icon': self.bot.user.avatar_url,
                 }
                 if message_id is None:
@@ -98,7 +98,7 @@ class UpdateCountryMessage(commands.Cog):
             if channel:
                 author = {
                     'name': self.bot.user.name,
-                    'url': DIVISION_URL,
+                    'url': 'https://vatsim-scandinavia.org',
                     'icon': self.bot.user.avatar_url,
                 }
                 if message_id is None:
