@@ -25,7 +25,7 @@ class UpdateCountryMessage(commands.Cog):
             required=True,
             choices=[
             create_choice(
-            name="Countries",
+            name="Channels",
             value="1"
             ),
             create_choice(
@@ -69,7 +69,7 @@ class UpdateCountryMessage(commands.Cog):
                     try:
                         await ctx.send("Message is being generated", delete_after=5)
                         text = self._read_file()
-                        msg = embed(description=text, author=author)
+                        msg = embed(title='Available Channel Roles', description=text)
                         await channel.send(embed=msg)
                     except Exception as e:
                         print(e)
@@ -81,7 +81,7 @@ class UpdateCountryMessage(commands.Cog):
                         try:
                             await ctx.send("Message is being generated", delete_after=5)
                             text = self._read_file()
-                            msg = embed(description=text, author=author)
+                            msg = embed(title='Available Channel Roles', description=text)
                             await message.edit(embed=msg)
                         except Exception as e:
                             print(e)
@@ -106,7 +106,7 @@ class UpdateCountryMessage(commands.Cog):
                         await ctx.send("Message is being generated", delete_after=5)
                         embd = self._read_embed__file()
                         text = self._read_message_file()
-                        msg = embed(description=embd, author=author)
+                        msg = embed(title='Available Country Roles', description=embd)
                         await channel.send(text, embed=msg)
                     except Exception as e:
                         print(e)
@@ -119,7 +119,7 @@ class UpdateCountryMessage(commands.Cog):
                             await ctx.send("Message is being generated", delete_after=5)
                             embd = self._read_embed__file()
                             text = self._read_message_file()
-                            msg = embed(description=embd, author=author)
+                            msg = embed(title='Available Country Roles', description=embd)
                             await message.edit(content=text, embed=msg)
                         except Exception as e:
                             print(e)
