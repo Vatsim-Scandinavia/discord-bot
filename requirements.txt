@@ -1,5 +1,4 @@
-#discord.py==1.6.0 # A new version is available but embeds won't work.
-py-cord==1.7.3
+discord.py==1.7.3
 discord==1.7.3
 discord-py-slash-command==3.0.3
 mysql_connector_repackaged==0.3.1

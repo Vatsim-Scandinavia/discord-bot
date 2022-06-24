@@ -428,7 +428,6 @@ class Staffingcog(commands.Cog):
         await self.bot.wait_until_ready()
         staffings = StaffingDB.select(self=self, table='staffing', columns=['*'], amount='all')
         now = datetime.datetime.utcnow()
-
         for staffing in staffings:
             date = staffing[2]
             week = staffing[6]
@@ -437,10 +436,11 @@ class Staffingcog(commands.Cog):
             year = date.strftime("%Y")
             formatted_date = datetime.datetime(int(year), int(month), int(day))
 
-            if now.date() == formatted_date.date() and now.hour == 21 and 0 <= now.minute <= 5:
+            if now.date() > formatted_date.date():
                 print(f'Resetting {staffing[1]} staffing')
                 title = staffing[1]
-                StaffingDB.update(self=self, table='positions', columns=['user'], values={'user': ''}, where=['title'], value={'title': title})
+                values = { 'user': '', }
+                StaffingDB.update(self=self, table='positions', where=['title'], value={'title': title}, columns=['user'], values=values)
                 newdate = None
                 times = 7
                 i = -1
@@ -451,7 +451,8 @@ class Staffingcog(commands.Cog):
                         today = datetime.date.today()
                         newdate = today + \
                             datetime.timedelta(days=i-today.weekday(), weeks=int(w))
-                StaffingDB.update(self=self, table='staffing', columns=['date'], values={'date': newdate}, where=['title'], value={'title': title})
+                values = { 'date': newdate, }
+                StaffingDB.update(self=self, table='staffing', where=['title'], value={'title': title}, columns=['date'], values=values)
                 await self._updatemessage(title)
                 channel = self.bot.get_channel(int(staffing[4]))
                 await channel.send("The chat is being automatic reset!")
