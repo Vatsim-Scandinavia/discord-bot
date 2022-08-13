@@ -9,3 +9,4 @@ markdownify==0.10.1
 python-version==0.0.2
 websockets==10.1
 emoji==1.6.3
+sentry-sdk==1.9.0

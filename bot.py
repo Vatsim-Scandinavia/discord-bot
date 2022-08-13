@@ -1,4 +1,5 @@
 import os
+import sentry_sdk
 
 import discord
 import requests
@@ -20,6 +21,15 @@ intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='/', description=config.DESCRIPTION, intents=intents, help_command=None, case_insensitive=True)
 
 slash = SlashCommand(bot, sync_commands=True)
+
+sentry_sdk.init(
+    dsn="https://72a8a935ed0845cf97486216a196bf1c@o1103878.ingest.sentry.io/6614652",
+
+    # Set traces_sample_rate to 1.0 to capture 100%
+    # of transactions for performance monitoring.
+    # We recommend adjusting this value in production.
+    traces_sample_rate=1.0
+)
 
 """
     Bot event that sets bots rich presence in Discord profile
