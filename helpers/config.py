@@ -83,6 +83,8 @@ BOT_DB_USER = str(os.getenv('BOT_DB_USER'))
 BOT_DB_PASSWORD = str(os.getenv('BOT_DB_PASSWORD'))
 BOT_DB_NAME = str(os.getenv('BOT_DB_NAME'))
 
+SENTRY_KEY = str(os.getenv('SENTRY_KEY'))
+
 VATSCA_MEMBER_ROLE = int(os.getenv('VATSCA_MEMBER_ROLE'))
 VATSIM_MEMBER_ROLE = int(os.getenv('VATSIM_MEMBER_ROLE'))
 EVENTS_ROLE = int(os.getenv('EVENTS_ROLE'))

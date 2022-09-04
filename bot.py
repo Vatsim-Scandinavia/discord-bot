@@ -10,7 +10,7 @@ from discord import InvalidArgument
 from discord.ext import commands
 from discord_slash import SlashCommand
 from dotenv import load_dotenv
-from helpers.config import VATSCA_MEMBER_ROLE, VATSIM_MEMBER_ROLE, VATSIM_SUBDIVISION, GUILD_ID, BOT_TOKEN, REACTION_ROLES, REACTION_MESSAGE_IDS, REACTION_EMOJI, ROLE_REASONS
+from helpers.config import SENTRY_KEY, VATSCA_MEMBER_ROLE, VATSIM_MEMBER_ROLE, VATSIM_SUBDIVISION, GUILD_ID, BOT_TOKEN, REACTION_ROLES, REACTION_MESSAGE_IDS, REACTION_EMOJI, ROLE_REASONS
 from helpers.members import get_division_members
 from helpers import config
 
@@ -23,7 +23,7 @@ bot = commands.Bot(command_prefix='/', description=config.DESCRIPTION, intents=i
 slash = SlashCommand(bot, sync_commands=True)
 
 sentry_sdk.init(
-    dsn="https://72a8a935ed0845cf97486216a196bf1c@o1103878.ingest.sentry.io/6614652",
+    dsn=SENTRY_KEY,
 
     # Set traces_sample_rate to 1.0 to capture 100%
     # of transactions for performance monitoring.
