@@ -32,8 +32,8 @@ CREATE TABLE IF NOT EXISTS `staffing` (
   `message_id` bigint NOT NULL,
   `week_interval` int(11) NOT NULL,
   `main_pos_title` text NOT NULL,
-  `secondary_pos_title` text NOT NULL,
-  `regional_pos_title` text NOT NULL,
+  `secondary_pos_title` text NULL,
+  `regional_pos_title` text NULL,
   `restrict_bookings` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id` (`id`) USING BTREE

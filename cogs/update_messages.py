@@ -1,7 +1,8 @@
+from secrets import choice
 import discord
+
+from discord import app_commands
 from discord.ext import commands
-from discord_slash import cog_ext, SlashContext
-from discord_slash.utils.manage_commands import create_choice, create_option
 
 from helpers.config import ROLES_CHANNEL, GUILD_ID, RULES_CHANNEL, DIVISION_URL, WELCOME_CHANNEL
 from helpers.message import embed
@@ -16,54 +17,30 @@ class UpdateCountryMessage(commands.Cog):
     guild_ids = [GUILD_ID]
     
 
-    @cog_ext.cog_slash(name="update", guild_ids=guild_ids, description="Function posts updated countries message.",
-    options=[
-        create_option(
-            name="option",
-            description="Select which message you want to update",
-            option_type=3,
-            required=True,
-            choices=[
-            create_choice(
-            name="Channels",
-            value="1"
-            ),
-            create_choice(
-            name="Notifications",
-            value="2"
-            ),
-            create_choice(
-            name="Welcome",
-            value="3"
-            ),
-            create_choice(
-            name="Rules",
-            value="4"
-            )]
-        ),
-        create_option(
-            name="message_id",
-            description="Select the message id of the message you want to update",
-            option_type=3,
-            required=False,
-        )
+    @app_commands.command(name="update", description="Function posts updated countries message.")
+    @app_commands.choices(option=[
+        app_commands.Choice(name="Channels", value="1"),
+        app_commands.Choice(name="Notifications", value="2"),
+        app_commands.Choice(name="Welcome", value="3"),
+        app_commands.Choice(name="Rules", value="4")
     ])
-        
     @commands.has_any_role(*staff_roles())
-    async def update(self, ctx, *, message_id: str = None, option: str):
+    async def update(self, interaction: discord.Integration, *, message_id: str = None, option: app_commands.Choice[str]):
         """
         Function posts updated countries message
         :param ctx:
         :param message_id:
         :return:
         """
-        if option == "1":
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        interaction._baton = ctx 
+        if option.value == "1":
             channel = discord.utils.get(ctx.guild.channels, id=ROLES_CHANNEL)
             if channel:
                 author = {
                     'name': self.bot.user.name,
                     'url': DIVISION_URL,
-                    'icon': self.bot.user.avatar_url,
+                    'icon': self.bot.user.display_avatar,
                 }
                 if message_id is None:
                     try:
@@ -75,7 +52,7 @@ class UpdateCountryMessage(commands.Cog):
                         print(e)
                 else:
                     message_id = int(message_id)
-                    message = discord.utils.get(await ctx.channel.history(limit=100).flatten(), id=message_id)
+                    message = await ctx.fetch_message(message_id)
                     
                     if message:
                         try:
@@ -86,7 +63,7 @@ class UpdateCountryMessage(commands.Cog):
                         except Exception as e:
                             print(e)
         
-        elif option == "2":
+        elif option.value == "2":
             """
             Function posts updated countries message
             :param ctx:
@@ -112,7 +89,7 @@ class UpdateCountryMessage(commands.Cog):
                         print(e)
                 else:
                     message_id = int(message_id)
-                    message = discord.utils.get(await channel.history(limit=100).flatten(), id=message_id)
+                    message = await ctx.fetch_message(message_id)
         
                     if message:
                         try:
@@ -123,7 +100,7 @@ class UpdateCountryMessage(commands.Cog):
                             await message.edit(content=text, embed=msg)
                         except Exception as e:
                             print(e)
-        elif option == "3":
+        elif option.value == "3":
             """
             Function posts updated welcome
             :param ctx:
@@ -147,7 +124,7 @@ class UpdateCountryMessage(commands.Cog):
                         print(e)
                 else:
                     message_id = int(message_id)
-                    message = discord.utils.get(await channel.history(limit=100).flatten(), id=message_id)
+                    message = await ctx.fetch_message(message_id)
     
                     if message:
                         try:
@@ -157,7 +134,7 @@ class UpdateCountryMessage(commands.Cog):
                             await message.edit(embed=msg)
                         except Exception as e:
                             print(e)
-        elif option == "4":
+        elif option.value == "4":
             """
             Function posts updated rules
             :param ctx:
@@ -181,7 +158,7 @@ class UpdateCountryMessage(commands.Cog):
                         print(e)
                 else:
                     message_id = int(message_id)
-                    message = discord.utils.get(await channel.history(limit=100).flatten(), id=message_id)
+                    message = await ctx.fetch_message(message_id)
     
                     if message:
                         try:
@@ -242,5 +219,5 @@ class UpdateCountryMessage(commands.Cog):
         return data
 
 
-def setup(bot):
-    bot.add_cog(UpdateCountryMessage(bot))
+async def setup(bot):
+    await bot.add_cog(UpdateCountryMessage(bot))

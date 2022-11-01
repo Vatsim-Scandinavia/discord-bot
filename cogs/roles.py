@@ -1,8 +1,8 @@
 import discord
 import re
 
+from discord import app_commands
 from discord.ext import commands, tasks
-from discord_slash import cog_ext
 import datetime
 from helpers.config import CHECK_MENTORS_INTERVAL, DEBUG, GUILD_ID, MENTOR_ROLE, ROLE_REASONS, FIR_MENTORS, TRAINING_STAFF_ROLE
 from helpers.roles import Roles
@@ -102,13 +102,16 @@ class RolesCog(commands.Cog):
     async def check_roles_loop(self):
         await self.check_roles()
 
-    @cog_ext.cog_slash(name="checkroles", guild_ids=GUILD_ID, description="Check mentor & training staff roles")
+    @app_commands.command(name="checkroles", description="Check mentor & training staff roles")
     @commands.has_any_role(*staff_roles())
-    async def check_mentors_command(self, ctx):
+    async def check_mentors_command(self, interaction: discord.Integration):
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        interaction._baton = ctx
+
         await ctx.send("Staff refresh in progress")
         await self.check_roles(True)
         await ctx.send("Staff refresh process finished")
 
-def setup(bot):
-    bot.add_cog(RolesCog(bot))
+async def setup(bot):
+    await bot.add_cog(RolesCog(bot))
 
