@@ -25,9 +25,9 @@ class StaffingDB():
         cursor.execute(f'INSERT INTO {table} ({cols}) VALUES ({vals})')
         mydb.commit()
 
-    def select(self, table: str, columns: list, where: list = False, value: dict = False, amount: str = False):
+    def select(table: str, columns: list, where: list = False, value: dict = False, amount: str = False):
         mydb = db_connection()
-        cursor = mydb.cursor()
+        cursor = mydb.cursor(buffered=True)
         if len(columns) > 1:
             cols = ', ' .join(columns)
         else:

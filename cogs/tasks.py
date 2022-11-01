@@ -4,8 +4,9 @@ import re
 import discord
 import requests
 import datetime
+
+from discord import app_commands
 from discord.ext import commands, tasks
-from discord_slash import cog_ext, SlashContext
 from dotenv import load_dotenv
 from helpers.message import staff_roles
 from helpers.members import get_division_members
@@ -88,13 +89,15 @@ class TasksCog(commands.Cog):
 
     guild_ids = [GUILD_ID]
     
-    @cog_ext.cog_slash(name="checkusers", guild_ids=guild_ids, description="Refresh roles based on division membership.")
+    @app_commands.command(name="checkusers", description="Refresh roles based on division membership.")
     @commands.has_any_role(*staff_roles())
-    async def user_check(self, ctx: SlashContext): 
+    async def user_check(self, interaction: discord.Integration):
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        interaction._baton = ctx 
         await ctx.send("Member refresh in progress")
         await self.check_members(True)
         await ctx.send("Member refresh process finished")
 
 
-def setup(bot):
-    bot.add_cog(TasksCog(bot))
+async def setup(bot):
+    await bot.add_cog(TasksCog(bot))

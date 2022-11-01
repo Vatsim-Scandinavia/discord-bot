@@ -1,8 +1,9 @@
 import os
 import datetime
+import discord
 
 from discord.ext import commands, tasks
-from discord_slash import cog_ext, SlashContext
+from discord import app_commands
 from helpers.message import staff_roles, embed
 from helpers.config import COGS_LOAD, GUILD_ID, DEBUG
 
@@ -15,9 +16,9 @@ class AdminCog(commands.Cog):
     guild_ids = [GUILD_ID]
 
     # Hidden means it won't show up on the default help.
-    @cog_ext.cog_slash(name="load", guild_ids=guild_ids, description="Command which Loads a Module.")
+    @app_commands.command(name="load", description="Command which Loads a Module.")
     @commands.has_any_role(*staff_roles())
-    async def load(self, ctx: SlashContext, *, cog: str):
+    async def load(self, interaction: discord.Interaction, *, cog: str):
         """
             Command which Loads a Module.
         """
@@ -25,13 +26,13 @@ class AdminCog(commands.Cog):
         try:
             self.bot.load_extension(COGS_LOAD[cog])
         except Exception as e:
-            await ctx.send(f'**`ERROR:`** {type(e).__name__} - {e}')
+            await interaction.response.send_message.send(f'**`ERROR:`** {type(e).__name__} - {e}')
         else:
-            await ctx.send('**`SUCCESS`**')
+            await interaction.response.send_message.send('**`SUCCESS`**')
 
-    @cog_ext.cog_slash(name="unload", guild_ids=guild_ids, description="Command which Unloads a Module.")
+    @app_commands.command(name="unload", description="Command which Unloads a Module.")
     @commands.has_any_role(*staff_roles())
-    async def unload(self, ctx: SlashContext, *, cog: str):
+    async def unload(self, interaction: discord.Interaction, *, cog: str):
         """
             Command which Unloads a Module.
         """
@@ -39,13 +40,13 @@ class AdminCog(commands.Cog):
         try:
             self.bot.unload_extension(COGS_LOAD[cog])
         except Exception as e:
-            await ctx.send(f'**`ERROR:`** {type(e).__name__} - {e}')
+            await interaction.response.send_message.send(f'**`ERROR:`** {type(e).__name__} - {e}')
         else:
-            await ctx.send('**`SUCCESS`**')
+            await interaction.response.send_message.send('**`SUCCESS`**')
 
-    @cog_ext.cog_slash(name="reload", guild_ids=guild_ids, description="Command which Reloads a Module.")
+    @app_commands.command(name="reload", description="Command which Reloads a Module.")
     @commands.has_any_role(*staff_roles())
-    async def reload(self, ctx: SlashContext, *, cog: str):
+    async def reload(self, interaction: discord.Interaction, *, cog: str):
         """
             Command which Reloads a Module.
         """
@@ -54,13 +55,13 @@ class AdminCog(commands.Cog):
             self.bot.unload_extension(COGS_LOAD[cog])
             self.bot.load_extension(COGS_LOAD[cog])
         except Exception as e:
-            await ctx.send(f'**`ERROR:`** {type(e).__name__} - {e}')
+            await interaction.response.send_message.send(f'**`ERROR:`** {type(e).__name__} - {e}')
         else:
-            await ctx.send('**`SUCCESS`**')
+            await interaction.response.send_message.send('**`SUCCESS`**')
 
-    @cog_ext.cog_slash(name="cogs", guild_ids=guild_ids, description="Command which sends a message with all available cogs.")
+    @app_commands.command(name="cogs", description="Command which sends a message with all available cogs.")
     @commands.has_any_role(*staff_roles())
-    async def cogs(self, ctx: SlashContext):
+    async def cogs(self, interaction: discord.Interaction):
         """
             Command which sends a message with all available cogs.
         """
@@ -72,33 +73,33 @@ class AdminCog(commands.Cog):
 
         msg = embed(title="List of Cogs", description="All available cogs", fields=fields)
 
-        await ctx.send(embed=msg)
+        await interaction.response.send_message(embed=msg)
     
-    @cog_ext.cog_slash(name="ping", guild_ids=guild_ids, description="Function sends pong if member has any of the admin roles.")
+    @app_commands.command(name="ping", description="Function sends pong if member has any of the admin roles.")
     @commands.has_any_role(*staff_roles())
-    async def ping(self, ctx: SlashContext): 
+    async def ping(self, interaction: discord.Interaction): 
         """
         Function sends pong if member has any of the admin roles
         :param ctx:
         :return None:
         """
-        await ctx.send('Pong')
+        await interaction.response.send_message('Pong')
 
-    @cog_ext.cog_slash(name="say", guild_ids=guild_ids, description="Bot sends a specific message sent by user.")
+    @app_commands.command(name="say", description="Bot sends a specific message sent by user.")
     @commands.has_any_role(*staff_roles())
-    async def say(self, ctx: SlashContext, *, content: str) -> None:
+    async def say(self, interaction: discord.Interaction, *, content: str) -> None:
         """
         Bot sends a specific message sent by user
         :param ctx:
         :param content:
         :return None:
         """
-        await ctx.send("Message is being generated", delete_after=5)
-        await ctx.send(content)
+        await interaction.response.send_message("Message is being generated", delete_after=5)
+        await interaction.response.send_message(content)
 
-    @cog_ext.cog_slash(name="delete", guild_ids=guild_ids, description="Function deletes specific amount of messages.")
+    @app_commands.command(name="delete", description="Function deletes specific amount of messages.")
     @commands.has_any_role(*staff_roles())
-    async def delete(self, ctx, *, number: int = 0):
+    async def delete(self, interaction: discord.Interaction, *, number: int = 0):
         """
         Function deletes specific amount of messages
         :param ctx:
@@ -106,6 +107,8 @@ class AdminCog(commands.Cog):
         :return None:
         :raise Exception:
         """
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        interaction._baton = ctx
         if DEBUG == True:
             try:
                 msg_delete = []
@@ -117,8 +120,8 @@ class AdminCog(commands.Cog):
             except Exception as exception:
                 await ctx.send(exception)
         else:
-            await ctx.author.send('Command is disabled because debug is not enabled.')
+            await ctx.send('Command is disabled because debug is not enabled.', ephemeral=True)
 
 
-def setup(bot):
-    bot.add_cog(AdminCog(bot))
+async def setup(bot):
+    await bot.add_cog(AdminCog(bot))

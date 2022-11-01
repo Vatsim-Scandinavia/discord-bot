@@ -7,3 +7,4 @@ __pycache__
 .idea
 
 staffing-info/
+cogs/old_staffing.py

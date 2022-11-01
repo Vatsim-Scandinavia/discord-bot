@@ -1,11 +1,10 @@
 import os
 from datetime import datetime, timedelta
-from discord_slash import cog_ext
 
 import aiohttp
 from discord.ext import commands, tasks
 
-from helpers.config import POST_EVENTS_INTERVAL, GET_EVENTS_INTERVAL, DELETE_EVENTS_INTERVAL, EVENTS_CHANNEL, EVENTS_ROLE, GUILD_ID, EVENT_CALENDAR_URL, EVENT_CALENDAR_TYPE, FORUM_API_TOKEN
+from helpers.config import DEBUG, POST_EVENTS_INTERVAL, GET_EVENTS_INTERVAL, DELETE_EVENTS_INTERVAL, EVENTS_CHANNEL, EVENTS_ROLE, GUILD_ID, EVENT_CALENDAR_URL, EVENT_CALENDAR_TYPE, FORUM_API_TOKEN
 from helpers.message import embed, event_description, get_image
 from helpers.database import db_connection
 from helpers.event import Event
@@ -145,6 +144,7 @@ class EventsCog(commands.Cog):
 
                 text = f'{role.mention}\n:clock2: **{event.name}** is starting in two hours!'
                 message = await channel.send(text, embed=msg)
+                if DEBUG == False: await message.publish()
 
                 event.mark_as_published()
                 await self.store_message_expire(message, event._get_expire_datetime())
@@ -159,7 +159,7 @@ class EventsCog(commands.Cog):
 
         now = datetime.utcnow()
         for event in event_details:
-            if now >= event[1]:
+            if now > event[1]:
                 channel = self.bot.get_channel(int(EVENTS_CHANNEL))
 
                 try:
@@ -193,7 +193,7 @@ class EventsCog(commands.Cog):
         """
 
         mydb = db_connection()
-        cursor = mydb.cursor()
+        cursor = mydb.cursor(buffered=True)
         cursor.execute("SELECT * FROM events")
 
         db_events = cursor.fetchall()
@@ -296,6 +296,7 @@ class EventsCog(commands.Cog):
 
             text = f':calendar_spiral: A new event has been scheduled.'
             message = await channel.send(text, embed=msg)
+            if DEBUG == False: await message.publish()
 
             await self.store_message_expire(message, e._get_expire_datetime())
 
@@ -367,5 +368,5 @@ class EventsCog(commands.Cog):
         return datetime.strptime(time, "%Y-%m-%dT%H:%M:%SZ")
           
 
-def setup(bot):
-    bot.add_cog(EventsCog(bot))
+async def setup(bot):
+    await bot.add_cog(EventsCog(bot))

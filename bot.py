@@ -6,11 +6,11 @@ import requests
 import re
 import emoji
 
-from discord import InvalidArgument
+from discord.ext.commands import BadArgument
 from discord.ext import commands
-from discord_slash import SlashCommand
+from datetime import datetime
 from dotenv import load_dotenv
-from helpers.config import SENTRY_KEY, VATSCA_MEMBER_ROLE, VATSIM_MEMBER_ROLE, VATSIM_SUBDIVISION, GUILD_ID, BOT_TOKEN, REACTION_ROLES, REACTION_MESSAGE_IDS, REACTION_EMOJI, ROLE_REASONS
+from helpers.config import DEBUG, SENTRY_KEY, VATSCA_MEMBER_ROLE, VATSIM_MEMBER_ROLE, VATSIM_SUBDIVISION, GUILD_ID, BOT_TOKEN, REACTION_ROLES, REACTION_MESSAGE_IDS, REACTION_EMOJI, ROLE_REASONS
 from helpers.members import get_division_members
 from helpers import config
 
@@ -20,16 +20,16 @@ intents = discord.Intents.all()
 
 bot = commands.Bot(command_prefix='/', description=config.DESCRIPTION, intents=intents, help_command=None, case_insensitive=True)
 
-slash = SlashCommand(bot, sync_commands=True)
+if DEBUG == False:
+    sentry_sdk.init(
+        dsn=SENTRY_KEY,
 
-sentry_sdk.init(
-    dsn=SENTRY_KEY,
+        # Set traces_sample_rate to 1.0 to capture 100%
+        # of transactions for performance monitoring.
+        # We recommend adjusting this value in production.
+        traces_sample_rate=1.0
+    )
 
-    # Set traces_sample_rate to 1.0 to capture 100%
-    # of transactions for performance monitoring.
-    # We recommend adjusting this value in production.
-    traces_sample_rate=1.0
-)
 
 """
     Bot event that sets bots rich presence in Discord profile
@@ -40,7 +40,8 @@ async def on_ready() -> None:
 
     try:
         await bot.change_presence(activity=config.activity(), status=config.status())
-    except InvalidArgument as e:
+        await bot.tree.sync()
+    except BadArgument as e:
         print(f'Error changing presence. Exception - {e}')
 
 @bot.event
@@ -117,11 +118,10 @@ async def on_raw_reaction_remove(payload):
             if role in user.roles:
                 await user.remove_roles(role, reason=ROLE_REASONS['reaction_remove'])
                 await user.send(f'You no longer have the `{role.name}` role because you removed your reaction.')
-    
 
 @bot.event
 async def on_connect():
-    config.load_cogs(bot)
+    await config.load_cogs(bot)
 
 if __name__ == "__main__":
     try:

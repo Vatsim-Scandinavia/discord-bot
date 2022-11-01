@@ -1,9 +1,8 @@
-from helpers.config import GUILD_ID, DEBUG
+from helpers.config import DEBUG
 import discord
 from discord.ext import commands
-from discord_slash import cog_ext
+from discord import app_commands
 from helpers.message import embed
-from discord_slash.utils.manage_commands import create_choice, create_option
 
 import aiohttp
 import os
@@ -14,37 +13,27 @@ class MemberCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    guild_ids = [GUILD_ID]
-
-    
-    @cog_ext.cog_slash(name="test", guild_ids=guild_ids, description="Function sends example embed.")
+    @app_commands.command(name="test", description="Function sends example embed.")
     @commands.guild_only()
-    async def example_embed(self, ctx):
+    async def example_embed(self, interaction: discord.Integration):
         """
         Function sends example embed
         :param ctx:
         :return:
         """
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        interaction._baton = ctx
         if DEBUG == True:
             message = embed(title='test', description='test')
-            
             await ctx.send(embed=message)
         else:
-            await ctx.author.send('Command is disabled because debug is not enabled.')
+            await ctx.send('Command is disabled because debug is not enabled.', ephemeral=True)
 
 
 
-    @cog_ext.cog_slash(name="metar", guild_ids=guild_ids, description="Get METAR for an airport",
-    options=[
-        create_option(
-            name="airport",
-            description="ICAO of airport",
-            option_type=3,
-            required=True,
-        )
-    ])
+    @app_commands.command(name="metar", description="Get METAR for an airport")
     @commands.guild_only()
-    async def example_embed(self, ctx, airport: str):
+    async def example_embed(self, interaction: discord.Integration, airport: str):
         """
         Function send METAR of specified airport
         """
@@ -54,12 +43,13 @@ class MemberCog(commands.Cog):
                 
                 if resp.status == 404:
                     return False
-                
+                ctx: commands.Context = await self.bot.get_context(interaction)
+                interaction._baton = ctx
                 metar_data = await resp.text()
 
                 message = embed(title='METAR for ' + str.upper(airport), description=metar_data)
-                await ctx.author.send(embed=message)
+                await ctx.send(embed=message, ephemeral=True)
 
 
-def setup(bot):
-    bot.add_cog(MemberCog(bot))
+async def setup(bot):
+    await bot.add_cog(MemberCog(bot))
