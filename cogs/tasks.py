@@ -3,15 +3,15 @@ import re
 
 import discord
 import requests
-import datetime
 
+from datetime import datetime
 from discord import app_commands
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
 from helpers.message import staff_roles
 from helpers.members import get_division_members
 
-from helpers.config import VATSIM_MEMBER_ROLE, VATSIM_SUBDIVISION, CHECK_MEMBERS_INTERVAL, VATSCA_MEMBER_ROLE, ROLE_REASONS, GUILD_ID, DEBUG
+from helpers.config import VATSIM_MEMBER_ROLE, VATSIM_SUBDIVISION, CHECK_MEMBERS_INTERVAL, VATSCA_MEMBER_ROLE, ROLE_REASONS, GUILD_ID, DEBUG, STAFFING_INTERVAL
 
 load_dotenv('.env')
 
@@ -25,9 +25,11 @@ class TasksCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.check_members_loop.start()
+        self.sync_commands_loop.start()
 
     def cog_unload(self):
         self.check_members_loop.cancel()
+        self.sync_commands_loop.start()
 
     async def check_members(self, override=False):
         """
@@ -41,7 +43,7 @@ class TasksCog(commands.Cog):
             print("check_members skipped due to DEBUG ON. You can start manually with command instead.")
             return
 
-        print("check_members started at " + str(datetime.datetime.now().isoformat()))
+        print("check_members started at " + str(datetime.now().isoformat()))
 
         guild = self.bot.get_guild(GUILD_ID)
         users = guild.members
@@ -80,14 +82,12 @@ class TasksCog(commands.Cog):
                 continue
 
 
-        print("check_members finished at " + str(datetime.datetime.now().isoformat()))
+        print("check_members finished at " + str(datetime.now().isoformat()))
 
 
     @tasks.loop(seconds=CHECK_MEMBERS_INTERVAL)
     async def check_members_loop(self):
         await self.check_members()
-
-    guild_ids = [GUILD_ID]
     
     @app_commands.command(name="checkusers", description="Refresh roles based on division membership.")
     @commands.has_any_role(*staff_roles())
@@ -97,6 +97,32 @@ class TasksCog(commands.Cog):
         await ctx.send("Member refresh in progress")
         await self.check_members(True)
         await ctx.send("Member refresh process finished")
+
+    async def sync_commands(self, override=False):
+        now = datetime.now().isoformat()
+        try:
+            if DEBUG == True and override == False:
+                print("sync_commands skipped due to DEBUG ON. You can start manually with command instead.")
+                return
+            print("sync_commands started at " + str(datetime.now().isoformat()))
+            await self.bot.tree.sync(guild=discord.Object(id=GUILD_ID))
+            print("sync_commands finished at " + str(datetime.now().isoformat()))
+        except Exception as e:
+            print(f'Failed to sync commands with error - {e} - at - {now}')
+
+    @app_commands.command(name='sync', description='Sync slash commands **Only accessable to staff**')
+    @commands.has_any_role(*staff_roles())
+    async def sync(self, interaction: discord.Interaction):
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        interaction._baton = ctx
+        await ctx.send("Sync commands in progress")
+        await self.sync_commands(True)
+        await ctx.send("Sync commands process finished")
+        
+    @tasks.loop(seconds=STAFFING_INTERVAL)
+    async def sync_commands_loop(self):
+        await self.sync_commands()
+        
 
 
 async def setup(bot):

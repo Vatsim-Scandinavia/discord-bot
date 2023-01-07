@@ -7,16 +7,18 @@ import re
 import emoji
 
 from discord.ext.commands import BadArgument
-from discord.ext import commands
+from discord.ext import commands, tasks
 from datetime import datetime
 from dotenv import load_dotenv
 from helpers.config import DEBUG, SENTRY_KEY, VATSCA_MEMBER_ROLE, VATSIM_MEMBER_ROLE, VATSIM_SUBDIVISION, GUILD_ID, BOT_TOKEN, REACTION_ROLES, REACTION_MESSAGE_IDS, REACTION_EMOJI, ROLE_REASONS
 from helpers.members import get_division_members
+from helpers.message import staff_roles
 from helpers import config
 
 load_dotenv('.env')
 
 intents = discord.Intents.all()
+intents.message_content = True
 
 bot = commands.Bot(command_prefix='/', description=config.DESCRIPTION, intents=intents, help_command=None, case_insensitive=True)
 
