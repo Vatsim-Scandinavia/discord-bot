@@ -144,12 +144,12 @@ class StaffingCog(commands.Cog):
             usernick = ctx.author.id
             if vatsim_member in ctx.author.roles or vatsca_member in ctx.author.roles and OBS_rating not in ctx.author.roles:
                 
-                event_channel = StaffingDB.select(self, table='staffing', columns=['channel_id'], amount="all")
-                title = StaffingDB.select(self, table='staffing', columns=['title'], where=['channel_id'], value={'channel_id': ctx.channel.id})
-                positions = StaffingDB.select(self, table='positions', columns=['position', 'user'], where=['title'], value={'title': title[0]}, amount='all')
-                main_pos = StaffingDB.select(self, table="positions", columns=['position', 'user'], where=['title', 'type'], value={'title': title[0], 'type': 'main'}, amount='all')
-                sec_pos = StaffingDB.select(self, table="positions", columns=['position', 'user'], where=['title', 'type'], value={'title': title[0], 'type': 'secondary'}, amount='all')
-                reg_pos = StaffingDB.select(self, table="positions", columns=['position', 'user'], where=['title', 'type'], value={'title': title[0], 'type': 'regional'}, amount='all')
+                event_channel = StaffingDB.select(table='staffing', columns=['channel_id'], amount="all")
+                title = StaffingDB.select(table='staffing', columns=['title'], where=['channel_id'], value={'channel_id': ctx.channel.id})
+                positions = StaffingDB.select(table='positions', columns=['position', 'user'], where=['title'], value={'title': title[0]}, amount='all')
+                main_pos = StaffingDB.select(table="positions", columns=['position', 'user'], where=['title', 'type'], value={'title': title[0], 'type': 'main'}, amount='all')
+                sec_pos = StaffingDB.select(table="positions", columns=['position', 'user'], where=['title', 'type'], value={'title': title[0], 'type': 'secondary'}, amount='all')
+                reg_pos = StaffingDB.select(table="positions", columns=['position', 'user'], where=['title', 'type'], value={'title': title[0], 'type': 'regional'}, amount='all')
                 eventDetails = StaffingDB.select(self, table='staffing', columns=['date', 'restrict_bookings'], where=['title'], value={'title': title[0]})
 
                 if any(ctx.channel_id in channel for channel in event_channel):
@@ -179,9 +179,9 @@ class StaffingCog(commands.Cog):
         ctx: commands.Context = await self.bot.get_context(interaction)
         interaction._baton = ctx
         try:
-            event_channel = StaffingDB.select(self, table='staffing', columns=['channel_id'], amount='all')
-            title = StaffingDB.select(self, table='staffing', columns=['title'], where=['channel_id'], value={'channel_id': ctx.channel.id})
-            positions = StaffingDB.select(self, table='positions', columns=['position', 'user'], where=['title'], value={'title': title[0]}, amount='all')
+            event_channel = StaffingDB.select(table='staffing', columns=['channel_id'], amount='all')
+            title = StaffingDB.select(table='staffing', columns=['title'], where=['channel_id'], value={'channel_id': ctx.channel.id})
+            positions = StaffingDB.select(table='positions', columns=['position', 'user'], where=['title'], value={'title': title[0]}, amount='all')
 
             usernick = ctx.author.id
             if any(ctx.channel_id in channel for channel in event_channel):
@@ -189,7 +189,7 @@ class StaffingCog(commands.Cog):
 
                     cid = re.findall("\d+", str(ctx.author.nick))
 
-                    position = StaffingDB.select(self, table='positions', columns=['position'], where=['user', 'title'], value={'user': f'<@{usernick}>', 'title': title[0]})
+                    position = StaffingDB.select(table='positions', columns=['position'], where=['user', 'title'], value={'user': f'<@{usernick}>', 'title': title[0]})
 
                     request = await Booking.delete_booking(self, int(cid[0]), str(position[0]))
                     if request == 200:
