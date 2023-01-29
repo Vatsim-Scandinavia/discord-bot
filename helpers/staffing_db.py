@@ -11,8 +11,11 @@ class StaffingDB():
         pass
 
     def insert(self, table: str, columns: list, values: list):
-        mydb = db_connection()
-        cursor = mydb.cursor()
+        """
+        Simplified method of making a MySQL connection and inserting values into a table
+        """
+        mydb = db_connection() # Establish DB connection
+        cursor = mydb.cursor() # Initialize interaction with DB
         cols = ', ' .join(columns)
         vals = ''
         i = 0
@@ -22,10 +25,13 @@ class StaffingDB():
                 vals += f'"{val}"'
             else:
                 vals += f'"{val}", '
-        cursor.execute(f'INSERT INTO {table} ({cols}) VALUES ({vals})')
-        mydb.commit()
+        cursor.execute(f'INSERT INTO {table} ({cols}) VALUES ({vals})') # Execute DB command
+        mydb.commit() # Commit above mentioned changes
 
     def select(table: str, columns: list, where: list = False, value: dict = False, amount: str = False):
+        """
+        Simplified method of making a MySQL connection and selecting values from a table
+        """
         mydb = db_connection()
         cursor = mydb.cursor(buffered=True)
         if len(columns) > 1:
@@ -53,6 +59,9 @@ class StaffingDB():
             return cursor.fetchone()
 
     def update(self, table: str, columns: list, where: list, value: dict, values: dict = False):
+        """
+        Simplified method of making a MySQL connection and updating values in a table
+        """
         mydb = db_connection()
         cursor = mydb.cursor()
         whereStatement = ''
@@ -64,10 +73,19 @@ class StaffingDB():
             else:
                 whereStatement += f'{val} = "{value[val]}" and '
         for col in columns:
-            cursor.execute(f'UPDATE {table} SET {col} = "{values[col]}" WHERE {whereStatement}')
+            if values[col] == 'None':
+                values[col] = 'NULL'
+                q = f'UPDATE {table} SET {col} = {values[col]} WHERE {whereStatement}'
+            else:
+                q = f'UPDATE {table} SET {col} = "{values[col]}" WHERE {whereStatement}'
+            cursor.execute(q)
+
         mydb.commit()
 
     def delete(self, table: str, where: list, value: dict):
+        """
+        Simplified method of making a MySQL connection and deleting a cell from a table
+        """
         mydb = db_connection()
         cursor = mydb.cursor()
         whereStatement = ''
@@ -76,5 +94,5 @@ class StaffingDB():
                 whereStatement += f'{val} = "{value[val]}" '
             else:
                 whereStatement += f'{val} = "{value[val]}" and '
-        cursor.execute(f'DELETE FROM {table} WHERE {whereStatement}"')
+        cursor.execute(f'DELETE FROM {table} WHERE {whereStatement}')
         mydb.commit()

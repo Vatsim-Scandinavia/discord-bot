@@ -261,6 +261,9 @@ class EventsCog(commands.Cog):
 
             if found_event:
                 continue
+
+            if new_event.get('start') is None or new_event.get('end') is None:
+                continue
             
             # Create the object
             self.events[new_event.get('id')] = Event(

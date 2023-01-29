@@ -53,7 +53,7 @@ class Booking():
         if bookings.status_code == requests.codes.ok:
             feedback = bookings.json()
             for booking in feedback["data"]:
-                if int(booking["cid"]) == cid and str(booking["callsign"]) + ":" == position:
+                if int(booking["user_id"]) == cid and str(booking["callsign"]) + ":" == position:
                     request = requests.delete(url=CC_API_URL + "/bookings/" + str(booking["id"]), headers={'Authorization': 'Bearer ' + CC_API_TOKEN, 'Accept': 'application/json'})
                     if request.status_code == requests.codes.ok:
                         return 200

@@ -17,7 +17,7 @@ class AdminCog(commands.Cog):
 
     # Hidden means it won't show up on the default help.
     @app_commands.command(name="load", description="Command which Loads a Module.")
-    @commands.has_any_role(*staff_roles())
+    @app_commands.checks.has_any_role(*staff_roles())
     async def load(self, interaction: discord.Interaction, *, cog: str):
         """
             Command which Loads a Module.
@@ -31,7 +31,7 @@ class AdminCog(commands.Cog):
             await interaction.response.send_message.send('**`SUCCESS`**')
 
     @app_commands.command(name="unload", description="Command which Unloads a Module.")
-    @commands.has_any_role(*staff_roles())
+    @app_commands.checks.has_any_role(*staff_roles())
     async def unload(self, interaction: discord.Interaction, *, cog: str):
         """
             Command which Unloads a Module.
@@ -45,7 +45,7 @@ class AdminCog(commands.Cog):
             await interaction.response.send_message.send('**`SUCCESS`**')
 
     @app_commands.command(name="reload", description="Command which Reloads a Module.")
-    @commands.has_any_role(*staff_roles())
+    @app_commands.checks.has_any_role(*staff_roles())
     async def reload(self, interaction: discord.Interaction, *, cog: str):
         """
             Command which Reloads a Module.
@@ -60,7 +60,7 @@ class AdminCog(commands.Cog):
             await interaction.response.send_message.send('**`SUCCESS`**')
 
     @app_commands.command(name="cogs", description="Command which sends a message with all available cogs.")
-    @commands.has_any_role(*staff_roles())
+    @app_commands.checks.has_any_role(*staff_roles())
     async def cogs(self, interaction: discord.Interaction):
         """
             Command which sends a message with all available cogs.
@@ -76,7 +76,7 @@ class AdminCog(commands.Cog):
         await interaction.response.send_message(embed=msg)
     
     @app_commands.command(name="ping", description="Function sends pong if member has any of the admin roles.")
-    @commands.has_any_role(*staff_roles())
+    @app_commands.checks.has_any_role(*staff_roles())
     async def ping(self, interaction: discord.Interaction): 
         """
         Function sends pong if member has any of the admin roles
@@ -86,7 +86,7 @@ class AdminCog(commands.Cog):
         await interaction.response.send_message('Pong')
 
     @app_commands.command(name="say", description="Bot sends a specific message sent by user.")
-    @commands.has_any_role(*staff_roles())
+    @app_commands.checks.has_any_role(*staff_roles())
     async def say(self, interaction: discord.Interaction, *, content: str) -> None:
         """
         Bot sends a specific message sent by user
@@ -98,7 +98,7 @@ class AdminCog(commands.Cog):
         await interaction.response.send_message(content)
 
     @app_commands.command(name="delete", description="Function deletes specific amount of messages.")
-    @commands.has_any_role(*staff_roles())
+    @app_commands.checks.has_any_role(*staff_roles())
     async def delete(self, interaction: discord.Interaction, *, number: int = 0):
         """
         Function deletes specific amount of messages

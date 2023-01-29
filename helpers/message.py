@@ -2,7 +2,7 @@ import re
 import discord
 
 from markdownify import markdownify as md
-from helpers.config import STAFF_ROLES, VATSCA_BLUE
+from helpers.config import STAFF_ROLES, VATSCA_BLUE, CONTROLLER_ROLES
 
 
 def embed(description: str = None, colour=None, title: str = None, author: dict = None, url: str = None, image: str = None, footer: dict = None,
@@ -58,6 +58,14 @@ def staff_roles() -> str:
     """
     staff_roles = tuple(STAFF_ROLES)
     return staff_roles
+
+def controller_roles() -> str:
+    """
+    Function returns tuple of controller roles
+    :return:
+    """
+    controller_roles = tuple(CONTROLLER_ROLES)
+    return controller_roles
 
 def event_description(description: str) -> str:
     """

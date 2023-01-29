@@ -38,6 +38,13 @@ STAFF_ROLES = [
     'Staff',
 ]
 
+CONTROLLER_ROLES = [
+    'S1',
+    'S2',
+    'S3',
+    'C1+'
+]
+
 ROLE_REASONS = {
     'vatsca_add': 'Member is now part of VATSCA',
     'vatsca_remove': 'Member is no longer part of VATSCA',
@@ -88,7 +95,6 @@ SENTRY_KEY = str(os.getenv('SENTRY_KEY'))
 VATSCA_MEMBER_ROLE = int(os.getenv('VATSCA_MEMBER_ROLE'))
 VATSIM_MEMBER_ROLE = int(os.getenv('VATSIM_MEMBER_ROLE'))
 EVENTS_ROLE = int(os.getenv('EVENTS_ROLE'))
-OBS_RATING_ROLE = int(os.getenv('OBS_RATING_ROLE'))
 MENTOR_ROLE = int(os.getenv('MENTOR_ROLE'))
 TRAINING_STAFF_ROLE = int(os.getenv('TRAINING_STAFF_ROLE'))
 
