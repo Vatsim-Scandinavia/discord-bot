@@ -39,7 +39,6 @@ class StaffingAsync():
                 formatted_event = " ".join(map(str, event))
                 if formatted_event not in formatted_staffings:
                     formatted_events.append(formatted_event)
-
         return Literal[tuple(formatted_events)]
 
     def _get_avail_titles() -> Literal:
@@ -243,7 +242,8 @@ class StaffingAsync():
         today = datetime.today()
         days = (start.weekday() - today.weekday() + 7) % (interval * 7)
         newdate = today + timedelta(days=days)
-        return newdate, start_time, end_time
+        current = StaffingDB.select(table="staffing", columns=['date'], where=['title'], value={'title' : title})[0]
+        return newdate, start_time, end_time, current
 
     async def _updatemessage(self, title):
         try:
@@ -266,7 +266,7 @@ class StaffingAsync():
             if format_staffing_message != "":
                 format_staffing_message += "\n"
 
-            formatted_date = dates[0].strftime("%A %d/%m/%Y")
+            formatted_date = dates[3].strftime('%A %d/%m/%Y')
 
             section_positions = {}
             section_positions[first_section] = StaffingDB.select(table='positions', columns=['*'], where=['title', 'type'], value={'title': title, 'type': 1}, amount='all')
@@ -294,13 +294,13 @@ class StaffingAsync():
     async def _book(self, ctx, eventDetails, title, usernick, position):
         cid = re.findall("\d+", str(ctx.author.nick))[0]
 
-        time = await StaffingAsync._geteventtime(self, title[0])
-        start_time = time[0]
-        end_time = time[1]
+        time = await StaffingAsync._geteventdate(self, title[0])
+        start_time = time[1]
+        end_time = time[2]
 
         tag = 3
 
-        date = datetime.datetime.strptime(str(eventDetails[0]), '%Y-%m-%d')
+        date = datetime.strptime(str(eventDetails[0]), '%Y-%m-%d')
         date = date.strftime("%d/%m/%Y")
 
         request = await Booking.post_booking(self, int(cid), str(date), str(start_time), str(end_time), str(position), int(tag))
@@ -309,7 +309,7 @@ class StaffingAsync():
             StaffingDB.update(self=self, table='positions', columns=['user'], values={
                               'user': f'<@{usernick}>'}, where=['position', 'title'], value={'position': f'{position.upper()}:', 'title': title[0]})
 
-            await self._updatemessage(title[0])
+            await StaffingAsync._updatemessage(self, title[0])
             await ctx.send(f"<@{usernick}> Confirmed booking for position `{position.upper()}` for event `{title[0]}`", delete_after=5)
         else:
             await ctx.send(f"<@{usernick}> Booking failed, Control Center responded with error `{request.json()['message']}` code `{request.status_code}`, please try again later", delete_after=5)

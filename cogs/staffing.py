@@ -56,11 +56,11 @@ class StaffingCog(commands.Cog):
         if format_staffing_message != "":
             format_staffing_message += "\n"
 
-        formatted_date = dates[0].strftime("%A %d/%m/%Y")
+        formatted_date = dates[3].strftime("%A %d/%m/%Y")
 
         pos_data = ''
         for x in section_positions:
-            pos_data = f'\n\n{x}:\n' + '\n' .join(position for position in section_positions[x]) + '\n'
+            pos_data += f'\n\n{x}:\n' + '\n' .join(position for position in section_positions[x]) + '\n'
 
         format_staffing_message += f'{title} staffing - {formatted_date} {dates[1]} - {dates[2]}z\n\n{description}\n{pos_data}'
 
@@ -74,7 +74,11 @@ class StaffingCog(commands.Cog):
         await channel.purge(limit=None, check=lambda msg: not msg.pinned)
         StaffingDB.insert(self=self, table="staffing", columns=['title', 'date', 'description', 'channel_id', 'message_id', 'week_interval', 'restrict_bookings'], values=[str(title), str(dates[0]), str(description), str(channel.id), str(msg.id), str(week_int), str(restrict_bookings[restrict_booking])])
         
-        columns = ['main_pos_title', 'secondary_pos_title', 'regional_pos_title']
+        columns =  {
+            1: 'main_pos_title',
+            2: 'secondary_pos_title',
+            3: 'regional_pos_title'
+        }
         j = 1
         for x in section_positions:
             StaffingDB.update(self=self, table="staffing", columns=[columns[j]], values={columns[j]: x}, where=["title"], value={"title": title})
@@ -134,7 +138,7 @@ class StaffingCog(commands.Cog):
 
     @app_commands.command(name="book", description="Bot books selected position for selected staffing")
     @app_commands.describe(position="Which position would you like to book?")
-    async def book(self, interaction: discord.Integration, position):
+    async def book(self, interaction: discord.Integration, position: str):
         ctx: commands.Context = await self.bot.get_context(interaction)
         interaction._baton = ctx
         try:
@@ -150,9 +154,9 @@ class StaffingCog(commands.Cog):
                 main_pos = StaffingDB.select(table="positions", columns=['position', 'user'], where=['title', 'type'], value={'title': title[0], 'type': 'main'}, amount='all')
                 sec_pos = StaffingDB.select(table="positions", columns=['position', 'user'], where=['title', 'type'], value={'title': title[0], 'type': 'secondary'}, amount='all')
                 reg_pos = StaffingDB.select(table="positions", columns=['position', 'user'], where=['title', 'type'], value={'title': title[0], 'type': 'regional'}, amount='all')
-                eventDetails = StaffingDB.select(self, table='staffing', columns=['date', 'restrict_bookings'], where=['title'], value={'title': title[0]})
-
-                if any(ctx.channel_id in channel for channel in event_channel):
+                eventDetails = StaffingDB.select(table='staffing', columns=['date', 'restrict_bookings'], where=['title'], value={'title': title[0]})
+                
+                if any(ctx.channel.id in channel for channel in event_channel):
                     if any(f'<@{usernick}>' in match for match in positions):
                         await ctx.send(f"<@{usernick}> You already have a booking!", delete_after=5)
                     elif any(position.upper() + ':' in match for match in positions):
@@ -182,9 +186,8 @@ class StaffingCog(commands.Cog):
             event_channel = StaffingDB.select(table='staffing', columns=['channel_id'], amount='all')
             title = StaffingDB.select(table='staffing', columns=['title'], where=['channel_id'], value={'channel_id': ctx.channel.id})
             positions = StaffingDB.select(table='positions', columns=['position', 'user'], where=['title'], value={'title': title[0]}, amount='all')
-
             usernick = ctx.author.id
-            if any(ctx.channel_id in channel for channel in event_channel):
+            if any(ctx.channel.id in channel for channel in event_channel):
                 if any(f'<@{usernick}>' in match for match in positions):
 
                     cid = re.findall("\d+", str(ctx.author.nick))
@@ -194,7 +197,7 @@ class StaffingCog(commands.Cog):
                     request = await Booking.delete_booking(self, int(cid[0]), str(position[0]))
                     if request == 200:
                         StaffingDB.update(self=self, table='positions', columns=['user'], values={'user': ''}, where=['user', 'title'], value={'user': f'<@{usernick}>', 'title': title[0]})
-                        await self._updatemessage(title[0])
+                        await StaffingAsync._updatemessage(self, title[0])
                         await ctx.send(f"<@{usernick}> Confirmed cancelling of your booking!", delete_after=5)
                     else:
                         await ctx.send(f"<@{usernick}> Cancelling failed, Control Center responded with error {request}, please try again later", delete_after=5)

@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS `staffing` (
   `channel_id` bigint NOT NULL,
   `message_id` bigint NOT NULL,
   `week_interval` int(11) NOT NULL,
-  `main_pos_title` text NOT NULL,
+  `main_pos_title` text NULL,
   `secondary_pos_title` text NULL,
   `regional_pos_title` text NULL,
   `restrict_bookings` int(11) NOT NULL,
