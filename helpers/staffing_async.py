@@ -101,15 +101,15 @@ class StaffingAsync():
         :return:
         """
         try:
-            await ctx.send('Should the event have booking restriction? **FYI this command expires in 5 minutes**')
+            await ctx.send('Should the event have booking restriction? Allwed ansers: `Yes` or `No` **FYI this command expires in 5 minutes**')
             message = await self.bot.wait_for('message', timeout=300, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
 
             if len(message.content) < 1:
                 await ctx.send('Setup cancelled. No message was provided.')
                 raise ValueError
 
-            if message.content == 'Yes' or message.content == 'No':
-                return message.content
+            if 'yes' in message.content.lower() or 'no' in message.content.lower():
+                return message.content.lower()
             else:
                 await ctx.send('Only the options `Yes` or `No` is available')
                 raise ValueError

@@ -103,7 +103,7 @@ class RolesCog(commands.Cog):
         await self.check_roles()
 
     @app_commands.command(name="checkroles", description="Check mentor & training staff roles")
-    @commands.has_any_role(*staff_roles())
+    @app_commands.checks.has_any_role(*staff_roles())
     async def check_mentors_command(self, interaction: discord.Integration):
         ctx: commands.Context = await self.bot.get_context(interaction)
         interaction._baton = ctx

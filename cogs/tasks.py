@@ -90,7 +90,7 @@ class TasksCog(commands.Cog):
         await self.check_members()
     
     @app_commands.command(name="checkusers", description="Refresh roles based on division membership.")
-    @commands.has_any_role(*staff_roles())
+    @app_commands.checks.has_any_role(*staff_roles())
     async def user_check(self, interaction: discord.Integration):
         ctx: commands.Context = await self.bot.get_context(interaction)
         interaction._baton = ctx 
@@ -111,7 +111,7 @@ class TasksCog(commands.Cog):
             print(f'Failed to sync commands with error - {e} - at - {now}')
 
     @app_commands.command(name='sync', description='Sync slash commands **Only accessable to staff**')
-    @commands.has_any_role(*staff_roles())
+    @app_commands.checks.has_any_role(*staff_roles())
     async def sync(self, interaction: discord.Interaction):
         ctx: commands.Context = await self.bot.get_context(interaction)
         interaction._baton = ctx

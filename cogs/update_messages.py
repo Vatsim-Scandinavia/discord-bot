@@ -24,7 +24,7 @@ class UpdateCountryMessage(commands.Cog):
         app_commands.Choice(name="Welcome", value="3"),
         app_commands.Choice(name="Rules", value="4")
     ])
-    @commands.has_any_role(*staff_roles())
+    @app_commands.checks.has_any_role(*staff_roles())
     async def update(self, interaction: discord.Integration, *, message_id: str = None, option: app_commands.Choice[str]):
         """
         Function posts updated countries message

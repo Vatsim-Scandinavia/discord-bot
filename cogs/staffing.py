@@ -10,11 +10,11 @@ from discord.ui import Select, View
 from datetime import datetime
 
 from helpers.booking import Booking
-from helpers.message import staff_roles
+from helpers.message import staff_roles, controller_roles
 from helpers.staffing_async import StaffingAsync
 from helpers.staffing_db import StaffingDB
 from helpers.select import SelectView
-from helpers.config import STAFFING_INTERVAL, GUILD_ID, DEBUG, VATSIM_MEMBER_ROLE, VATSCA_MEMBER_ROLE, OBS_RATING_ROLE
+from helpers.config import STAFFING_INTERVAL, DEBUG, VATSIM_MEMBER_ROLE, VATSCA_MEMBER_ROLE
 
 class StaffingCog(commands.Cog):
     #
@@ -37,7 +37,7 @@ class StaffingCog(commands.Cog):
     #
     @app_commands.command(name="setupstaffing", description="Bot setups staffing information")
     @app_commands.describe(title="What should the title of the staffing be?", week_int="What should the week interval be? eg. 1 then the date will be selected each week.", section_amount="What should the section amount be? eg. 3 then there will be 3 sections.", restrict_booking="Should the staffing restrict booking to first section before allowing other sections too?")
-    @commands.has_any_role(*staff_roles())
+    @app_commands.checks.has_any_role(*staff_roles())
     async def setup_staffing(self, interaction: discord.Integration, title: StaffingAsync._get_titles(), week_int: app_commands.Range[int, 1, 4], section_amount: app_commands.Range[int, 1, 3], restrict_booking: Literal["Yes", "No"], channel: TextChannel):
         ctx: commands.Context = await self.bot.get_context(interaction)
         interaction._baton = ctx
@@ -88,7 +88,7 @@ class StaffingCog(commands.Cog):
 
     @app_commands.command(name="refreshevent", description="Bot refreshes selected event")
     @app_commands.describe(title="Which staffing would you like to refresh?")
-    @commands.has_any_role(*staff_roles())
+    @app_commands.checks.has_any_role(*staff_roles())
     async def refreshevent(self, interaction: discord.Integration, title: StaffingAsync._get_avail_titles()):
         await StaffingAsync._updatemessage(self, title)
         ctx: commands.Context = await self.bot.get_context(interaction)
@@ -97,7 +97,7 @@ class StaffingCog(commands.Cog):
 
     @app_commands.command(name="manreset", description="Bot manually resets selected event")
     @app_commands.describe(title="Which staffing would you like to manually reset?")
-    @commands.has_any_role(*staff_roles())
+    @app_commands.checks.has_any_role(*staff_roles())
     async def manreset(self, interaction: discord.Integration, title: StaffingAsync._get_avail_titles()):
         await self.bot.wait_until_ready()
         ctx: commands.Context = await self.bot.get_context(interaction)
@@ -126,7 +126,7 @@ class StaffingCog(commands.Cog):
 
     @app_commands.command(name="updatestaffing", description="Bot updates selected staffing")
     @app_commands.describe(title="Which staffing would you like to update?")
-    @commands.has_any_role(*staff_roles())
+    @app_commands.checks.has_any_role(*staff_roles())
     async def updatestaffing(self, interaction: discord.Integration, title: StaffingAsync._get_avail_titles()):
         ctx: commands.Context = await self.bot.get_context(interaction)
         interaction._baton = ctx
@@ -138,15 +138,15 @@ class StaffingCog(commands.Cog):
 
     @app_commands.command(name="book", description="Bot books selected position for selected staffing")
     @app_commands.describe(position="Which position would you like to book?")
+    @app_commands.checks.has_any_role(*controller_roles())
     async def book(self, interaction: discord.Integration, position: str):
         ctx: commands.Context = await self.bot.get_context(interaction)
         interaction._baton = ctx
         try:
             vatsim_member = discord.utils.get(ctx.guild.roles, id=VATSIM_MEMBER_ROLE)
             vatsca_member = discord.utils.get(ctx.guild.roles, id=VATSCA_MEMBER_ROLE)
-            OBS_rating = discord.utils.get(ctx.guild.roles, id=OBS_RATING_ROLE)
             usernick = ctx.author.id
-            if vatsim_member in ctx.author.roles or vatsca_member in ctx.author.roles and OBS_rating not in ctx.author.roles:
+            if vatsim_member in ctx.author.roles or vatsca_member in ctx.author.roles:
                 
                 event_channel = StaffingDB.select(table='staffing', columns=['channel_id'], amount="all")
                 title = StaffingDB.select(table='staffing', columns=['title'], where=['channel_id'], value={'channel_id': ctx.channel.id})

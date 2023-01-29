@@ -34,36 +34,45 @@ class Select(discord.ui.Select):
             await interaction.followup.send(f'Event description/staffing message has been updated to:\n{newdescription}')
         elif self.values[0] == "Sections & Positions":
             await interaction.response.defer()
-            section = await StaffingAsync._section_type(self, self.ctx)
-            section_title = await StaffingAsync._setup_section(self, self.ctx, section)
-            positions = StaffingDB.select(table='positions', columns=['position'], where=['type', 'title'], value={'type': section, 'title': self.title})
-            if section_title != 'None':
-                section_pos = await StaffingAsync._setup_section_pos(self, self.ctx, section_title)
-            columns = {
-                1: 'main_pos_title',
-                2: 'secondary_pos_title',
-                3: 'regional_pos_title'
-            }
-            StaffingDB.update(self=self, table='staffing', where=['title'], value={'title': self.title}, columns=[columns[int(section)]], values={columns[int(section)]: section_title})
-            if positions != 'None':
-                StaffingDB.delete(self=self, table='positions', where=['type', 'title'], value={'type' : section, 'title' : self.title})
+            check_pos = StaffingDB.select(table="positions", columns=['user'], where=['title'], value={'title': self.title}, amount='all')
+            update_ok = True
+            for pos in check_pos:
+                if pos[0] != '':
+                    update_ok = False
 
-            if section_title != 'None':
-                for position in section_pos:
-                    StaffingDB.insert(self=self, table="positions", columns=['position', 'user', 'type', 'title'], values=[position, "", section, self.title])
-            
-                formatted_pos_data = "\n" .join(
-                            position for position in section_pos)
-                await interaction.followup.send(f'Section Title updated to `{section_title}`\n\nPositions updated to:\n{formatted_pos_data}')
+            if update_ok == True:
+                section = await StaffingAsync._section_type(self, self.ctx)
+                section_title = await StaffingAsync._setup_section(self, self.ctx, section)
+                positions = StaffingDB.select(table='positions', columns=['position'], where=['type', 'title'], value={'type': section, 'title': self.title})
+                if section_title != 'None':
+                    section_pos = await StaffingAsync._setup_section_pos(self, self.ctx, section_title)
+                columns = {
+                    1: 'main_pos_title',
+                    2: 'secondary_pos_title',
+                    3: 'regional_pos_title'
+                }
+                StaffingDB.update(self=self, table='staffing', where=['title'], value={'title': self.title}, columns=[columns[int(section)]], values={columns[int(section)]: section_title})
+                if positions != 'None':
+                    StaffingDB.delete(self=self, table='positions', where=['type', 'title'], value={'type' : section, 'title' : self.title})
+
+                if section_title != 'None':
+                    for position in section_pos:
+                        StaffingDB.insert(self=self, table="positions", columns=['position', 'user', 'type', 'title'], values=[position, "", section, self.title])
+                
+                    formatted_pos_data = "\n" .join(
+                                position for position in section_pos)
+                    await interaction.followup.send(f'Section Title updated to `{section_title}`\n\nPositions updated to:\n{formatted_pos_data}')
+                else:
+                    await interaction.followup.send(f'Section has been removed.')
+                await StaffingAsync._updatemessage(self=self, title=self.title)
             else:
-                await interaction.followup.send(f'Section has been removed.')
-            await StaffingAsync._updatemessage(self=self, title=self.title)
+                await interaction.followup.send(f'Update is not OK. There are still active bookings for this event.')
         elif self.values[0] == "Booking restriction":
             await interaction.response.defer()
             restriction = await StaffingAsync._get_retriction(self=self, ctx=self.ctx)
             restrict_bookings = {
-                'No': 0,
-                'Yes': 1
+                'no': 0,
+                'yes': 1
             }
             StaffingDB.update(self=self, table='staffing', where=['title'], value={'title': self.title}, columns=['restrict_bookings'], values={'restrict_bookings': restrict_bookings[restriction]})
             await interaction.followup.send(f'Booking restriction updated.')
