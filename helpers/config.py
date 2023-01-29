@@ -39,10 +39,10 @@ STAFF_ROLES = [
 ]
 
 CONTROLLER_ROLES = [
-    'S1',
-    'S2',
-    'S3',
-    'C1+'
+    'Rating: S1',
+    'Rating: S2',
+    'Rating: S3',
+    'Rating: C1+'
 ]
 
 ROLE_REASONS = {
