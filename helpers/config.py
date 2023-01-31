@@ -38,13 +38,6 @@ STAFF_ROLES = [
     'Staff',
 ]
 
-CONTROLLER_ROLES = [
-    'Rating: S1',
-    'Rating: S2',
-    'Rating: S3',
-    'Rating: C1+'
-]
-
 ROLE_REASONS = {
     'vatsca_add': 'Member is now part of VATSCA',
     'vatsca_remove': 'Member is no longer part of VATSCA',
@@ -97,6 +90,7 @@ VATSIM_MEMBER_ROLE = int(os.getenv('VATSIM_MEMBER_ROLE'))
 EVENTS_ROLE = int(os.getenv('EVENTS_ROLE'))
 MENTOR_ROLE = int(os.getenv('MENTOR_ROLE'))
 TRAINING_STAFF_ROLE = int(os.getenv('TRAINING_STAFF_ROLE'))
+OBS_ROLE = int(os.getenv('OBS_ROLE'))
 
 FIR_DATA = str(os.getenv('FIR_DATA')).split(',')
 FIRS = []
