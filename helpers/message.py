@@ -2,7 +2,7 @@ import re
 import discord
 
 from markdownify import markdownify as md
-from helpers.config import STAFF_ROLES, VATSCA_BLUE, CONTROLLER_ROLES
+from helpers.config import STAFF_ROLES, VATSCA_BLUE, OBS_ROLE, GUILD_ID
 
 
 def embed(description: str = None, colour=None, title: str = None, author: dict = None, url: str = None, image: str = None, footer: dict = None,
@@ -59,13 +59,17 @@ def staff_roles() -> str:
     staff_roles = tuple(STAFF_ROLES)
     return staff_roles
 
-def controller_roles() -> str:
+def is_obs(interaction: discord.Interaction) -> str:
     """
     Function returns tuple of controller roles
     :return:
     """
-    controller_roles = tuple(CONTROLLER_ROLES)
-    return controller_roles
+    obs_role = discord.utils.get(interaction.guild.roles, id=OBS_ROLE)
+    if obs_role in interaction.user.roles:
+        raise discord.app_commands.AppCommandError('You do not have the proper roles to use this command')
+    else:
+        return True
+
 
 def event_description(description: str) -> str:
     """

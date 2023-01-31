@@ -10,7 +10,7 @@ from discord.ui import Select, View
 from datetime import datetime
 
 from helpers.booking import Booking
-from helpers.message import staff_roles, controller_roles
+from helpers.message import staff_roles, is_obs
 from helpers.staffing_async import StaffingAsync
 from helpers.staffing_db import StaffingDB
 from helpers.select import SelectView
@@ -138,7 +138,7 @@ class StaffingCog(commands.Cog):
 
     @app_commands.command(name="book", description="Bot books selected position for selected staffing")
     @app_commands.describe(position="Which position would you like to book?")
-    @app_commands.checks.has_any_role(*controller_roles())
+    @app_commands.check(is_obs)
     async def book(self, interaction: discord.Integration, position: str):
         ctx: commands.Context = await self.bot.get_context(interaction)
         interaction._baton = ctx
