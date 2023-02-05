@@ -1,11 +1,6 @@
-
-
-from datetime import date
-
 from helpers.database import db_connection
 
-
-class StaffingDB():
+class DB():
 
     def __init__(self) -> None:
         pass

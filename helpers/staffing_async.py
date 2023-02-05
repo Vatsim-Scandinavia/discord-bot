@@ -8,7 +8,7 @@ from helpers.booking import Booking
 
 from helpers.config import AVAILABLE_EVENT_DAYS
 from helpers.database import db_connection
-from helpers.staffing_db import StaffingDB
+from helpers.db import DB
 
 
 class StaffingAsync():
@@ -22,9 +22,9 @@ class StaffingAsync():
     # ----------------------------------
     #
     def _get_titles() -> Literal:
-        events = StaffingDB.select(table='events', columns=[
+        events = DB.select(table='events', columns=[
                                    'name'], amount='all')
-        staffings = StaffingDB.select(
+        staffings = DB.select(
             table="staffing", columns=['title'], amount='all')
         formatted_staffings = []
         formatted_events = []
@@ -42,7 +42,7 @@ class StaffingAsync():
         return Literal[tuple(formatted_events)]
 
     def _get_avail_titles() -> Literal:
-        staffings = StaffingDB.select(table="staffing", columns=['title'], amount='all')
+        staffings = DB.select(table="staffing", columns=['title'], amount='all')
         formatted_staffings = []
         if not staffings:
             formatted_staffings.append('None is available. Please try again later.')
@@ -228,12 +228,14 @@ class StaffingAsync():
         1 week = 7
         2 weeks 14 and etc.
         """
-        start = StaffingDB.select(table="events", columns=["start_time"], where=[
+        start = DB.select(table="events", columns=["start_time"], where=[
                                   "name"], value={'name': title})[0]
         start_time = start.strftime("%H:%M")
 
-        end = StaffingDB.select(table='events', columns=['end_time'], where=[
+        end = DB.select(table='events', columns=['end_time'], where=[
                                 'name'], value={'name': title})[0]
+
+        staffing_exists = DB.select(table="staffing", columns=['title'], amount="all")
         if end is not None:
             end_time = end.strftime("%H:%M")
         else:
@@ -242,12 +244,14 @@ class StaffingAsync():
         today = datetime.today()
         days = (start.weekday() - today.weekday() + 7) % (interval * 7)
         newdate = today + timedelta(days=days)
-        current = StaffingDB.select(table="staffing", columns=['date'], where=['title'], value={'title' : title})[0]
+        current = None
+        if title in staffing_exists:
+            current = DB.select(table="staffing", columns=['date'], where=['title'], value={'title' : title})[0]
         return newdate, start_time, end_time, current
 
     async def _updatemessage(self, title):
         try:
-            event = StaffingDB.select(table='staffing', columns=['*'], where=['title'], value={'title': title})
+            event = DB.select(table='staffing', columns=['*'], where=['title'], value={'title': title})
 
             title = event[1]
             description = event[3]
@@ -269,9 +273,9 @@ class StaffingAsync():
             formatted_date = dates[3].strftime('%A %d/%m/%Y')
 
             section_positions = {}
-            section_positions[first_section] = StaffingDB.select(table='positions', columns=['*'], where=['title', 'type'], value={'title': title, 'type': 1}, amount='all')
-            section_positions[second_section] = StaffingDB.select(table='positions', columns=['*'], where=['title', 'type'], value={'title': title, 'type': 2}, amount='all')
-            section_positions[third_section] = StaffingDB.select(table='positions', columns=['*'], where=['title', 'type'], value={'title': title, 'type': 3}, amount='all')
+            section_positions[first_section] = DB.select(table='positions', columns=['*'], where=['title', 'type'], value={'title': title, 'type': 1}, amount='all')
+            section_positions[second_section] = DB.select(table='positions', columns=['*'], where=['title', 'type'], value={'title': title, 'type': 2}, amount='all')
+            section_positions[third_section] = DB.select(table='positions', columns=['*'], where=['title', 'type'], value={'title': title, 'type': 3}, amount='all')
 
             pos_info = ''
             for x in section_positions:
@@ -288,8 +292,8 @@ class StaffingAsync():
             await message.edit(content=format_staffing_message)
 
         except Exception as e:
-                print(f'Unable to update message - {e}')
-                raise e
+            print(f'Unable to update message - {e}')
+            raise e
 
     async def _book(self, ctx, eventDetails, title, usernick, position):
         cid = re.findall("\d+", str(ctx.author.nick))[0]
@@ -306,7 +310,7 @@ class StaffingAsync():
         request = await Booking.post_booking(self, int(cid), str(date), str(start_time), str(end_time), str(position), int(tag))
 
         if request == 200:
-            StaffingDB.update(self=self, table='positions', columns=['user'], values={
+            DB.update(self=self, table='positions', columns=['user'], values={
                               'user': f'<@{usernick}>'}, where=['position', 'title'], value={'position': f'{position.upper()}:', 'title': title[0]})
 
             await StaffingAsync._updatemessage(self, title[0])

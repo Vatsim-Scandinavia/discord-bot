@@ -3,16 +3,15 @@ import discord
 import asyncio
 import re
 
-from discord import app_commands, TextChannel, SelectOption
+from discord import app_commands, TextChannel
 from discord.ext import commands, tasks
-from discord.ui import Select, View
 
 from datetime import datetime
 
 from helpers.booking import Booking
 from helpers.message import staff_roles, is_obs
 from helpers.staffing_async import StaffingAsync
-from helpers.staffing_db import StaffingDB
+from helpers.db import DB
 from helpers.select import SelectView
 from helpers.config import STAFFING_INTERVAL, DEBUG, VATSIM_MEMBER_ROLE, VATSCA_MEMBER_ROLE
 
@@ -72,7 +71,7 @@ class StaffingCog(commands.Cog):
         msg = await channel.send(format_staffing_message)
         await msg.pin()
         await channel.purge(limit=None, check=lambda msg: not msg.pinned)
-        StaffingDB.insert(self=self, table="staffing", columns=['title', 'date', 'description', 'channel_id', 'message_id', 'week_interval', 'restrict_bookings'], values=[str(title), str(dates[0]), str(description), str(channel.id), str(msg.id), str(week_int), str(restrict_bookings[restrict_booking])])
+        DB.insert(self=self, table="staffing", columns=['title', 'date', 'description', 'channel_id', 'message_id', 'week_interval', 'restrict_bookings'], values=[str(title), str(dates[0]), str(description), str(channel.id), str(msg.id), str(week_int), str(restrict_bookings[restrict_booking])])
         
         columns =  {
             1: 'main_pos_title',
@@ -81,9 +80,9 @@ class StaffingCog(commands.Cog):
         }
         j = 1
         for x in section_positions:
-            StaffingDB.update(self=self, table="staffing", columns=[columns[j]], values={columns[j]: x}, where=["title"], value={"title": title})
+            DB.update(self=self, table="staffing", columns=[columns[j]], values={columns[j]: x}, where=["title"], value={"title": title})
             for pos in section_positions[x]:
-                StaffingDB.insert(self=self, table="positions", columns=['position', 'user', 'type', 'title'], values=[pos, "", j, title])
+                DB.insert(self=self, table="positions", columns=['position', 'user', 'type', 'title'], values=[pos, "", j, title])
             j += 1
 
     @app_commands.command(name="refreshevent", description="Bot refreshes selected event")
@@ -103,16 +102,16 @@ class StaffingCog(commands.Cog):
         ctx: commands.Context = await self.bot.get_context(interaction)
         interaction._baton = ctx
         try:
-            staffing = StaffingDB.select(table='staffing', columns=['*'], where=['title'], value={'title': title})
+            staffing = DB.select(table='staffing', columns=['*'], where=['title'], value={'title': title})
             title = staffing[1]
             week = staffing[6]
             
             await ctx.send(f"{ctx.author.mention} Started manual reset of `{title}` at `{str(datetime.now().isoformat())}`", delete_after=5, ephemeral=True)
 
-            StaffingDB.update(self=self, table='positions', where=['title'], value={'title': title}, columns=['user'], values={'user': ''})
+            DB.update(self=self, table='positions', where=['title'], value={'title': title}, columns=['user'], values={'user': ''})
             newdate = await StaffingAsync._geteventdate(self=self, title=title, interval=week)
 
-            StaffingDB.update(self=self, table='staffing', where=['title'], value={'title': title}, columns=['date'], values={'date': newdate[0]})
+            DB.update(self=self, table='staffing', where=['title'], value={'title': title}, columns=['date'], values={'date': newdate[0]})
             await StaffingAsync._updatemessage(self=self, title=title)
 
             channel = self.bot.get_channel(int(staffing[4]))
@@ -148,13 +147,13 @@ class StaffingCog(commands.Cog):
             usernick = ctx.author.id
             if vatsim_member in ctx.author.roles or vatsca_member in ctx.author.roles:
                 
-                event_channel = StaffingDB.select(table='staffing', columns=['channel_id'], amount="all")
-                title = StaffingDB.select(table='staffing', columns=['title'], where=['channel_id'], value={'channel_id': ctx.channel.id})
-                positions = StaffingDB.select(table='positions', columns=['position', 'user'], where=['title'], value={'title': title[0]}, amount='all')
-                main_pos = StaffingDB.select(table="positions", columns=['position', 'user'], where=['title', 'type'], value={'title': title[0], 'type': 'main'}, amount='all')
-                sec_pos = StaffingDB.select(table="positions", columns=['position', 'user'], where=['title', 'type'], value={'title': title[0], 'type': 'secondary'}, amount='all')
-                reg_pos = StaffingDB.select(table="positions", columns=['position', 'user'], where=['title', 'type'], value={'title': title[0], 'type': 'regional'}, amount='all')
-                eventDetails = StaffingDB.select(table='staffing', columns=['date', 'restrict_bookings'], where=['title'], value={'title': title[0]})
+                event_channel = DB.select(table='staffing', columns=['channel_id'], amount="all")
+                title = DB.select(table='staffing', columns=['title'], where=['channel_id'], value={'channel_id': ctx.channel.id})
+                positions = DB.select(table='positions', columns=['position', 'user'], where=['title'], value={'title': title[0]}, amount='all')
+                main_pos = DB.select(table="positions", columns=['position', 'user'], where=['title', 'type'], value={'title': title[0], 'type': 'main'}, amount='all')
+                sec_pos = DB.select(table="positions", columns=['position', 'user'], where=['title', 'type'], value={'title': title[0], 'type': 'secondary'}, amount='all')
+                reg_pos = DB.select(table="positions", columns=['position', 'user'], where=['title', 'type'], value={'title': title[0], 'type': 'regional'}, amount='all')
+                eventDetails = DB.select(table='staffing', columns=['date', 'restrict_bookings'], where=['title'], value={'title': title[0]})
                 
                 if any(ctx.channel.id in channel for channel in event_channel):
                     if any(f'<@{usernick}>' in match for match in positions):
@@ -183,20 +182,20 @@ class StaffingCog(commands.Cog):
         ctx: commands.Context = await self.bot.get_context(interaction)
         interaction._baton = ctx
         try:
-            event_channel = StaffingDB.select(table='staffing', columns=['channel_id'], amount='all')
-            title = StaffingDB.select(table='staffing', columns=['title'], where=['channel_id'], value={'channel_id': ctx.channel.id})
-            positions = StaffingDB.select(table='positions', columns=['position', 'user'], where=['title'], value={'title': title[0]}, amount='all')
+            event_channel = DB.select(table='staffing', columns=['channel_id'], amount='all')
+            title = DB.select(table='staffing', columns=['title'], where=['channel_id'], value={'channel_id': ctx.channel.id})
+            positions = DB.select(table='positions', columns=['position', 'user'], where=['title'], value={'title': title[0]}, amount='all')
             usernick = ctx.author.id
             if any(ctx.channel.id in channel for channel in event_channel):
                 if any(f'<@{usernick}>' in match for match in positions):
 
                     cid = re.findall("\d+", str(ctx.author.nick))
 
-                    position = StaffingDB.select(table='positions', columns=['position'], where=['user', 'title'], value={'user': f'<@{usernick}>', 'title': title[0]})
+                    position = DB.select(table='positions', columns=['position'], where=['user', 'title'], value={'user': f'<@{usernick}>', 'title': title[0]})
 
                     request = await Booking.delete_booking(self, int(cid[0]), str(position[0]))
                     if request == 200:
-                        StaffingDB.update(self=self, table='positions', columns=['user'], values={'user': ''}, where=['user', 'title'], value={'user': f'<@{usernick}>', 'title': title[0]})
+                        DB.update(self=self, table='positions', columns=['user'], values={'user': ''}, where=['user', 'title'], value={'user': f'<@{usernick}>', 'title': title[0]})
                         await StaffingAsync._updatemessage(self, title[0])
                         await ctx.send(f"<@{usernick}> Confirmed cancelling of your booking!", delete_after=5)
                     else:
@@ -218,7 +217,7 @@ class StaffingCog(commands.Cog):
         if DEBUG == True and override == False:
                 print("autoreset skipped due to DEBUG ON. You can start manually with command instead.")
                 return
-        staffings = StaffingDB.select(table='staffing', columns=['*'], amount='all')
+        staffings = DB.select(table='staffing', columns=['*'], amount='all')
         now = datetime.utcnow()
         for staffing in staffings:
             title = staffing[1]
@@ -226,9 +225,9 @@ class StaffingCog(commands.Cog):
             week = staffing[6]
             if now.date() > date:
                 print(f"Started autoreset of {title} at {str(datetime.now().isoformat())}")
-                StaffingDB.update(self=self, table='positions', where=['title'], value={'title': title}, columns=['user'], values={'user': ''})
+                DB.update(self=self, table='positions', where=['title'], value={'title': title}, columns=['user'], values={'user': ''})
                 newdate = await StaffingAsync._geteventdate(self=self, title=title, interval=week)
-                StaffingDB.update(self=self, table='staffing', where=['title'], value={'title': title}, columns=['date'], values={'date': newdate[0]})
+                DB.update(self=self, table='staffing', where=['title'], value={'title': title}, columns=['date'], values={'date': newdate[0]})
                 await StaffingAsync._updatemessage(self=self, title=title)
                 channel = self.bot.get_channel(int(staffing[4]))
                 await channel.send("The chat is being automatic reset!")

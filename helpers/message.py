@@ -61,7 +61,7 @@ def staff_roles() -> str:
 
 def is_obs(interaction: discord.Interaction) -> str:
     """
-    Function returns tuple of controller roles
+    Function checks if user has OBS role
     :return:
     """
     obs_role = discord.utils.get(interaction.guild.roles, id=OBS_ROLE)
