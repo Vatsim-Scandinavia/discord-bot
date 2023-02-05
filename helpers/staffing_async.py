@@ -234,6 +234,9 @@ class StaffingAsync():
 
         end = StaffingDB.select(table='events', columns=['end_time'], where=[
                                 'name'], value={'name': title})[0]
+
+        staffing_exists = StaffingDB.select(table="staffing", columns=['title'], amount="all")
+
         if end is not None:
             end_time = end.strftime("%H:%M")
         else:
@@ -242,7 +245,9 @@ class StaffingAsync():
         today = datetime.today()
         days = (start.weekday() - today.weekday() + 7) % (interval * 7)
         newdate = today + timedelta(days=days)
-        current = StaffingDB.select(table="staffing", columns=['date'], where=['title'], value={'title' : title})[0]
+        current = None
+        if title in staffing_exists:
+            current = StaffingDB.select(table="staffing", columns=['date'], where=['title'], value={'title' : title})[0]
         return newdate, start_time, end_time, current
 
     async def _updatemessage(self, title):
