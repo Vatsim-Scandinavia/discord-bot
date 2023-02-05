@@ -271,7 +271,10 @@ class StaffingAsync():
             if format_staffing_message != "":
                 format_staffing_message += "\n"
 
-            formatted_date = dates[3].strftime('%A %d/%m/%Y')
+            date = dates[3]
+            if date is None:
+                date = dates[0]
+            formatted_date = date.strftime("%A %d/%m/%Y")
 
             section_positions = {}
             section_positions[first_section] = StaffingDB.select(table='positions', columns=['*'], where=['title', 'type'], value={'title': title, 'type': 1}, amount='all')
