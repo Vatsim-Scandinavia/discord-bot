@@ -246,7 +246,7 @@ class StaffingAsync():
         days = (start.weekday() - today.weekday() + 7) % (interval * 7)
         newdate = today + timedelta(days=days)
         current = None
-        if title in staffing_exists:
+        if title in [item[0] for item in staffing_exists]:
             current = StaffingDB.select(table="staffing", columns=['date'], where=['title'], value={'title' : title})[0]
         return newdate, start_time, end_time, current
 
