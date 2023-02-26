@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS `positions` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `position` text NOT NULL,
   `user` text NOT NULL,
-  `booking_id` bigint NULL,
+  `booking_id` varchar(255) NULL,
   `type` text NOT NULL,
   `title` varchar(255) NOT NULL,
   PRIMARY KEY (`id`),
