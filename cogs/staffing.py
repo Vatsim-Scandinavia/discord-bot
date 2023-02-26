@@ -112,7 +112,7 @@ class StaffingCog(commands.Cog):
             
             await ctx.send(f"{ctx.author.mention} Started manual reset of `{title}` at `{str(datetime.now().isoformat())}`", delete_after=5, ephemeral=True)
 
-            StaffingDB.update(self=self, table='positions', where=['title'], value={'title': title}, columns=['user'], values={'user': ''})
+            StaffingDB.update(self=self, table='positions', where=['title'], value={'title': title}, columns=['user', 'booking_id'], values={'user': '', 'booking_id': ''})
             newdate = await StaffingAsync._geteventdate(self=self, title=title, interval=week)
 
             StaffingDB.update(self=self, table='staffing', where=['title'], value={'title': title}, columns=['date'], values={'date': newdate[0]})
@@ -229,7 +229,7 @@ class StaffingCog(commands.Cog):
             week = staffing[6]
             if now.date() > date:
                 print(f"Started autoreset of {title} at {str(datetime.now().isoformat())}")
-                StaffingDB.update(self=self, table='positions', where=['title'], value={'title': title}, columns=['user'], values={'user': ''})
+                StaffingDB.update(self=self, table='positions', where=['title'], value={'title': title}, columns=['user', 'booking_id'], values={'user': '', 'booking_id': ''})
                 newdate = await StaffingAsync._geteventdate(self=self, title=title, interval=week)
                 StaffingDB.update(self=self, table='staffing', where=['title'], value={'title': title}, columns=['date'], values={'date': newdate[0]})
                 await StaffingAsync._updatemessage(self=self, title=title)
