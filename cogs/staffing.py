@@ -199,7 +199,7 @@ class StaffingCog(commands.Cog):
 
                     request = await Booking.delete_booking(self, int(cid[0]), int(booking[0]))
                     if request == 200:
-                        StaffingDB.update(self=self, table='positions', columns=['user', 'booking_id'], values={'user': '', 'booking_id': ''}, where=['user', 'title'], value={'user': f'<@{usernick}>', 'title': title[0]})
+                        StaffingDB.update(self=self, table='positions', columns=['booking_id', 'user',], values={'booking_id': '', 'user': ''}, where=['user', 'title'], value={'user': f'<@{usernick}>', 'title': title[0]})
                         await StaffingAsync._updatemessage(self, title[0])
                         await ctx.send(f"<@{usernick}> Confirmed cancelling of your booking!", delete_after=5)
                     else:

@@ -78,6 +78,7 @@ class StaffingDB():
                 q = f'UPDATE {table} SET {col} = {values[col]} WHERE {whereStatement}'
             else:
                 q = f'UPDATE {table} SET {col} = "{values[col]}" WHERE {whereStatement}'
+            print(q)
             cursor.execute(q)
 
         mydb.commit()
