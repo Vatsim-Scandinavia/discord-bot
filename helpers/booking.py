@@ -40,25 +40,14 @@ class Booking():
 
         request = requests.post(url=CC_API_URL + "/bookings/create", headers={'Authorization': 'Bearer ' + CC_API_TOKEN, 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json'}, data=data)
         
-        if request.status_code == requests.codes.ok:
-            return 200
-        else:
-            return request
+        return request
 
-    async def delete_booking(self, cid: int, position: str):
+    async def delete_booking(self, cid: int, booking_id: int):
         """
         Delete a booking from the API
         """
-        bookings = requests.get(CC_API_URL + '/bookings', headers={'Authorization': 'Bearer ' + CC_API_TOKEN, 'Accept': 'application/json'})
-        if bookings.status_code == requests.codes.ok:
-            feedback = bookings.json()
-            for booking in feedback["data"]:
-                if int(booking["user_id"]) == cid and str(booking["callsign"]) + ":" == position:
-                    request = requests.delete(url=CC_API_URL + "/bookings/" + str(booking["id"]), headers={'Authorization': 'Bearer ' + CC_API_TOKEN, 'Accept': 'application/json'})
-                    if request.status_code == requests.codes.ok:
-                        return 200
-                    else:
-                        return request.status_code
-            return 404
+        request = requests.delete(url=CC_API_URL + "/bookings/" + str(booking_id), headers={'Authorization': 'Bearer ' + CC_API_TOKEN, 'Accept': 'application/json'})
+        if request.status_code == requests.codes.ok:
+            return 200
         else:
-            return bookings.status_code
+            return request.status_code
