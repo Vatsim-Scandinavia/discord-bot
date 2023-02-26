@@ -236,6 +236,7 @@ class StaffingAsync():
                                 'name'], value={'name': title})[0]
 
         staffing_exists = DB.select(table="staffing", columns=['title'], amount="all")
+
         if end is not None:
             end_time = end.strftime("%H:%M")
         else:
@@ -245,7 +246,7 @@ class StaffingAsync():
         days = (start.weekday() - today.weekday() + 7) % (interval * 7)
         newdate = today + timedelta(days=days)
         current = None
-        if title in staffing_exists:
+        if title in [item[0] for item in staffing_exists]:
             current = DB.select(table="staffing", columns=['date'], where=['title'], value={'title' : title})[0]
         return newdate, start_time, end_time, current
 
@@ -270,7 +271,10 @@ class StaffingAsync():
             if format_staffing_message != "":
                 format_staffing_message += "\n"
 
-            formatted_date = dates[3].strftime('%A %d/%m/%Y')
+            date = dates[3]
+            if date is None:
+                date = dates[0]
+            formatted_date = date.strftime("%A %d/%m/%Y")
 
             section_positions = {}
             section_positions[first_section] = DB.select(table='positions', columns=['*'], where=['title', 'type'], value={'title': title, 'type': 1}, amount='all')

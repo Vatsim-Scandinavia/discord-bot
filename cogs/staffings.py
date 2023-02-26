@@ -55,7 +55,10 @@ class StaffingCog(commands.Cog):
         if format_staffing_message != "":
             format_staffing_message += "\n"
 
-        formatted_date = dates[3].strftime("%A %d/%m/%Y")
+        date = dates[3]
+        if date is None:
+            date = dates[0]
+        formatted_date = date.strftime("%A %d/%m/%Y")
 
         pos_data = ''
         for x in section_positions:
