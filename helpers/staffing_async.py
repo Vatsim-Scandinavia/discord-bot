@@ -1,5 +1,5 @@
 import re
-import discord
+import requests
 from typing import Literal
 
 from datetime import datetime, timedelta
@@ -243,7 +243,7 @@ class StaffingAsync():
             end_formatted = start + timedelta(hours=2)
             end_time = end_formatted.strftime("%H:%M")
         today = datetime.today()
-        days = (start.weekday() - today.weekday() + 7) % (interval * 7)
+        days = (start.weekday() - today.weekday() + interval * 7) % (interval * 7)
         newdate = today + timedelta(days=days)
         current = None
         if title in [item[0] for item in staffing_exists]:
@@ -258,11 +258,12 @@ class StaffingAsync():
             description = event[3]
             channel_id = event[4]
             message_id = event[5]
+            interval = event[6]
             first_section = event[7]
             second_section = event[8]
             third_section = event[9]
 
-            dates = await StaffingAsync._geteventdate(self, title)
+            dates = await StaffingAsync._geteventdate(self, title, interval)
             start_time = dates[1]
             end_time = dates[2]
 
@@ -313,9 +314,10 @@ class StaffingAsync():
 
         request = await Booking.post_booking(self, int(cid), str(date), str(start_time), str(end_time), str(position), int(tag))
 
-        if request == 200:
-            StaffingDB.update(self=self, table='positions', columns=['user'], values={
-                              'user': f'<@{usernick}>'}, where=['position', 'title'], value={'position': f'{position.upper()}:', 'title': title[0]})
+        if request.status_code == requests.codes.ok:
+            feedback = request.json()['booking']
+            StaffingDB.update(self=self, table='positions', columns=['user', 'booking_id'], values={
+                              'user': f'<@{usernick}>', 'booking_id': feedback['id']}, where=['position', 'title'], value={'position': f'{position.upper()}:', 'title': title[0]})
 
             await StaffingAsync._updatemessage(self, title[0])
             await ctx.send(f"<@{usernick}> Confirmed booking for position `{position.upper()}` for event `{title[0]}`", delete_after=5)
