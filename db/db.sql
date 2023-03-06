@@ -43,8 +43,13 @@ CREATE TABLE IF NOT EXISTS `positions` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `position` text NOT NULL,
   `user` text NOT NULL,
+  `booking_id` varchar(255) NULL,
   `type` text NOT NULL,
-  `title` varchar(255) NOT NULL,
+  `local_booking` int(11) NULL,
+  `start_time` TIME NULL,
+  `end_time` TIME NULL,
+  `event` int(11),
   PRIMARY KEY (`id`),
-  UNIQUE KEY `id` (`id`) USING BTREE
+  UNIQUE KEY `id` (`id`) USING BTREE,
+  CONSTRAINT `event_id_foreign` FOREIGN KEY (`event`) REFERENCES `staffing` (`id`) ON DELETE CASCADE
 );

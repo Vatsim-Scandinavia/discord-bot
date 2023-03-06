@@ -111,7 +111,7 @@ class StaffingCog(commands.Cog):
             
             await ctx.send(f"{ctx.author.mention} Started manual reset of `{title}` at `{str(datetime.now().isoformat())}`", delete_after=5, ephemeral=True)
 
-            DB.update(self=self, table='positions', where=['title'], value={'title': title}, columns=['user'], values={'user': ''})
+            DB.update(self=self, table='positions', where=['title'], value={'title': title}, columns=['user', 'booking_id'], values={'user': '', 'booking_id': ''})
             newdate = await StaffingAsync._geteventdate(self=self, title=title, interval=week)
 
             DB.update(self=self, table='staffing', where=['title'], value={'title': title}, columns=['date'], values={'date': newdate[0]})
@@ -194,11 +194,11 @@ class StaffingCog(commands.Cog):
 
                     cid = re.findall("\d+", str(ctx.author.nick))
 
-                    position = DB.select(table='positions', columns=['position'], where=['user', 'title'], value={'user': f'<@{usernick}>', 'title': title[0]})
+                    booking = DB.select(table='positions', columns=['booking_id'], where=['user', 'title'], value={'user': f'<@{usernick}>', 'title': title[0]})
 
-                    request = await Booking.delete_booking(self, int(cid[0]), str(position[0]))
+                    request = await Booking.delete_booking(self, int(cid[0]), int(booking[0]))
                     if request == 200:
-                        DB.update(self=self, table='positions', columns=['user'], values={'user': ''}, where=['user', 'title'], value={'user': f'<@{usernick}>', 'title': title[0]})
+                        DB.update(self=self, table='positions', columns=['booking_id', 'user',], values={'booking_id': '', 'user': ''}, where=['user', 'title'], value={'user': f'<@{usernick}>', 'title': title[0]})
                         await StaffingAsync._updatemessage(self, title[0])
                         await ctx.send(f"<@{usernick}> Confirmed cancelling of your booking!", delete_after=5)
                     else:
@@ -228,7 +228,7 @@ class StaffingCog(commands.Cog):
             week = staffing[6]
             if now.date() > date:
                 print(f"Started autoreset of {title} at {str(datetime.now().isoformat())}")
-                DB.update(self=self, table='positions', where=['title'], value={'title': title}, columns=['user'], values={'user': ''})
+                DB.update(self=self, table='positions', where=['title'], value={'title': title}, columns=['user', 'booking_id'], values={'user': '', 'booking_id': ''})
                 newdate = await StaffingAsync._geteventdate(self=self, title=title, interval=week)
                 DB.update(self=self, table='staffing', where=['title'], value={'title': title}, columns=['date'], values={'date': newdate[0]})
                 await StaffingAsync._updatemessage(self=self, title=title)
