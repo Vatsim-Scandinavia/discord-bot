@@ -415,8 +415,7 @@ class StaffingAsync():
                         booking = True
                     else:
                         await ctx.send(f"<@{usernick}> Booking failed, Control Center responded with error `{request.json()['message']}` code `{request.status_code}`, please try again later", delete_after=5)
-                
-                if sections[section] == pos[4] and position.upper() + ':' == pos[1] and pos[2] == '':
+                elif sections[section] == pos[4] and position.upper() + ':' == pos[1] and pos[2] == '':
                     request = await Booking.post_booking(self, int(cid), str(date), str(start_time), str(end_time), str(position), int(tag))
 
                     if request.status_code == requests.codes.ok:

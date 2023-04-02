@@ -201,15 +201,18 @@ class StaffingCog(commands.Cog):
                     cid = re.findall("\d+", str(ctx.author.nick))
 
                     bookings = DB.select(table='positions', columns=['booking_id'], where=['user', 'event'], value={'user': f'<@{usernick}>', 'event': event[0]}, amount='all')
-
+                    cancel = False
                     for booking in bookings:
                         request = await Booking.delete_booking(self, int(cid[0]), int(booking[0]))
                         if request == 200:
                             DB.update(self=self, table='positions', columns=['booking_id', 'user',], values={'booking_id': '', 'user': ''}, where=['user', 'event'], value={'user': f'<@{usernick}>', 'event': event[0]}, limit=1)
                             await StaffingAsync._updatemessage(self, event[0])
-                            await ctx.send(f"<@{usernick}> Confirmed cancelling of your booking!", delete_after=5)
+                            cancel = True
                         else:
                             await ctx.send(f"<@{usernick}> Cancelling failed, Control Center responded with error {request}, please try again later", delete_after=5)
+                    
+                    if cancel == True:
+                        await ctx.send(f"<@{usernick}> Confirmed cancelling of your booking(s)!", delete_after=5)
             else:
                 await ctx.send(f"<@{usernick}> Please use the correct channel", delete_after=5)
         except Exception as e:
