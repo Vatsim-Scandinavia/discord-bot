@@ -121,12 +121,12 @@ async def on_raw_reaction_remove(payload):
                 await user.remove_roles(role, reason=ROLE_REASONS['reaction_remove'])
                 await user.send(f'You no longer have the `{role.name}` role because you removed your reaction.')
 
-# @bot.tree.error
-# async def on_app_command_error(interaction: discord.Interaction, error: discord.app_commands.AppCommandError):
-#     ctx: commands.Context = await bot.get_context(interaction)
-#     interaction._baton = ctx
-#     print(error)
-#     await ctx.send(f'{error}\n\nIf you think this was a mistake, please contact the Web team', ephemeral=True)
+@bot.tree.error
+async def on_app_command_error(interaction: discord.Interaction, error: discord.app_commands.AppCommandError):
+    ctx: commands.Context = await bot.get_context(interaction)
+    interaction._baton = ctx
+    print(error)
+    await ctx.send(f'{error}\n\nIf you think this was a mistake, please contact the Web team', ephemeral=True)
 
 
 @bot.event
