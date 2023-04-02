@@ -54,7 +54,6 @@ class StaffingCog(commands.Cog):
         format_staffing_message = ""
         if format_staffing_message != "":
             format_staffing_message += "\n"
-
         date = dates[3]
         if date is None:
             date = dates[0]
