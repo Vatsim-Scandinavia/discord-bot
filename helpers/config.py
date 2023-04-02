@@ -16,7 +16,7 @@ COGS = [
     'cogs.tasks',
     'cogs.events',
     'cogs.update_messages',
-    'cogs.staffing',
+    'cogs.staffings',
     'cogs.roles'
 ]
 
@@ -26,7 +26,7 @@ COGS_LOAD = {
     'check_members': 'cogs.tasks',
     'events': 'cogs.events',
     'update': 'cogs.update_messages',
-    'staffing': 'cogs.staffing',
+    'staffings': 'cogs.staffings',
     'check_roles': 'cogs.roles'
 }
 

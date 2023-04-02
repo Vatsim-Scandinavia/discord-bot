@@ -31,9 +31,10 @@ CREATE TABLE IF NOT EXISTS `staffing` (
   `channel_id` bigint NOT NULL,
   `message_id` bigint NOT NULL,
   `week_interval` int(11) NOT NULL,
-  `main_pos_title` text NULL,
-  `secondary_pos_title` text NULL,
-  `regional_pos_title` text NULL,
+  `section_1_title` text NULL,
+  `section_2_title` text NULL,
+  `section_3_title` text NULL,
+  `section_4_title` text NULL,
   `restrict_bookings` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id` (`id`) USING BTREE
@@ -45,7 +46,11 @@ CREATE TABLE IF NOT EXISTS `positions` (
   `user` text NOT NULL,
   `booking_id` varchar(255) NULL,
   `type` text NOT NULL,
-  `title` varchar(255) NOT NULL,
+  `local_booking` int(11) NULL,
+  `start_time` TIME NULL,
+  `end_time` TIME NULL,
+  `event` int(11),
   PRIMARY KEY (`id`),
-  UNIQUE KEY `id` (`id`) USING BTREE
+  UNIQUE KEY `id` (`id`) USING BTREE,
+  CONSTRAINT `event_id_foreign` FOREIGN KEY (`event`) REFERENCES `staffing` (`id`) ON DELETE CASCADE
 );

@@ -1,11 +1,6 @@
-
-
-from datetime import date
-
 from helpers.database import db_connection
 
-
-class StaffingDB():
+class DB():
 
     def __init__(self) -> None:
         pass
@@ -32,10 +27,10 @@ class StaffingDB():
         """
         Simplified method of making a MySQL connection and selecting values from a table
         """
-        mydb = db_connection()
-        cursor = mydb.cursor(buffered=True)
+        mydb = db_connection() # Establish DB connection
+        cursor = mydb.cursor(buffered=True) # Initialize interaction with DB with buffered results
         if len(columns) > 1:
-            cols = ', ' .join(columns)
+            cols = ', ' .join(columns) # Format columns
         else:
             cols = columns[0]
         if value and where:
@@ -43,22 +38,22 @@ class StaffingDB():
             i = 0
             for val in where:
                 i += 1
-                if i == len(where):
-                    whereStatement += f'{val} = "{value[val]}"'
+                if i == len(where): # Define if it is the last where statement
+                    whereStatement += f'{val} = "{value[val]}"' # Format where statement
                 else:
-                    whereStatement += f'{val} = "{value[val]}" and '
-            cursor.execute(f'SELECT {cols} FROM {table} WHERE {whereStatement}')
+                    whereStatement += f'{val} = "{value[val]}" and ' # Format where statement
+            cursor.execute(f'SELECT {cols} FROM {table} WHERE {whereStatement}') # Execute SQL statement 
         else:
-            cursor.execute(f'SELECT {cols} FROM {table}')
+            cursor.execute(f'SELECT {cols} FROM {table}') # Execute SQL statement 
         
-        if amount and amount != 'all':
+        if amount and amount != 'all': # Determine type of result
             return cursor.fetchmany(int(amount))
         elif amount and amount == 'all':
             return cursor.fetchall()
         else:
             return cursor.fetchone()
 
-    def update(self, table: str, columns: list, where: list, value: dict, values: dict = False):
+    def update(self, table: str, columns: list, where: list, value: dict, values: dict = False, limit: int = None):
         """
         Simplified method of making a MySQL connection and updating values in a table
         """
@@ -76,6 +71,8 @@ class StaffingDB():
             if values[col] == 'None':
                 values[col] = 'NULL'
                 q = f'UPDATE {table} SET {col} = {values[col]} WHERE {whereStatement}'
+            elif limit:
+                q = f'UPDATE {table} SET {col} = "{values[col]}" WHERE {whereStatement}LIMIT {limit}'
             else:
                 q = f'UPDATE {table} SET {col} = "{values[col]}" WHERE {whereStatement}'
             cursor.execute(q)
