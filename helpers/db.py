@@ -53,7 +53,7 @@ class DB():
         else:
             return cursor.fetchone()
 
-    def update(self, table: str, columns: list, where: list, value: dict, values: dict = False):
+    def update(self, table: str, columns: list, where: list, value: dict, values: dict = False, limit: int = None):
         """
         Simplified method of making a MySQL connection and updating values in a table
         """
@@ -71,6 +71,8 @@ class DB():
             if values[col] == 'None':
                 values[col] = 'NULL'
                 q = f'UPDATE {table} SET {col} = {values[col]} WHERE {whereStatement}'
+            elif limit:
+                q = f'UPDATE {table} SET {col} = "{values[col]}" WHERE {whereStatement}LIMIT {limit}'
             else:
                 q = f'UPDATE {table} SET {col} = "{values[col]}" WHERE {whereStatement}'
             cursor.execute(q)

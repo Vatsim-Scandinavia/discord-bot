@@ -101,7 +101,7 @@ class StaffingAsync():
         :return:
         """
         try:
-            await ctx.send('Should the event have booking restriction? Allwed ansers: `Yes` or `No` **FYI this command expires in 5 minutes**')
+            await ctx.send('Should the event have booking restriction? Allowed ansers: `Yes` or `No` **FYI this command expires in 5 minutes**')
             message = await self.bot.wait_for('message', timeout=300, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
 
             if len(message.content) < 1:
@@ -146,14 +146,22 @@ class StaffingAsync():
         :return:
         """
         try:
-            position = []
+            position = {}
             times = await StaffingAsync.get_howmanypositions(self, ctx, title)
 
             i = 1
             for _ in range(int(times)):
                 await ctx.send(f'{title} nr. {i}? **FYI this command expires in 1 minute**')
                 message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
-                position.append(message.content + ':')
+                start_time = await StaffingAsync._get_start_or_end_time(self, ctx, 'start time')
+                end_time = await StaffingAsync._get_start_or_end_time(self, ctx, 'end time')
+                local_booking = await StaffingAsync._get_local_booking(self, ctx)
+                position[message.content + ':'] = {
+                    'position': message.content  + ':',
+                    'start_time': start_time,
+                    'end_time': end_time,
+                    'local_booking': local_booking
+                }
                 i += 1
 
             if len(message.content) < 1:
@@ -161,6 +169,7 @@ class StaffingAsync():
                 raise ValueError
 
             return position
+
         except Exception as e:
             await ctx.send(f'Error getting {title} - {e}')
             raise e
@@ -207,7 +216,48 @@ class StaffingAsync():
         except Exception as e:
             await ctx.send(f'Error getting the section title - {e}')
             raise e
+        
+    async def _get_start_or_end_time(self, ctx, time):
+        """
+        Function to get the start time
+        :param ctx:
+        :return:
+        """
+        try:
+            await ctx.send(f'Does this position have a specified {time}? If yes, then insert below (format: `HH:MM`), otherwise type `No`! **FYI this command expires in 1 minute**')
 
+            message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
+
+            if len(message.content) < 1:
+                await ctx.send('Setup cancelled. No message was provided.')
+                raise ValueError       
+
+            if 'no' in message.content.lower():
+                return None
+
+            return message.content
+        
+        except Exception as e:
+            await ctx.send(f'Error getting the {time} - {e}')
+            raise e
+        
+    async def _get_local_booking(self, ctx):
+        try:
+            await ctx.send(f'Is this positions a local position? Allowed ansers: `Yes` or `No` **FYI this command expires in 1 minutes**')
+
+            message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
+
+            if 'yes' in message.content.lower() or 'no' in message.content.lower():
+                return True if message.content.lower() == 'yes' else False
+            else:
+                await ctx.send('Only the options `Yes` or `No` is available')
+                raise ValueError
+
+                
+        except Exception as e:
+            await ctx.send(f'Error getting the local booking option - {e}')
+            raise e
+        
     async def _getconfirmation(self, ctx, title):
         try:
             await ctx.send(f'To confirm you want to delete staffing {title} type `{title}` in the chat. If you want to cancel the deletion type `CANCEL` in the chat. **FYI this command expires in 1 minute**')
@@ -250,9 +300,9 @@ class StaffingAsync():
             current = DB.select(table="staffing", columns=['date'], where=['title'], value={'title' : title})[0]
         return newdate, start_time, end_time, current
 
-    async def _updatemessage(self, title):
+    async def _updatemessage(self, id):
         try:
-            event = DB.select(table='staffing', columns=['*'], where=['title'], value={'title': title})
+            event = DB.select(table='staffing', columns=['*'], where=['id'], value={'id': id})
 
             title = event[1]
             description = event[3]
@@ -262,6 +312,7 @@ class StaffingAsync():
             first_section = event[7]
             second_section = event[8]
             third_section = event[9]
+            fourth_section = event[10]
 
             dates = await StaffingAsync._geteventdate(self, title, interval)
             start_time = dates[1]
@@ -278,16 +329,21 @@ class StaffingAsync():
             formatted_date = date.strftime("%A %d/%m/%Y")
 
             section_positions = {}
-            section_positions[first_section] = DB.select(table='positions', columns=['*'], where=['title', 'type'], value={'title': title, 'type': 1}, amount='all')
-            section_positions[second_section] = DB.select(table='positions', columns=['*'], where=['title', 'type'], value={'title': title, 'type': 2}, amount='all')
-            section_positions[third_section] = DB.select(table='positions', columns=['*'], where=['title', 'type'], value={'title': title, 'type': 3}, amount='all')
+            section_positions[first_section] = DB.select(table='positions', columns=['*'], where=['event', 'type'], value={'event': id, 'type': 1}, amount='all')
+            section_positions[second_section] = DB.select(table='positions', columns=['*'], where=['event', 'type'], value={'event': id, 'type': 2}, amount='all')
+            section_positions[third_section] = DB.select(table='positions', columns=['*'], where=['event', 'type'], value={'event': id, 'type': 3}, amount='all')
+            section_positions[fourth_section] = DB.select(table='positions', columns=['*'], where=['event', 'type'], value={'event': id, 'type': 4}, amount='all')
+
 
             pos_info = ''
             for x in section_positions:
                 if x is not None:
                     pos_data = []
                     for pos in section_positions[x]:
-                        pos_data.append(f'{pos[1]} {pos[2]}')
+                        if pos[6] is not None and pos[7] is not None:
+                            pos_data.append(f':'.join(str(pos[6]).split(':')[:2]) + ' - ' + ':'.join(str(pos[7]).split(':')[:2]) + f' ‖ {pos[1]} {pos[2]}')
+                        else:
+                            pos_data.append(f'{pos[1]} {pos[2]}')
                     pos_info += f'\n\n{x}:\n' + '\n' .join(position for position in pos_data)
                 
             format_staffing_message += f'{title} staffing - {formatted_date} {start_time} - {end_time}z\n\n{description}{pos_info}'
@@ -300,25 +356,84 @@ class StaffingAsync():
             print(f'Unable to update message - {e}')
             raise e
 
-    async def _book(self, ctx, eventDetails, title, usernick, position):
+    async def _book(self, ctx, eventDetails, event, usernick, position, section):
         cid = re.findall("\d+", str(ctx.author.nick))[0]
 
-        time = await StaffingAsync._geteventdate(self, title[0])
-        start_time = time[1]
-        end_time = time[2]
+        positions = DB.select(table="positions", columns=['*'], where=['event'], value={'event': event[0]}, amount='all')
+        sections = DB.select(table="staffing", columns=['section_1_title', 'section_2_title', 'section_3_title', 'section_4_title'], where=['id'], value={'id': event[0]})
+        sections = {
+            sections[0]: '1',
+            sections[1]: '2',
+            sections[2]: '3',
+            sections[3]: '4'
+        }
+
+        time = await StaffingAsync._geteventdate(self, event[1])
 
         tag = 3
 
         date = datetime.strptime(str(eventDetails[0]), '%Y-%m-%d')
         date = date.strftime("%d/%m/%Y")
 
-        request = await Booking.post_booking(self, int(cid), str(date), str(start_time), str(end_time), str(position), int(tag))
+        start_time = None
+        end_time = None
+        booking = False
+        for pos in positions:
+            if pos[6] == '00:00:00' or pos[6] == None:
+                start_time = time[1]
+            else:
+                start_time = ':'.join(str(pos[6]).split(':')[:2])
 
-        if request.status_code == requests.codes.ok:
-            feedback = request.json()['booking']
-            DB.update(self=self, table='positions', columns=['user', 'booking_id'], values={'user': f'<@{usernick}>', 'booking_id': feedback['id']}, where=['position', 'title'], value={'position': f'{position.upper()}:', 'title': title[0]})
+            if pos[7] == '00:00:00' or pos[7] == None:
+                end_time = time[2]
+            else:
+                end_time = ':'.join(str(pos[7]).split(':')[:2])
+            
+            if booking == False:
+            
+                # if sections[section] == pos[4] and position.upper() + ':' == pos[1] and pos[5] == 1:
+                #     DB.update(self=self, table='positions', columns=['user'], values={'user': f'<@{usernick}>'}, where=['position', 'user', 'local_booking', 'event'], value={'position': f'{position.upper()}:', 'user': '', 'local_booking': 1, 'event': event[0]}, limit=1)
+                    
+                #     await StaffingAsync._updatemessage(self, event[0])
+                #     await ctx.send(f"<@{usernick}> Confirmed booking for position `{position.upper()}` for event `{event[1]}`", delete_after=5)
+                #     booking = True
+                if section == None and position.upper() + ':' == pos[1] and pos[2] == '':
+                    request = await Booking.post_booking(self, int(cid), str(date), str(start_time), str(end_time), str(position), int(tag))
 
-            await StaffingAsync._updatemessage(self, title[0])
-            await ctx.send(f"<@{usernick}> Confirmed booking for position `{position.upper()}` for event `{title[0]}`", delete_after=5)
-        else:
-            await ctx.send(f"<@{usernick}> Booking failed, Control Center responded with error `{request.json()['message']}` code `{request.status_code}`, please try again later", delete_after=5)
+                    if request.status_code == requests.codes.ok:
+                        feedback = request.json()['booking']
+                        DB.update(self=self, table='positions', columns=['user'], values={'user': f'<@{usernick}>'}, where=['position', 'user', 'event'], value={'position': f'{position.upper()}:', 'user': '', 'event': event[0]}, limit=1)
+                        
+                        selected = DB.select(table="positions", columns=['*'], where=['position', 'user', 'event'], value={'position': f'{position.upper()}:', 'user': f'<@{usernick}>', 'event': event[0]}, amount='all')
+                        
+                        for select in selected:
+                            if select[3] == '':
+                                DB.update(self=self, table='positions', columns=['booking_id'], values={'booking_id': feedback['id']}, where=['id'], value={'id': select[0]})
+
+                        await StaffingAsync._updatemessage(self, event[0])
+                        await ctx.send(f"<@{usernick}> Confirmed booking for position `{position.upper()}` for event `{event[1]}`", delete_after=5)
+                        booking = True
+                    else:
+                        await ctx.send(f"<@{usernick}> Booking failed, Control Center responded with error `{request.json()['message']}` code `{request.status_code}`, please try again later", delete_after=5)
+                
+                if sections[section] == pos[4] and position.upper() + ':' == pos[1] and pos[2] == '':
+                    request = await Booking.post_booking(self, int(cid), str(date), str(start_time), str(end_time), str(position), int(tag))
+
+                    if request.status_code == requests.codes.ok:
+                        feedback = request.json()['booking']
+                        DB.update(self=self, table='positions', columns=['user'], values={'user': f'<@{usernick}>'}, where=['position', 'type', 'user', 'event'], value={'position': f'{position.upper()}:', 'type': sections[section], 'user': '', 'event': event[0]}, limit=1)
+                        selected = DB.select(table="positions", columns=['*'], where=['position', 'type', 'user', 'event'], value={'position': f'{position.upper()}:', 'type': sections[section], 'user': f'<@{usernick}>', 'event': event[0]}, amount='all')
+
+                        for select in selected:
+                            if select[3] == '':
+                                DB.update(self=self, table='positions', columns=['booking_id'], values={'booking_id': feedback['id']}, where=['id'], value={'id': select[0]})
+
+
+                        await StaffingAsync._updatemessage(self, event[0])
+                        await ctx.send(f"<@{usernick}> Confirmed booking for position `{position.upper()}` for event `{event[1]}`", delete_after=5)
+                        booking = True
+                    else:
+                        await ctx.send(f"<@{usernick}> Booking failed, Control Center responded with error `{request.json()['message']}` code `{request.status_code}`, please try again later", delete_after=5)
+
+        if booking == False:
+            await ctx.send(f'<@{usernick}> Booking failed, check if you inserted correct postion, section or if the positions is already booked.', delete_after=5)
