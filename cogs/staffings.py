@@ -165,6 +165,9 @@ class StaffingCog(commands.Cog):
                 sec_pos = DB.select(table="positions", columns=['position', 'user'], where=['event', 'type'], value={'event': event[0], 'type': 2}, amount='all')
                 reg_pos = DB.select(table="positions", columns=['position', 'user'], where=['event', 'type'], value={'event': event[0], 'type': 3}, amount='all')
                 eventDetails = DB.select(table='staffing', columns=['date', 'restrict_bookings'], where=['id'], value={'id': event[0]})
+
+                if section:
+                    section = section.lower()
                 
                 if any(ctx.channel.id in channel for channel in event_channel):
                     if any(position.upper() + ':' in match for match in positions):

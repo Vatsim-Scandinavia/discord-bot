@@ -362,10 +362,10 @@ class StaffingAsync():
         positions = DB.select(table="positions", columns=['*'], where=['event'], value={'event': event[0]}, amount='all')
         sections = DB.select(table="staffing", columns=['section_1_title', 'section_2_title', 'section_3_title', 'section_4_title'], where=['id'], value={'id': event[0]})
         sections = {
-            sections[0]: '1',
-            sections[1]: '2',
-            sections[2]: '3',
-            sections[3]: '4'
+            sections[0].lower(): '1',
+            sections[1].lower(): '2',
+            sections[2].lower(): '3',
+            sections[3].lower(): '4'
         }
 
         time = await StaffingAsync._geteventdate(self, event[1])
