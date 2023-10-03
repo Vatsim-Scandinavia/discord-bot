@@ -4,7 +4,7 @@ import re
 from discord import app_commands
 from discord.ext import commands, tasks
 import datetime
-from helpers.config import CHECK_MENTORS_INTERVAL, DEBUG, GUILD_ID, MENTOR_ROLE, ROLE_REASONS, FIR_MENTORS, TRAINING_STAFF_ROLE
+from helpers.config import CHECK_MENTORS_INTERVAL, DEBUG, GUILD_ID, MENTOR_ROLE, ROLE_REASONS, FIR_MENTORS, TRAINING_STAFF_ROLE, TRAINING_ROLES
 from helpers.roles import Roles
 from helpers.message import staff_roles
 
@@ -14,6 +14,8 @@ class RolesCog(commands.Cog):
     MENTOR_ROLE_REMOVE_REASON = ROLE_REASONS['mentor_remove']
     TRAINING_STAFF_ADD_REASON = ROLE_REASONS['training_staff_add']
     TRAINING_STAFF_REMOVE_REASON = ROLE_REASONS['training_staff_remove']
+    STUDENT_TRAINING_ADD_REASON = ROLE_REASONS['training_add']
+    STUDENT_TRAINING_REMOVE_REASON = ROLE_REASONS['training_remove']
     NO_CID_REMOVE_REASON = ROLE_REASONS['no_cid']
     NO_AUTH_REMOVE_REASON = ROLE_REASONS['no_auth']
 
@@ -46,6 +48,8 @@ class RolesCog(commands.Cog):
 
         moderators = await Roles.get_moderators(self)
 
+        trainings = await Roles.get_training(self)
+
         for user in users:            
             try:
                 cid = re.findall('\d+', str(user.nick))
@@ -68,6 +72,17 @@ class RolesCog(commands.Cog):
                 for moderator in moderators:
                     if int(moderator['id']) == int(cid[0]):
                         should_be_training_staff = True
+
+                student_data = {}
+                should_be_student = False
+
+                for training in trainings:
+                    if int(training['id']) == int(cid[0]):
+                        for item in training["training"]:
+                            if int(item['status']) >= 1:
+                                student_data[item['area']] = item['ratings']
+                                should_be_student = True
+                        
                         
 
                 if mentor_role not in user.roles and should_be_mentor == True:
@@ -86,7 +101,15 @@ class RolesCog(commands.Cog):
                         await user.add_roles(FIR_ROLE, reason=self.MENTOR_ROLE_ADD_REASON)
                     elif FIR_ROLE in user.roles and fir not in belong_to and should_be_mentor == False:
                         await user.remove_roles(FIR_ROLE, reason=self.MENTOR_ROLE_REMOVE_REASON)
-              
+
+                for entry in TRAINING_ROLES:
+                    for item in TRAINING_ROLES[entry]:
+                        training_role = discord.utils.get(guild.roles, id=int(TRAINING_ROLES[entry][item]))
+                        if entry in student_data.keys():
+                            if training_role not in user.roles and item in student_data[entry] and should_be_student:
+                                await user.add_roles(training_role, reason=self.STUDENT_TRAINING_ADD_REASON)
+                        elif training_role in user.roles:
+                            await user.remove_roles(training_role, reason=self.STUDENT_TRAINING_REMOVE_REASON)
 
             except ValueError as e:
                 if mentor_role in user.roles:
