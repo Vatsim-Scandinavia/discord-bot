@@ -35,3 +35,17 @@ class Roles():
             return feedback["data"]["moderators"]
         else:
             return False
+        
+    async def get_training(self):
+        """
+        Get all traning data from the API
+        """
+        request = requests.get(CC_API_URL + '/users', headers={'Authorization': 'Bearer ' + CC_API_TOKEN, 'Accept': 'application/json'}, 
+        params={
+            'include[]': 'training'
+        })
+        if request.status_code == requests.codes.ok:
+            feedback = request.json()
+            return feedback["data"]
+        else:
+            return False

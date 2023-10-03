@@ -45,6 +45,8 @@ ROLE_REASONS = {
     'no_auth': 'User did not authenticate via the Community Website',
     'mentor_add': 'Member is now a mentor',
     'mentor_remove': 'Member is no longer a mentor',
+    'training_add': 'Member is now in training',
+    'training_remove': 'Member is no longer in training',
     'training_staff_add': 'Member is now Traning Staff',
     'training_staff_remove': 'Member is no longer Training Staff',
     'reaction_add': 'Member reacted to a message',
@@ -100,6 +102,27 @@ for fir in FIR_DATA:
     FIR_ROLES.append(fir.split(':')[1])
 
 FIR_MENTORS = dict(zip(FIRS, FIR_ROLES))
+
+TRAINING_DATA = str(os.getenv('TRAINING_DATA')).split(',')
+TRAINING_ROLES = {}
+
+for entry in TRAINING_DATA:
+    entry_parts = entry.split('|', 1)
+    country = entry_parts[0]
+    roles_str = entry_parts[1]
+
+    role_parts = roles_str.split(',')
+
+    roles_dict = {}
+
+    for part in role_parts:
+        role_name, role_id = part.split(':')
+        roles_dict[role_name] = role_id
+
+    if country in TRAINING_ROLES:
+        TRAINING_ROLES[country].update(roles_dict)
+    else:
+        TRAINING_ROLES[country] = roles_dict
 
 REACTION_ROLE_DATA = str(os.getenv('REACTION_ROLE_DATA')).split(',')
 REACTION_EMOJI = []
