@@ -106,8 +106,12 @@ class RolesCog(commands.Cog):
                     for item in TRAINING_ROLES[entry]:
                         training_role = discord.utils.get(guild.roles, id=int(TRAINING_ROLES[entry][item]))
                         if entry in student_data.keys():
+                            print()
                             if training_role not in user.roles and item in student_data[entry] and should_be_student:
                                 await user.add_roles(training_role, reason=self.STUDENT_TRAINING_ADD_REASON)
+                            elif training_role in user.roles and item not in student_data[entry]:
+                                await user.remove_roles(training_role, reason=self.STUDENT_TRAINING_REMOVE_REASON)
+
                         elif training_role in user.roles:
                             await user.remove_roles(training_role, reason=self.STUDENT_TRAINING_REMOVE_REASON)
 
