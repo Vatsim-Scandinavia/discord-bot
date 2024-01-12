@@ -18,3 +18,5 @@
 :eight: Please post voice chat releated messages in the respective voice text channel instead of main channels
 
 :nine: Members being idle for more than 30 minutes will be moved to the 'Away' channel
+
+:one::zero: Do not stream Discord audio without permission from everyone present; this includes people that join while you are streaming.
