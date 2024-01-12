@@ -76,7 +76,7 @@ class UpdateCountryMessage(commands.Cog):
                 author = {
                     'name': self.bot.user.name,
                     'url': DIVISION_URL,
-                    'icon': self.bot.user.avatar_url,
+                    'icon': self.bot.user.avatar.url,
                 }
                 if message_id is None:
                     try:
@@ -112,7 +112,7 @@ class UpdateCountryMessage(commands.Cog):
                 author = {
                     'name': self.bot.user.name,
                     'url': DIVISION_URL,
-                    'icon': self.bot.user.avatar_url,
+                    'icon': self.bot.user.avatar.url,
                 }
                 if message_id is None:
                     try:
@@ -146,7 +146,7 @@ class UpdateCountryMessage(commands.Cog):
                 author = {
                     'name': self.bot.user.name,
                     'url': DIVISION_URL,
-                    'icon': self.bot.user.avatar_url,
+                    'icon': self.bot.user.avatar.url,
                 }
                 if message_id is None:
                     try:
