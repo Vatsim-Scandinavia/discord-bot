@@ -6,8 +6,8 @@ Welcome to the Discord server of VATSIM Scandinavia!
 
 :two: If you want to access country specific channels or be added to the notification list, visit the #role-selection channel after verifying your account
 
-:thinking: If you have issues with verifying your account or roles, check out this [troubleshooting guide](https://vatsim-scandinavia.org/forums/topic/3560-discord-access-troubleshooting/) first before contacting staff.
+:thinking: If you have issues with verifying your account or roles, check out this [troubleshooting guide](https://forum.vatsim-scandinavia.org/d/51-discord-access-troubleshooting) first before contacting staff.
 
 ▫️▫️▫️
 
-_By verifying your account on this Discord server, you agree to [Vatsim Scandinavia's Data Protection Policy](https://vatsim-scandinavia.org/about/data-protection-policy/)._
+_By verifying your account on this Discord server, you agree to [Vatsim Scandinavia's Data Protection Policy](https://wiki.vatsim-scandinavia.org/books/privacy-policies)._
