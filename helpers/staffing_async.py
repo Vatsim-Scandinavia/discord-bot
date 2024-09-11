@@ -353,11 +353,11 @@ class StaffingAsync():
             await message.edit(content=format_staffing_message)
 
         except Exception as e:
-            print(f'Unable to update message - {e}')
+            print(f'Unable to update message - {e}', flush=True)
             raise e
 
     async def _book(self, ctx, eventDetails, event, usernick, position, section):
-        cid = re.findall("\d+", str(ctx.author.nick))[0]
+        cid = re.findall(r"\d+", str(ctx.author.nick))[0]
 
         positions = DB.select(table="positions", columns=['*'], where=['event'], value={'event': event[0]}, amount='all')
         sections = DB.select(table="staffing", columns=['section_1_title', 'section_2_title', 'section_3_title', 'section_4_title'], where=['id'], value={'id': event[0]})

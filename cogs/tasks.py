@@ -40,10 +40,10 @@ class TasksCog(commands.Cog):
         await self.bot.wait_until_ready()
 
         if DEBUG == True and override == False:
-            print("check_members skipped due to DEBUG ON. You can start manually with command instead.")
+            print("check_members skipped due to DEBUG ON. You can start manually with command instead.", flush=True)
             return
 
-        print("check_members started at " + str(datetime.now().isoformat()))
+        print("check_members started at " + str(datetime.now().isoformat()), flush=True)
 
         guild = self.bot.get_guild(GUILD_ID)
         users = guild.members
@@ -55,7 +55,7 @@ class TasksCog(commands.Cog):
             
         for user in users:            
             try:
-                cid = re.findall('\d+', str(user.nick))
+                cid = re.findall(r'\d+', str(user.nick))
 
                 if len(cid) < 1:
                     raise ValueError
@@ -78,11 +78,11 @@ class TasksCog(commands.Cog):
                 if vatsca_member in user.roles:
                     await user.remove_roles(vatsca_member, reason=self.NO_CID_REMOVE_REASON)
             except Exception as e:
-                print(e)
+                print(e, flush=True)
                 continue
 
 
-        print("check_members finished at " + str(datetime.now().isoformat()))
+        print("check_members finished at " + str(datetime.now().isoformat()), flush=True)
 
 
     @tasks.loop(seconds=CHECK_MEMBERS_INTERVAL)
@@ -102,13 +102,13 @@ class TasksCog(commands.Cog):
         now = datetime.now().isoformat()
         try:
             if DEBUG == True and override == False:
-                print("sync_commands skipped due to DEBUG ON. You can start manually with command instead.")
+                print("sync_commands skipped due to DEBUG ON. You can start manually with command instead.", flush=True)
                 return
-            print("sync_commands started at " + str(datetime.now().isoformat()))
+            print("sync_commands started at " + str(datetime.now().isoformat()), flush=True)
             await self.bot.tree.sync(guild=discord.Object(id=GUILD_ID))
-            print("sync_commands finished at " + str(datetime.now().isoformat()))
+            print("sync_commands finished at " + str(datetime.now().isoformat()), flush=True)
         except Exception as e:
-            print(f'Failed to sync commands with error - {e} - at - {now}')
+            print(f'Failed to sync commands with error - {e} - at - {now}', flush=True)
 
     @app_commands.command(name='sync', description='Sync slash commands **Only accessable to staff**')
     @app_commands.checks.has_any_role(*staff_roles())

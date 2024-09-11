@@ -32,10 +32,10 @@ class RolesCog(commands.Cog):
     async def check_roles(self, override=False):
         await self.bot.wait_until_ready()
         if DEBUG == True and override == False:
-            print("check_roles skipped due to DEBUG ON. You can start manually with command instead.")
+            print("check_roles skipped due to DEBUG ON. You can start manually with command instead.", flush=True)
             return
             
-        print("check_roles started at " + str(datetime.datetime.now().isoformat()))
+        print("check_roles started at " + str(datetime.datetime.now().isoformat()), flush=True)
 
         guild = self.bot.get_guild(GUILD_ID)
         users = guild.members
@@ -52,7 +52,7 @@ class RolesCog(commands.Cog):
 
         for user in users:            
             try:
-                cid = re.findall('\d+', str(user.nick))
+                cid = re.findall(r'\d+', str(user.nick))
 
                 if len(cid) < 1:
                     raise ValueError
@@ -106,7 +106,6 @@ class RolesCog(commands.Cog):
                     for item in TRAINING_ROLES[entry]:
                         training_role = discord.utils.get(guild.roles, id=int(TRAINING_ROLES[entry][item]))
                         if entry in student_data.keys():
-                            print()
                             if training_role not in user.roles and item in student_data[entry] and should_be_student:
                                 await user.add_roles(training_role, reason=self.STUDENT_TRAINING_ADD_REASON)
                             elif training_role in user.roles and item not in student_data[entry]:
@@ -120,10 +119,10 @@ class RolesCog(commands.Cog):
                     await user.remove_roles(mentor_role, reason=self.NO_CID_REMOVE_REASON)
                     
             except Exception as e:
-                print(e)
+                print(e, flush=True)
                 continue
 
-        print("check_roles finished at " + str(datetime.datetime.now().isoformat()))
+        print("check_roles finished at " + str(datetime.datetime.now().isoformat()), flush=True)
 
     @tasks.loop(seconds=CHECK_MENTORS_INTERVAL)
     async def check_roles_loop(self):

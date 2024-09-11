@@ -72,6 +72,7 @@ VATSIM_API_TOKEN = str(os.getenv('VATSIM_API_TOKEN'))
 
 EVENT_CALENDAR_URL = str(os.getenv('EVENT_CALENDAR_URL'))
 EVENT_CALENDAR_TYPE = int(os.getenv('EVENT_CALENDAR_TYPE'))
+EVENT_API_TOKEN = os.getenv('EVENT_API_TOKEN')
 
 CC_API_URL = str(os.getenv('CC_API_URL'))
 CC_API_TOKEN = str(os.getenv('CC_API_TOKEN'))
@@ -81,6 +82,7 @@ VATSIM_SUBDIVISION = str(os.getenv('VATSIM_SUBDIVISION'))
 DIVISION_URL = str(os.getenv('DIVISION_URL'))
 
 BOT_DB_HOST = str(os.getenv('BOT_DB_HOST'))
+BOT_DB_PORT = str(os.getenv('BOT_DB_PORT'))
 BOT_DB_USER = str(os.getenv('BOT_DB_USER'))
 BOT_DB_PASSWORD = str(os.getenv('BOT_DB_PASSWORD'))
 BOT_DB_NAME = str(os.getenv('BOT_DB_NAME'))
@@ -165,4 +167,4 @@ async def load_cogs(bot: discord.ext.commands.Bot) -> None:
         try:
             await bot.load_extension(cog)
         except Exception as e:
-            print(f'Failed to load cog - {cog}. \n Error: {e}')
+            print(f'Failed to load cog - {cog}. \n Error: {e}', flush=True)

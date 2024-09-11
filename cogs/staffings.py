@@ -201,7 +201,7 @@ class StaffingCog(commands.Cog):
             if any(ctx.channel.id in channel for channel in event_channel):
                 if any(f'<@{usernick}>' in match for match in positions):
 
-                    cid = re.findall("\d+", str(ctx.author.nick))
+                    cid = re.findall(r"\d+", str(ctx.author.nick))
 
                     bookings = DB.select(table='positions', columns=['booking_id'], where=['user', 'event'], value={'user': f'<@{usernick}>', 'event': event[0]}, amount='all')
                     cancel = False
@@ -231,7 +231,7 @@ class StaffingCog(commands.Cog):
     async def autoreset(self, override=False):
         await self.bot.wait_until_ready()
         if DEBUG == True and override == False:
-                print("autoreset skipped due to DEBUG ON. You can start manually with command instead.")
+                print("autoreset skipped due to DEBUG ON. You can start manually with command instead.", flush=True)
                 return
         staffings = DB.select(table='staffing', columns=['*'], amount='all')
         now = datetime.utcnow()
@@ -241,7 +241,7 @@ class StaffingCog(commands.Cog):
             date = staffing[2]
             week = staffing[6]
             if now.date() > date:
-                print(f"Started autoreset of {title} at {str(datetime.now().isoformat())}")
+                print(f"Started autoreset of {title} at {str(datetime.now().isoformat())}", flush=True)
                 DB.update(self=self, table='positions', where=['event'], value={'event': event}, columns=['user', 'booking_id'], values={'user': '', 'booking_id': ''})
                 newdate = await StaffingAsync._geteventdate(self=self, title=title, interval=week)
                 DB.update(self=self, table='staffing', where=['id'], value={'id': event}, columns=['date'], values={'date': newdate[0]})
@@ -251,7 +251,7 @@ class StaffingCog(commands.Cog):
                 await asyncio.sleep(5)
                 await channel.purge(limit=None, check=lambda msg: not msg.pinned)
 
-                print(f"Finished autoreset of {title} at {str(datetime.now().isoformat())}")
+                print(f"Finished autoreset of {title} at {str(datetime.now().isoformat())}", flush=True)
 
 
 

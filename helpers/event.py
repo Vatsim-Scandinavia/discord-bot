@@ -1,19 +1,18 @@
 import aiohttp
-import os
+import asyncio
 
 from datetime import datetime, timedelta
 from helpers.message import event_description, get_image
-from helpers.config import EVENT_CALENDAR_URL, FORUM_API_TOKEN
+from helpers.config import EVENT_API_TOKEN, EVENT_CALENDAR_URL
 
 class Event():
-
     #
     # ----------------------------------
     #   INITIAL
     # ----------------------------------
     #
 
-    def __init__(self, id, name, img, url, desc, start: datetime, end: datetime, recurring, recurring_interval, recurring_end, published):
+    def __init__(self, id, name, img, url, desc, start_time: datetime, end_time: datetime, published):
         """
         Create an Event object
         """
@@ -23,145 +22,75 @@ class Event():
         self.url = url
         self.desc = desc
         
-        self.start = start
-        self.end = end
-        self.recurring = recurring
-        self.recurring_interval = recurring_interval
-        self.recurring_end = recurring_end
+        self.start = start_time
+        self.end = end_time
 
         self.published = published
-
-
-
-
-
-
 
     #
     # ----------------------------------
     #   BOOLEAN FUNCTIONS
     # ----------------------------------
     #
-
-    def is_recurring_event(self) -> bool:
-        """
-        Check if event is recurring
-        """
-
-        return self.recurring is not None
-
     def is_expired(self) -> bool:
         """
         Check if event is expired and no longer valid
         """
-        if self.is_recurring_event() == True:
-            return datetime.utcnow() > self.recurring_end
-        else:
-            return datetime.utcnow() > self.start
-
+        return datetime.utcnow() > self.start
+    
     def should_be_notified(self) -> bool:
         """
         Check if this event triggers a notification
         """
-        
+
         start = self.start
         now = datetime.utcnow()
 
-        is_recurring = self.is_recurring_event()
-
-        # Change the start date if recurrence is the thing
-        if is_recurring == True:
-            recurred_date = self._get_upcoming_recurrence_datetime(start, self.recurring, self.recurring_interval, self.recurring_end)
-
-            # If today is notification day and we've not already notified
-            if recurred_date is not False:
-                # Go on if it's never been published
-                if self.published is None:
-                    start = recurred_date
-                # Go on if it's not passed two hours since last publish
-                elif now > self.published + timedelta(hours = 2):
-                    start = recurred_date
-                else:
-                    return False
-            else:
-                return False
-        else:
-            if self.published is not None:
-                return False
-
+        if self.published is not None:
+            return False
+        
         # Define the when it's 2 hours prior, and the threshold of notifying to avoid notifications way too late
         notificationTime = start - timedelta(hours=2)
         notificationThreshold = start - timedelta(hours=1.75)
 
         return (now >= notificationTime and now <= notificationThreshold)
-
-
-
-
-
-
-
-
+    
     #
     # ----------------------------------
     #   DATA PARSING FUNCTIONS
     # ----------------------------------
     #
-
     async def fetch_api_updates(self):
         """
         Fetch API updates for this object
         """
-
-        auth = aiohttp.BasicAuth(FORUM_API_TOKEN, '')
-
+        headers = {
+            'accept': 'application/json',
+            'Authorization': f'Bearer {EVENT_API_TOKEN}'
+        }
+        
         async with aiohttp.ClientSession() as session:
-            async with session.get(f'{EVENT_CALENDAR_URL}/{str(self.id)}', auth=auth) as resp:
-                
+            async with session.get(f'{EVENT_CALENDAR_URL}/events/{str(self.id)}', headers=headers) as resp:
                 if resp.status == 404:
                     return False
-
+                
                 if resp.status != 200:
-                    print("Response from API was not OK. Status: " + resp.status)
+                    print(f"Response from API was not OK. Status: {resp.status}", flush=True)
+                    return False
                 
                 updated_event = await resp.json()
-
-                if updated_event.get('hidden'):
-                    return False
+                updated_event = updated_event.get('event')
 
                 self.name = updated_event.get('title')
-                self.img = get_image(updated_event.get('description'))
-                self.url = updated_event.get('url')
-                self.desc = event_description(updated_event.get('description'))
+                self.img = updated_event.get('image')
+                self.url = updated_event.get('link')
+                self.desc = event_description(updated_event.get('long_description'))
                 
-                self.start = datetime.strptime(updated_event.get('start'), "%Y-%m-%dT%H:%M:%SZ")
-                self.end = datetime.strptime(updated_event.get('end'), "%Y-%m-%dT%H:%M:%SZ")
-
-                self.hidden = updated_event.get('hidden')
-
-                # If reccurence data is available, parse it
-                if updated_event.get('recurrence') is not None:
-                    self.parse_recurrence(updated_event.get('recurrence'))
-                else:
-                    self.recurring = None
-                    self.recurring_interval = None
-                    self.recurring_end = None
+                self.start = datetime.strptime(updated_event.get('start_date'), "%Y-%m-%d %H:%M:%S")
+                self.end = datetime.strptime(updated_event.get('end_date'), "%Y-%m-%d %H:%M:%S")
 
             return True
-
-
-    def parse_recurrence(self, ics):
-        """
-        Parse recurrence ICS string
-        """
-
-        params = self.__split_ics_params(ics)
-
-        self.recurring = params["freq"]
-        self.recurring_interval = params["interval"]
-        self.recurring_end = self.__parse_ics_recurrence_end(params, self.start)
-
-
+    
     def mark_as_published(self):
         """
         Mark event as published
@@ -169,101 +98,9 @@ class Event():
 
         self.published = datetime.utcnow()
 
-
-
-
-
-    #
-    # ----------------------------------
-    #   RECURRING RELATED FUNCTIONS
-    # ----------------------------------
-    #
-
-
-    def _get_upcoming_recurrence_datetime(self, proposed_date, recurring, interval, recurring_end, return_date = False):
-        """
-        Function to return back the date of next reccurence or False
-        """
-
-        interval = int(interval) or 1
-
-        while(proposed_date <= recurring_end):
-
-                # Is the proposed datetime happening between 2h and 1.75h? It's today then
-                if proposed_date <= datetime.utcnow() + timedelta(hours=2) and proposed_date >= datetime.utcnow() + timedelta(hours=1.75) :
-                    return proposed_date
-
-                # Break if we're past today
-                if proposed_date.date() > datetime.utcnow().date():
-                    break
-
-                if recurring == "DAILY":
-                    proposed_date = proposed_date + timedelta(days=interval)
-                elif recurring == "WEEKLY":
-                    proposed_date = proposed_date + timedelta(weeks=interval)
-                elif recurring == "MONTHLY":
-                    proposed_date = proposed_date + timedelta(months=interval)
-                else:
-                    return False
-        
-        # Return the latest date instead of False if requested. Used for recording deletion time of recurring events.
-        if return_date == True:
-            return proposed_date
-
-        return False
-
-
     def _get_expire_datetime(self):
         """
         Return the expire datetime for message deletion for selected event
         """
 
-        if self.is_recurring_event() == False:
-            return self.start + timedelta(hours=24)
-        else:
-            return self._get_upcoming_recurrence_datetime(self.start, self.recurring, self.recurring_interval, self.recurring_end, True) + timedelta(hours=24)
-
-
-
-
-
-    #
-    # ----------------------------------
-    #   PRIVATE FUNCTIONS
-    # ----------------------------------
-    #
-
-    def __split_ics_params(self, ics: str):
-        """
-        Split ICS parameters
-        """
-
-        params = {}
-        for param in ics.split(';'):
-            split = param.split('=')
-            params[split[0].lower()] = split[1]
-
-        return params
-
-
-    def __parse_ics_recurrence_end(self, params: list, start_time: datetime):
-        """
-        Parse and calculate when the last day of recurrence is
-        """
-
-        # If until timestamp has been provided, let's use that
-        if "until" in params:
-            return datetime.strptime(params["until"], "%Y%m%dT%H%M%S")
-
-        # If no timestamp has been given, calculate based on the interval
-        if "count" in params:
-            if params["freq"] == "DAILY":
-                return start_time + timedelta(days = (int(params["count"]) * int(params["interval"])) )
-            elif params["freq"] == "WEEKLY":
-                return start_time + timedelta(weeks = (int(params["count"]) * int(params["interval"])) )
-            elif params["freq"] == "MONTHLY":
-                return start_time + timedelta(months = (int(params["count"]) * int(params["interval"])) )
-
-        # If no timestamp selected, none can be calculated, then this is probably an event without end date
-        return start_time + timedelta(days=(365*10))
-
+        return self.start + timedelta(hours=24)

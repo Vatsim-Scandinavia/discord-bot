@@ -49,7 +49,7 @@ class UpdateCountryMessage(commands.Cog):
                         msg = embed(title='Available Channel Roles', description=text)
                         await channel.send(embed=msg)
                     except Exception as e:
-                        print(e)
+                        print(e, flush=True)
                 else:
                     message_id = int(message_id)
                     message = await ctx.fetch_message(message_id)
@@ -61,7 +61,7 @@ class UpdateCountryMessage(commands.Cog):
                             msg = embed(title='Available Channel Roles', description=text)
                             await message.edit(embed=msg)
                         except Exception as e:
-                            print(e)
+                            print(e, flush=True)
         
         elif option.value == "2":
             """
@@ -86,7 +86,7 @@ class UpdateCountryMessage(commands.Cog):
                         msg = embed(title='Available Country Roles', description=embd)
                         await channel.send(text, embed=msg)
                     except Exception as e:
-                        print(e)
+                        print(e, flush=True)
                 else:
                     message_id = int(message_id)
                     message = await ctx.fetch_message(message_id)
@@ -99,7 +99,7 @@ class UpdateCountryMessage(commands.Cog):
                             msg = embed(title='Available Country Roles', description=embd)
                             await message.edit(content=text, embed=msg)
                         except Exception as e:
-                            print(e)
+                            print(e, flush=True)
         elif option.value == "3":
             """
             Function posts updated welcome
@@ -121,7 +121,7 @@ class UpdateCountryMessage(commands.Cog):
                         msg = embed(title='Welcome', description=text, author=author)
                         await channel.send(embed=msg)
                     except Exception as e:
-                        print(e)
+                        print(e, flush=True)
                 else:
                     message_id = int(message_id)
                     message = await ctx.fetch_message(message_id)
@@ -133,7 +133,7 @@ class UpdateCountryMessage(commands.Cog):
                             msg = embed(title='Welcome', description=text, author=author)
                             await message.edit(embed=msg)
                         except Exception as e:
-                            print(e)
+                            print(e, flush=True)
         elif option.value == "4":
             """
             Function posts updated rules
@@ -155,7 +155,7 @@ class UpdateCountryMessage(commands.Cog):
                         msg = embed(title='Rules', description=text, author=author)
                         await channel.send(embed=msg)
                     except Exception as e:
-                        print(e)
+                        print(e, flush=True)
                 else:
                     message_id = int(message_id)
                     message = await ctx.fetch_message(message_id)
@@ -167,7 +167,7 @@ class UpdateCountryMessage(commands.Cog):
                             msg = embed(title='Rules', description=text, author=author)
                             await message.edit(embed=msg)
                         except Exception as e:
-                            print(e)
+                            print(e, flush=True)
 
 
     def _read_file(self) -> str:

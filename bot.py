@@ -38,13 +38,13 @@ if DEBUG == False:
 """
 @bot.event
 async def on_ready() -> None:
-    print(f'Bot started. \nUsername: {bot.user.name}. \nID: {bot.user.id}')
+    print(f'Bot started. \nUsername: {bot.user.name}. \nID: {bot.user.id}', flush=True)
 
     try:
         await bot.change_presence(activity=config.activity(), status=config.status())
         await bot.tree.sync()
     except BadArgument as e:
-        print(f'Error changing presence. Exception - {e}')
+        print(f'Error changing presence. Exception - {e}', flush=True)
 
 @bot.event
 async def on_member_update(before_update, user: discord.User):
@@ -65,7 +65,7 @@ async def on_member_update(before_update, user: discord.User):
     vatsim_member = discord.utils.get(guild.roles, id=VATSIM_MEMBER_ROLE)
     try:
 
-        cid = re.findall('\d+', str(user.nick))
+        cid = re.findall(r'\d+', str(user.nick))
 
         if len(cid) < 1:
             raise ValueError
@@ -88,10 +88,10 @@ async def on_member_update(before_update, user: discord.User):
 
     except ValueError as e:
         # This happens when a CID is not found, ignore it
-        print("Tried to find an ID but it threw a ValueError, not found")
+        print("Tried to find an ID but it threw a ValueError, not found", flush=True)
 
     except Exception as e:
-        print(e)
+        print(e, flush=True)
 
 @bot.event
 async def on_raw_reaction_add(payload):
@@ -125,7 +125,7 @@ async def on_raw_reaction_remove(payload):
 async def on_app_command_error(interaction: discord.Interaction, error: discord.app_commands.AppCommandError):
     ctx: commands.Context = await bot.get_context(interaction)
     interaction._baton = ctx
-    print(error)
+    print(error, flush=True)
     await ctx.send(f'{error}\n\nIf you think this was a mistake, please contact the Web team', ephemeral=True)
 
 
@@ -137,4 +137,4 @@ if __name__ == "__main__":
     try:
         bot.run(BOT_TOKEN)
     except Exception as e:
-        print(f'Error starting the bot. Exception - {e}')
+        print(f'Error starting the bot. Exception - {e}', flush=True)
