@@ -8,9 +8,6 @@ CREATE TABLE `events` (
   `description` text NOT NULL,
   `start_time` datetime NOT NULL,
   `end_time` datetime NOT NULL,
-  `recurring` varchar(255) DEFAULT NULL,
-  `recurring_interval` smallint(6) DEFAULT NULL,
-  `recurring_end` datetime DEFAULT NULL,
   `published` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id` (`id`) USING BTREE
