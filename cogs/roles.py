@@ -63,7 +63,6 @@ class RolesCog(commands.Cog):
                 for role in roles:
                     if int(role['id']) == int(cid[0]):
                         for item in role['roles']:
-                            print(role['roles'][item])
                             if role['roles'][item] is not None:
                                 if 'Mentor' in role['roles'][item]:
                                     should_be_mentor = True
