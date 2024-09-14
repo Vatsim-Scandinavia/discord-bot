@@ -83,6 +83,9 @@ def event_description(description: str) -> str:
     # Create markdown of the description, except img tag and trim the result.
     markdown = md(description, strip=['img']).strip()
 
+    # Remove or replace backslashes
+    markdown = markdown.replace('\\', '')  # Remove backslashes
+
     # If there's more than two newlines, replace them with two, this removes excessive newlines from last step
     markdown = re.sub('\n\n(\n)*', '\n\n', markdown)
 
