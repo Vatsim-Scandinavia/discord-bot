@@ -8,6 +8,7 @@ from helpers.config import EVENT_CALENDAR_URL, EVENT_CALENDAR_TYPE, EVENT_API_TO
 from helpers.message import embed, event_description, get_image
 from helpers.database import db_connection
 from helpers.event import Event
+from helpers.error import Error
 
 class EventsCog(commands.Cog):
     #
@@ -105,7 +106,7 @@ class EventsCog(commands.Cog):
                 text = f'{role.mention}\n:clock2: **{event.name}** is starting in two hours!'
                 message = await channel.send(text, embed=msg)
 
-                if DEBUG == False: await message.publish()
+                if DEBUG == False: await Error.crosspost(message=message)
 
                 event.mark_as_published()
                 await self.store_message_expire(message, event._get_expire_datetime())
@@ -225,6 +226,10 @@ class EventsCog(commands.Cog):
                     None
                 )
 
+                is_recurring = new_event.get('parent_id')
+                if is_recurring is not None:
+                    continue
+
                 # Publish the newly scheduled event in channel
                 channel = self.bot.get_channel(EVENTS_CHANNEL)
                 e = self.events[new_event.get('id')]
@@ -239,7 +244,7 @@ class EventsCog(commands.Cog):
 
                 text = f':calendar_spiral: A new event has been scheduled.'
                 message = await channel.send(text, embed=msg)
-                if DEBUG == False: await message.publish()
+                if DEBUG == False: await Error.crosspost(message=message)
 
                 await self.store_message_expire(message, e._get_expire_datetime())
 
@@ -263,6 +268,9 @@ class EventsCog(commands.Cog):
         for event in self.events.values():
             mydb = db_connection()
             cursor = mydb.cursor()
+
+            print(event.id, flush=True)
+            print(event.url, flush=True)
 
             cursor.execute(
                 "INSERT INTO events (id, name, img, url, description, start_time, end_time, published) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE name = VALUES(name), img = VALUES(img), url = VALUES(url), description = VALUES(description), start_time = VALUES(start_time), end_time = VALUES(end_time), published = VALUES(published)",

@@ -44,9 +44,7 @@ class RolesCog(commands.Cog):
 
         training_staff_role = discord.utils.get(guild.roles, id=TRAINING_STAFF_ROLE)
 
-        mentors = await Roles.get_mentors(self)
-
-        moderators = await Roles.get_moderators(self)
+        roles = await Roles.get_roles(self)
 
         trainings = await Roles.get_training(self)
 
@@ -58,20 +56,21 @@ class RolesCog(commands.Cog):
                     raise ValueError
 
                 should_be_mentor = False
+                should_be_training_staff = False            
 
                 belong_to = []
 
-                for mentor in mentors:
-                    if int(mentor['id']) == int(cid[0]):
-                        should_be_mentor = True
-                        for fir in mentor['fir']:
-                            belong_to.append(fir)
+                for role in roles:
+                    if int(role['id']) == int(cid[0]):
+                        for item in role['roles']:
+                            print(role['roles'][item])
+                            if role['roles'][item] is not None:
+                                if 'Mentor' in role['roles'][item]:
+                                    should_be_mentor = True
+                                    belong_to.append(item)
+                                if 'Moderator' in role['roles'][item]:
+                                    should_be_training_staff = True
 
-                should_be_training_staff = False            
-                
-                for moderator in moderators:
-                    if int(moderator['id']) == int(cid[0]):
-                        should_be_training_staff = True
 
                 student_data = {}
                 should_be_student = False
