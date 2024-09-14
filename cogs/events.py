@@ -269,9 +269,6 @@ class EventsCog(commands.Cog):
             mydb = db_connection()
             cursor = mydb.cursor()
 
-            print(event.id, flush=True)
-            print(event.url, flush=True)
-
             cursor.execute(
                 "INSERT INTO events (id, name, img, url, description, start_time, end_time, published) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE name = VALUES(name), img = VALUES(img), url = VALUES(url), description = VALUES(description), start_time = VALUES(start_time), end_time = VALUES(end_time), published = VALUES(published)",
                 (
