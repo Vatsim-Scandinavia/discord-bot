@@ -108,11 +108,13 @@ class TasksCog(commands.Cog):
                 return
             
             print("sync_commands started at " + str(datetime.now().isoformat()), flush=True)
-            
-            if guild:
-                await self.bot.tree.sync(guild=guild) # Sync commands to a specific guild for faster deployment
-            else:
-                await self.bot.tree.sync() # Sync global commands (might take up to 1 hour to reflect globally)
+            try:
+                if guild:
+                    await self.bot.tree.sync(guild=guild) # Sync commands to a specific guild for faster deployment
+                else:
+                    await self.bot.tree.sync() # Sync global commands (might take up to 1 hour to reflect globally)
+            except discord.HTTPException as e:
+                print(f"Failed to sync commands due to rate limiting: {e}")
 
             print("sync_commands finished at " + str(datetime.now().isoformat()), flush=True)
         except Exception as e:
