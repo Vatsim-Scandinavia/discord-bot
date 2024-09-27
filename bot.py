@@ -49,6 +49,8 @@ async def on_ready() -> None:
             await bot.tree.sync() # Sync global commands (might take up to 1 hour to reflect globally)
     except BadArgument as e:
         print(f'Error changing presence. Exception - {e}', flush=True)
+    except discord.HTTPException as e:
+        print(f"Failed to sync commands due to rate limiting: {e}")
 
 @bot.event
 async def on_member_update(before_update, user: discord.User):
