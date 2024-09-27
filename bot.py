@@ -39,14 +39,10 @@ if DEBUG == False:
 @bot.event
 async def on_ready() -> None:
     print(f'Bot started. \nUsername: {bot.user.name}. \nID: {bot.user.id}', flush=True)
-    guild = bot.get_guild(GUILD_ID)
 
     try:
         await bot.change_presence(activity=config.activity(), status=config.status())
-        if guild:
-            await bot.tree.sync(guild=guild) # Sync commands to a specific guild for faster deployment
-        else:
-            await bot.tree.sync() # Sync global commands (might take up to 1 hour to reflect globally)
+        await bot.tree.sync() # Sync global commands (might take up to 1 hour to reflect globally)
     except BadArgument as e:
         print(f'Error changing presence. Exception - {e}', flush=True)
     except discord.HTTPException as e:
