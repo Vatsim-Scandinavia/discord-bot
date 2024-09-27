@@ -37,12 +37,30 @@ class StaffingCog(commands.Cog):
     #
     
     # A function to dynamically fetch and return a list of titles as choices
-    async def get_title_choices(self) -> List[app_commands.Choice[str]]:
+    async def get_title_choices(self, interaction: Interaction, current: str) -> List[app_commands.Choice[str]]:
+        # Fetch the latest available titles from the database
         titles = StaffingAsync._get_titles()
-        return [app_commands.Choice(name=title, value=title) for title in titles]
+        
+        # Return titles that match the user's input
+        return [
+            app_commands.Choice(name=title, value=title)
+            for title in titles if current.lower() in title.lower()
+        ]
+    
+    # Autocomplete function to fetch and filter titles in real-time
+    async def avail_title_autocomplete(self, interaction: Interaction, current: str):
+        # Fetch the latest available titles from the database
+        titles = StaffingAsync._get_avail_titles()
+        
+        # Return titles that match the user's input
+        return [
+            app_commands.Choice(name=title, value=title)
+            for title in titles if current.lower() in title.lower()
+        ]
 
     @app_commands.command(name="setupstaffing", description="Bot setups staffing information")
     @app_commands.describe(title="What should the title of the staffing be?", week_int="What should the week interval be? eg. 1 then the date will be selected each week.", section_amount="What should the section amount be? eg. 3 then there will be 3 sections.", restrict_booking="Should the staffing restrict booking to first section before allowing other sections too?")
+    @app_commands.autocomplete(title=get_title_choices)
     @app_commands.checks.has_any_role(*staff_roles())
     async def setup_staffing(self, interaction: Interaction, title: str, week_int: app_commands.Range[int, 1, 4], section_amount: app_commands.Range[int, 1, 4], restrict_booking: Literal["Yes", "No"], channel: TextChannel):
         ctx: commands.Context = await self.bot.get_context(interaction)
@@ -99,23 +117,6 @@ class StaffingCog(commands.Cog):
                 }
                 DB.insert(self=self, table="positions", columns=['position', 'user', 'type', 'local_booking', 'start_time', 'end_time', 'event'], values=[pos, "", j, local[section_positions[x][pos]['local_booking']], section_positions[x][pos]['start_time'], section_positions[x][pos]['end_time'], event])
             j += 1
-
-    # Link this command to custom autocomplete for titles
-    @setup_staffing.autocomplete("title")
-    async def title_autocomplete(self, interaction: Interaction, current: str):
-        titles = await self.get_title_choices()
-        return [choice for choice in titles if current.lower() in choice.name.lower()][:25]  # Limit to 25 choices (Discord limit)
-    
-    # Autocomplete function to fetch and filter titles in real-time
-    async def avail_title_autocomplete(self, interaction: Interaction, current: str):
-        # Fetch the latest available titles from the database
-        titles = StaffingAsync._get_avail_titles()
-        
-        # Return titles that match the user's input
-        return [
-            app_commands.Choice(name=title, value=title)
-            for title in titles if current.lower() in title.lower()
-        ]
 
     @app_commands.command(name="refreshevent", description="Bot refreshes selected event")
     @app_commands.describe(title="Which staffing would you like to refresh?")

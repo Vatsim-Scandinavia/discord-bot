@@ -100,7 +100,7 @@ class TasksCog(commands.Cog):
 
     async def sync_commands(self, override=False):
         now = datetime.now().isoformat()
-        guild = self.bot.get_guild(GUILD_ID)
+        guild = discord.Object(id=GUILD_ID)
 
         try:
             if DEBUG == True and override == False:
@@ -111,7 +111,6 @@ class TasksCog(commands.Cog):
             try:
                 if guild:
                     await self.bot.tree.sync(guild=guild) # Sync commands to a specific guild for faster deployment
-                    print(f'Commands has been synced for guild {guild}', flush=True)
                 else:
                     await self.bot.tree.sync() # Sync global commands (might take up to 1 hour to reflect globally)
             except discord.HTTPException as e:
