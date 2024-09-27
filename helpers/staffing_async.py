@@ -1,6 +1,6 @@
 import re
 import requests
-from typing import Literal
+from typing import Literal, List
 
 from datetime import datetime, timedelta
 
@@ -21,28 +21,34 @@ class StaffingAsync():
     # ASYNC DATA FUNCTIONS
     # ----------------------------------
     #
-    def _get_titles() -> Literal:
-        events = DB.select(table='events', columns=[
-                                   'name'], amount='all')
-        staffings = DB.select(
-            table="staffing", columns=['title'], amount='all')
-        formatted_staffings = []
+    def _get_titles() -> List[str]:
+        """
+        Function to fetch and return a list of unique event titles from the database
+        excluding titles already used in staffing.
+        """
+        # Fetch event names and staffing titles from the database
+        events = DB.select(table='events', columns=['name'], amount='all')
+        staffings = DB.select(table="staffing", columns=['title'], amount='all')
+
+        formatted_staffings = set(" ".join(map(str, staffing)) for staffing in staffings)
         formatted_events = []
 
+        # If no events are found, append a message indicating no availability
         if not events:
             formatted_events.append('None is available. Please try again later.')
         else:
-            for staffing in staffings:
-                formatted_staffings.append(" ".join(map(str, staffing)))
-
             for event in events:
                 formatted_event = " ".join(map(str, event))
+                # Add the event only if it is not already present in staffing
                 if formatted_event not in formatted_staffings:
                     formatted_events.append(formatted_event)
-        return Literal[tuple(formatted_events)]
+    
+        # Return a list of unique event titles
+        return list(set(formatted_events))
 
-    def _get_avail_titles() -> Literal:
+    def _get_avail_titles() -> List[str]:
         staffings = DB.select(table="staffing", columns=['title'], amount='all')
+        
         formatted_staffings = []
         if not staffings:
             formatted_staffings.append('None is available. Please try again later.')
@@ -50,7 +56,7 @@ class StaffingAsync():
             for staffing in staffings:
                 formatted_staffings.append(" ".join(map(str, staffing)))
 
-        return Literal[tuple(formatted_staffings)]
+        return list[set(formatted_staffings)]
         
     async def _get_description(self, ctx):
         """

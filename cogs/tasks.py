@@ -100,12 +100,20 @@ class TasksCog(commands.Cog):
 
     async def sync_commands(self, override=False):
         now = datetime.now().isoformat()
+        guild = self.bot.get_guild(GUILD_ID)
+        
         try:
             if DEBUG == True and override == False:
                 print("sync_commands skipped due to DEBUG ON. You can start manually with command instead.", flush=True)
                 return
+            
             print("sync_commands started at " + str(datetime.now().isoformat()), flush=True)
-            await self.bot.tree.sync(guild=discord.Object(id=GUILD_ID))
+            
+            if guild:
+                await self.bot.tree.sync(guild=guild) # Sync commands to a specific guild for faster deployment
+            else:
+                await self.bot.tree.sync() # Sync global commands (might take up to 1 hour to reflect globally)
+
             print("sync_commands finished at " + str(datetime.now().isoformat()), flush=True)
         except Exception as e:
             print(f'Failed to sync commands with error - {e} - at - {now}', flush=True)
