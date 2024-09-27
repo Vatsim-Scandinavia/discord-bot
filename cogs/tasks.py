@@ -101,6 +101,7 @@ class TasksCog(commands.Cog):
     async def sync_commands(self, override=False):
         now = datetime.now().isoformat()
         guild = discord.Object(id=GUILD_ID)
+        bot_member = guild.get_member(self.bot.user.id)
 
         try:
             if DEBUG == True and override == False:
@@ -113,6 +114,11 @@ class TasksCog(commands.Cog):
                     await self.bot.tree.sync(guild=guild) # Sync commands to a specific guild for faster deployment
                 else:
                     await self.bot.tree.sync() # Sync global commands (might take up to 1 hour to reflect globally)
+
+                if bot_member.guild_permissions.administrator or bot_member.guild_permissions.manage_guild:
+                    await print("Bot has the required permissions to sync commands.", flush=True)
+                else:
+                    await print("Bot is missing required permissions.", flush=True)
             except discord.HTTPException as e:
                 print(f"Failed to sync commands due to rate limiting: {e}")
 
