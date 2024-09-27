@@ -106,13 +106,20 @@ class StaffingCog(commands.Cog):
         titles = await self.get_title_choices()
         return [choice for choice in titles if current.lower() in choice.name.lower()][:25]  # Limit to 25 choices (Discord limit)
     
-    # A function to dynamically fetch and return a list of titles as choices
-    async def get_avail_title_choices(self) -> List[app_commands.Choice[str]]:
+    # Autocomplete function to fetch and filter titles in real-time
+    async def avail_title_autocomplete(self, interaction: Interaction, current: str):
+        # Fetch the latest available titles from the database
         titles = StaffingAsync._get_avail_titles()
-        return [app_commands.Choice(name=title, value=title) for title in titles]
+        
+        # Return titles that match the user's input
+        return [
+            app_commands.Choice(name=title, value=title)
+            for title in titles if current.lower() in title.lower()
+        ]
 
     @app_commands.command(name="refreshevent", description="Bot refreshes selected event")
     @app_commands.describe(title="Which staffing would you like to refresh?")
+    @app_commands.autocomplete(title=avail_title_autocomplete)
     @app_commands.checks.has_any_role(*staff_roles())
     async def refreshevent(self, interaction: discord.Integration, title: str):
         id = DB.select(table="staffing", columns=['id'], where=['title'], value={'title': title})[0]
@@ -121,14 +128,9 @@ class StaffingCog(commands.Cog):
         interaction._baton = ctx
         await ctx.send(f"{ctx.author.mention} Event `{title}` has been refreshed", delete_after=5, ephemeral=True)
 
-    # Link this command to custom autocomplete for titles
-    @refreshevent.autocomplete("title")
-    async def title_autocomplete(self, interaction: Interaction, current: str):
-        titles = await self.get_avail_title_choices()
-        return [choice for choice in titles if current.lower() in choice.name.lower()][:25]  # Limit to 25 choices (Discord limit)
-
     @app_commands.command(name="manreset", description="Bot manually resets selected event")
     @app_commands.describe(title="Which staffing would you like to manually reset?")
+    @app_commands.autocomplete(title=avail_title_autocomplete)
     @app_commands.checks.has_any_role(*staff_roles())
     async def manreset(self, interaction: discord.Integration, title: str):
         await self.bot.wait_until_ready()
@@ -157,14 +159,9 @@ class StaffingCog(commands.Cog):
         except Exception as e:
             await ctx.send(f"{ctx.author.mention} The bot failed to manual reset `{title}` with error `{e}` at `{str(datetime.now().isoformat())}`", ephemeral=True)
 
-    # Link this command to custom autocomplete for titles
-    @manreset.autocomplete("title")
-    async def title_autocomplete(self, interaction: Interaction, current: str):
-        titles = await self.get_avail_title_choices()
-        return [choice for choice in titles if current.lower() in choice.name.lower()][:25]  # Limit to 25 choices (Discord limit)
-
     @app_commands.command(name="updatestaffing", description="Bot updates selected staffing")
     @app_commands.describe(title="Which staffing would you like to update?")
+    @app_commands.autocomplete(title=avail_title_autocomplete)
     @app_commands.checks.has_any_role(*staff_roles())
     async def updatestaffing(self, interaction: discord.Integration, title: str):
         ctx: commands.Context = await self.bot.get_context(interaction)
@@ -175,12 +172,7 @@ class StaffingCog(commands.Cog):
         except Exception as e:
             await ctx.send(f'Error updating staffing {title} - {e}')
             raise e
-        
-    # Link this command to custom autocomplete for titles
-    @updatestaffing.autocomplete("title")
-    async def title_autocomplete(self, interaction: Interaction, current: str):
-        titles = await self.get_avail_title_choices()
-        return [choice for choice in titles if current.lower() in choice.name.lower()][:25]  # Limit to 25 choices (Discord limit)
+    
 
     @app_commands.command(name="book", description="Bot books selected position for selected staffing")
     @app_commands.describe(position="Which position would you like to book?")

@@ -101,7 +101,7 @@ class TasksCog(commands.Cog):
     async def sync_commands(self, override=False):
         now = datetime.now().isoformat()
         guild = self.bot.get_guild(GUILD_ID)
-        
+
         try:
             if DEBUG == True and override == False:
                 print("sync_commands skipped due to DEBUG ON. You can start manually with command instead.", flush=True)
