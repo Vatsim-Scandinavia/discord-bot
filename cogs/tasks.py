@@ -100,7 +100,7 @@ class TasksCog(commands.Cog):
 
     async def sync_commands(self, override=False):
         now = datetime.now().isoformat()
-        guild = self.bot.get_guild(guild=GUILD_ID)
+        guild = self.bot.get_guild(GUILD_ID)
 
         try:
             if DEBUG == True and override == False:
