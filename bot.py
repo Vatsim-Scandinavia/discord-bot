@@ -44,14 +44,6 @@ async def on_ready() -> None:
         await bot.change_presence(activity=config.activity(), status=config.status())
         await bot.tree.sync() # Sync global commands (might take up to 1 hour to reflect globally)
 
-        guild = bot.get_guild(GUILD_ID)
-        bot_member = guild.get_member(bot.user.id)
-
-        if bot_member.guild_permissions.administrator or bot_member.guild_permissions.manage_guild:
-            await print("Bot has the required permissions to sync commands.", flush=True)
-        else:
-            await print("Bot is missing required permissions.", flush=True)
-
     except BadArgument as e:
         print(f'Error changing presence. Exception - {e}', flush=True)
     except discord.HTTPException as e:
