@@ -400,51 +400,57 @@ class StaffingAsync():
             else:
                 end_time = ':'.join(str(pos[7]).split(':')[:2])
             
-            if booking == False:
-            
-                # if sections[section] == pos[4] and position.upper() + ':' == pos[1] and pos[5] == 1:
-                #     DB.update(self=self, table='positions', columns=['user'], values={'user': f'<@{usernick}>'}, where=['position', 'user', 'local_booking', 'event'], value={'position': f'{position.upper()}:', 'user': '', 'local_booking': 1, 'event': event[0]}, limit=1)
-                    
-                #     await StaffingAsync._updatemessage(self, event[0])
-                #     await ctx.send(f"<@{usernick}> Confirmed booking for position `{position.upper()}` for event `{event[1]}`", delete_after=5)
-                #     booking = True
+            if booking is False:
                 if section == None and position.upper() + ':' == pos[1] and pos[2] == '':
-                    request = await Booking.post_booking(self, int(cid), str(date), str(start_time), str(end_time), str(position), int(tag))
-
-                    if request.status_code == requests.codes.ok:
-                        feedback = request.json()['booking']
-                        DB.update(self=self, table='positions', columns=['user'], values={'user': f'<@{usernick}>'}, where=['position', 'user', 'event'], value={'position': f'{position.upper()}:', 'user': '', 'event': event[0]}, limit=1)
-                        
-                        selected = DB.select(table="positions", columns=['*'], where=['position', 'user', 'event'], value={'position': f'{position.upper()}:', 'user': f'<@{usernick}>', 'event': event[0]}, amount='all')
-                        
-                        for select in selected:
-                            if select[3] == '':
-                                DB.update(self=self, table='positions', columns=['booking_id'], values={'booking_id': feedback['id']}, where=['id'], value={'id': select[0]})
-
-                        await StaffingAsync._updatemessage(self, event[0])
-                        await ctx.send(f"<@{usernick}> Confirmed booking for position `{position.upper()}` for event `{event[1]}`", delete_after=5)
-                        booking = True
-                    else:
-                        await ctx.send(f"<@{usernick}> Booking failed, Control Center responded with error `{request.json()['message']}` code `{request.status_code}`, please try again later", delete_after=5)
-                elif section is not None:
-                    if sections[section] == pos[4] and position.upper() + ':' == pos[1] and pos[2] == '':
+                    if int(pos[5]) == 0:
                         request = await Booking.post_booking(self, int(cid), str(date), str(start_time), str(end_time), str(position), int(tag))
 
                         if request.status_code == requests.codes.ok:
                             feedback = request.json()['booking']
-                            DB.update(self=self, table='positions', columns=['user'], values={'user': f'<@{usernick}>'}, where=['position', 'type', 'user', 'event'], value={'position': f'{position.upper()}:', 'type': sections[section], 'user': '', 'event': event[0]}, limit=1)
-                            selected = DB.select(table="positions", columns=['*'], where=['position', 'type', 'user', 'event'], value={'position': f'{position.upper()}:', 'type': sections[section], 'user': f'<@{usernick}>', 'event': event[0]}, amount='all')
-
+                            DB.update(self=self, table='positions', columns=['user'], values={'user': f'<@{usernick}>'}, where=['position', 'user', 'event'], value={'position': f'{position.upper()}:', 'user': '', 'event': event[0]}, limit=1)
+                            
+                            selected = DB.select(table="positions", columns=['*'], where=['position', 'user', 'event'], value={'position': f'{position.upper()}:', 'user': f'<@{usernick}>', 'event': event[0]}, amount='all')
+                            
                             for select in selected:
                                 if select[3] == '':
                                     DB.update(self=self, table='positions', columns=['booking_id'], values={'booking_id': feedback['id']}, where=['id'], value={'id': select[0]})
-
 
                             await StaffingAsync._updatemessage(self, event[0])
                             await ctx.send(f"<@{usernick}> Confirmed booking for position `{position.upper()}` for event `{event[1]}`", delete_after=5)
                             booking = True
                         else:
                             await ctx.send(f"<@{usernick}> Booking failed, Control Center responded with error `{request.json()['message']}` code `{request.status_code}`, please try again later", delete_after=5)
+
+                    else:
+                        DB.update(self=self, table='positions', columns=['user'], values={'user': f'<@{usernick}>'}, where=['position', 'user', 'event'], value={'position': f'{position.upper()}:', 'user': '', 'event': event[0]}, limit=1)
+                        await StaffingAsync._updatemessage(self, event[0])
+                        await ctx.send(f"<@{usernick}> Confirmed booking for position `{position.upper()}` for event `{event[1]}`", delete_after=5)
+                        booking = True
+                elif section is not None:
+                    if sections[section] == pos[4] and position.upper() + ':' == pos[1] and pos[2] == '':
+                        if int(pos[5]) == 0:
+                            request = await Booking.post_booking(self, int(cid), str(date), str(start_time), str(end_time), str(position), int(tag))
+
+                            if request.status_code == requests.codes.ok:
+                                feedback = request.json()['booking']
+                                DB.update(self=self, table='positions', columns=['user'], values={'user': f'<@{usernick}>'}, where=['position', 'type', 'user', 'event'], value={'position': f'{position.upper()}:', 'type': sections[section], 'user': '', 'event': event[0]}, limit=1)
+                                selected = DB.select(table="positions", columns=['*'], where=['position', 'type', 'user', 'event'], value={'position': f'{position.upper()}:', 'type': sections[section], 'user': f'<@{usernick}>', 'event': event[0]}, amount='all')
+
+                                for select in selected:
+                                    if select[3] == '':
+                                        DB.update(self=self, table='positions', columns=['booking_id'], values={'booking_id': feedback['id']}, where=['id'], value={'id': select[0]})
+
+
+                                await StaffingAsync._updatemessage(self, event[0])
+                                await ctx.send(f"<@{usernick}> Confirmed booking for position `{position.upper()}` for event `{event[1]}`", delete_after=5)
+                                booking = True
+                            else:
+                                await ctx.send(f"<@{usernick}> Booking failed, Control Center responded with error `{request.json()['message']}` code `{request.status_code}`, please try again later", delete_after=5)
+                    else:
+                        DB.update(self=self, table='positions', columns=['user'], values={'user': f'<@{usernick}>'}, where=['position', 'type', 'user', 'event'], value={'position': f'{position.upper()}:', 'type': sections[section], 'user': '', 'event': event[0]}, limit=1)
+                        await StaffingAsync._updatemessage(self, event[0])
+                        await ctx.send(f"<@{usernick}> Confirmed booking for position `{position.upper()}` for event `{event[1]}`", delete_after=5)
+                        booking = True
 
         if booking == False:
             await ctx.send(f'<@{usernick}> Booking failed, check if you inserted correct postion, section or if the positions is already booked.', delete_after=5)
