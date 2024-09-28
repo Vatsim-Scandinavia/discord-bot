@@ -235,7 +235,7 @@ class StaffingCog(commands.Cog):
                     bookings = DB.select(table='positions', columns=['booking_id'], where=['user', 'event'], value={'user': f'<@{usernick}>', 'event': event[0]}, amount='all')
                     cancel = False
                     for booking in bookings:
-                        if isinstance(int(booking[0]) , int):
+                        if isinstance(int(booking[0]), int):
                             request = await Booking.delete_booking(self, int(cid[0]), int(booking[0]))
                             if request == 200:
                                 DB.update(self=self, table='positions', columns=['booking_id', 'user',], values={'booking_id': '', 'user': ''}, where=['user', 'event'], value={'user': f'<@{usernick}>', 'event': event[0]}, limit=1)
