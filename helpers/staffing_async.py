@@ -48,15 +48,14 @@ class StaffingAsync():
 
     def _get_avail_titles() -> List[str]:
         staffings = DB.select(table="staffing", columns=['title'], amount='all')
-        
-        formatted_staffings = []
+    
         if not staffings:
-            formatted_staffings.append('None is available. Please try again later.')
-        else:
-            for staffing in staffings:
-                formatted_staffings.append(" ".join(map(str, staffing)))
+            return ['None is available. Please try again later.']
+        
+        # Use a set to avoid duplicates
+        formatted_staffings = {" ".join(map(str, staffing)) for staffing in staffings}
 
-        return list[set(formatted_staffings)]
+        return list(formatted_staffings)
         
     async def _get_description(self, ctx):
         """
