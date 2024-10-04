@@ -1,8 +1,6 @@
-import os
-import datetime
 import discord
 
-from discord.ext import commands, tasks
+from discord.ext import commands
 from discord import app_commands
 from helpers.message import staff_roles, embed
 from helpers.config import COGS_LOAD, GUILD_ID, DEBUG
@@ -15,6 +13,23 @@ class AdminCog(commands.Cog):
 
     guild_ids = [GUILD_ID]
 
+    async def handle_cog_action(self, action: str, interaction: discord.Interaction, cog: str) -> None:
+        try:
+            if action == 'load':
+                self.bot.load_extension(COGS_LOAD[cog])
+            
+            elif action == 'unload':
+                self.bot.unload_extension(COGS_LOAD[cog])
+
+            elif action == 'reload':
+                self.bot_load_extension(COGS_LOAD[cog])
+                self.bot.unload_extension(COGS_LOAD[cog])
+        
+        except Exception as e:
+            await interaction.response.send_message(f'**`ERROR:`** {type(e).__name__} - {e}')
+        else:
+            await interaction.response.send_message('**`SUCCESS`**')
+
     # Hidden means it won't show up on the default help.
     @app_commands.command(name="load", description="Command which Loads a Module.")
     @app_commands.checks.has_any_role(*staff_roles())
@@ -22,13 +37,7 @@ class AdminCog(commands.Cog):
         """
             Command which Loads a Module.
         """
-
-        try:
-            self.bot.load_extension(COGS_LOAD[cog])
-        except Exception as e:
-            await interaction.response.send_message.send(f'**`ERROR:`** {type(e).__name__} - {e}')
-        else:
-            await interaction.response.send_message.send('**`SUCCESS`**')
+        await self.handle_cog_action('load', interaction, cog)
 
     @app_commands.command(name="unload", description="Command which Unloads a Module.")
     @app_commands.checks.has_any_role(*staff_roles())
@@ -36,13 +45,7 @@ class AdminCog(commands.Cog):
         """
             Command which Unloads a Module.
         """
-
-        try:
-            self.bot.unload_extension(COGS_LOAD[cog])
-        except Exception as e:
-            await interaction.response.send_message.send(f'**`ERROR:`** {type(e).__name__} - {e}')
-        else:
-            await interaction.response.send_message.send('**`SUCCESS`**')
+        await self.handle_cog_action('unload', interaction, cog)
 
     @app_commands.command(name="reload", description="Command which Reloads a Module.")
     @app_commands.checks.has_any_role(*staff_roles())
@@ -50,14 +53,7 @@ class AdminCog(commands.Cog):
         """
             Command which Reloads a Module.
         """
-
-        try:
-            self.bot.unload_extension(COGS_LOAD[cog])
-            self.bot.load_extension(COGS_LOAD[cog])
-        except Exception as e:
-            await interaction.response.send_message.send(f'**`ERROR:`** {type(e).__name__} - {e}')
-        else:
-            await interaction.response.send_message.send('**`SUCCESS`**')
+        await self.handle_cog_action('reload', interaction, cog)
 
     @app_commands.command(name="cogs", description="Command which sends a message with all available cogs.")
     @app_commands.checks.has_any_role(*staff_roles())
@@ -66,10 +62,7 @@ class AdminCog(commands.Cog):
             Command which sends a message with all available cogs.
         """
 
-        fields = []
-
-        for key in COGS_LOAD:
-            fields.append({'name': key, 'value': COGS_LOAD[key]})
+        fields = [{'name': key, 'value': COGS_LOAD[key]} for key in COGS_LOAD]
 
         msg = embed(title="List of Cogs", description="All available cogs", fields=fields)
 
@@ -94,7 +87,6 @@ class AdminCog(commands.Cog):
         :param content:
         :return None:
         """
-        await interaction.response.send_message("Message is being generated", delete_after=5)
         await interaction.response.send_message(content)
 
     @app_commands.command(name="delete", description="Function deletes specific amount of messages.")
@@ -109,16 +101,13 @@ class AdminCog(commands.Cog):
         """
         ctx: commands.Context = await self.bot.get_context(interaction)
         interaction._baton = ctx
-        if DEBUG == True:
+        if DEBUG:
             try:
-                msg_delete = []
-                async for msg in ctx.channel.history(limit=number):
-                    msg_delete.append(msg)
+                await ctx.channel.purge(limit=number)
+                await ctx.send(f"Deleted {number} messages.", delete_after=5)
 
-                msgs = await ctx.send("Deleting messages")
-                await msgs.channel.purge(limit=number)
             except Exception as exception:
-                await ctx.send(exception)
+                await ctx.send(f"An error occurred: {exception}")
         else:
             await ctx.send('Command is disabled because debug is not enabled.', ephemeral=True)
 
