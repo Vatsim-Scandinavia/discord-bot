@@ -1,7 +1,6 @@
 import discord
 
 from discord.ext import commands
-from helpers.config import DEBUG
 
 class Handler():
     

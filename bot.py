@@ -10,7 +10,11 @@ from discord.ext import commands
 
 from dotenv import load_dotenv
 
-from helpers.config import DEBUG, SENTRY_KEY, VATSCA_MEMBER_ROLE, VATSIM_MEMBER_ROLE, VATSIM_SUBDIVISION, GUILD_ID, BOT_TOKEN, REACTION_ROLES, REACTION_MESSAGE_IDS, REACTION_EMOJI, ROLE_REASONS
+from helpers.config import (
+    DEBUG, SENTRY_KEY, VATSCA_MEMBER_ROLE, VATSIM_MEMBER_ROLE, 
+    VATSIM_SUBDIVISION, GUILD_ID, BOT_TOKEN, REACTION_ROLES, 
+    REACTION_MESSAGE_IDS, REACTION_EMOJI, ROLE_REASONS
+)
 from helpers.members import get_division_members
 from helpers import config
 

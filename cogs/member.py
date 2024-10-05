@@ -1,9 +1,9 @@
 import discord
 import aiohttp
 
-from helpers.config import DEBUG
 from discord.ext import commands
 from discord import app_commands
+from helpers.config import DEBUG
 from helpers.message import embed
 from helpers.handler import Handler
 
