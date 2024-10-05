@@ -4,6 +4,7 @@ from discord.ext import commands
 from discord import app_commands
 from helpers.message import staff_roles, embed
 from helpers.config import COGS_LOAD, GUILD_ID, DEBUG
+from helpers.handler import Handler
 
 
 class AdminCog(commands.Cog):
@@ -99,8 +100,7 @@ class AdminCog(commands.Cog):
         :return None:
         :raise Exception:
         """
-        ctx: commands.Context = await self.bot.get_context(interaction)
-        interaction._baton = ctx
+        ctx = await Handler.get_context(self.bot, interaction)
         if DEBUG:
             try:
                 await ctx.channel.purge(limit=number)
