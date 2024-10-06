@@ -163,7 +163,7 @@ class RolesCog(commands.Cog):
     @app_commands.command(name="checkroles", description="Check mentor & training staff roles")
     @app_commands.checks.has_any_role(*staff_roles())
     async def check_mentors_command(self, interaction: discord.Integration):
-        ctx = Handler.get_context(interaction)
+        ctx = Handler.get_context(self.bot, interaction)
 
         await ctx.send("Staff refresh in progress")
         await self.check_roles(True)
