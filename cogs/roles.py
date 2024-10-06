@@ -78,36 +78,6 @@ class RolesCog(commands.Cog):
                     should_be_mentor, should_be_training_staff, should_be_student
                 )
 
-
-                if mentor_role not in user.roles and should_be_mentor == True:
-                    await user.add_roles(mentor_role, reason=self.MENTOR_ROLE_ADD_REASON)
-                elif mentor_role in user.roles and should_be_mentor == False:
-                    await user.remove_roles(mentor_role, reason=self.MENTOR_ROLE_REMOVE_REASON)
-
-                if training_staff_role not in user.roles and should_be_training_staff == True:
-                    await user.add_roles(training_staff_role, reason=self.TRAINING_STAFF_ADD_REASON)
-                elif training_staff_role in user.roles and should_be_training_staff == False:
-                    await user.remove_roles(training_staff_role, reason=self.TRAINING_STAFF_REMOVE_REASON)
-
-                for fir in FIR_MENTORS:
-                    FIR_ROLE = discord.utils.get(guild.roles, id=int(FIR_MENTORS[fir]))
-                    if FIR_ROLE not in user.roles and fir in belong_to and should_be_mentor == True:
-                        await user.add_roles(FIR_ROLE, reason=self.MENTOR_ROLE_ADD_REASON)
-                    elif FIR_ROLE in user.roles and fir not in belong_to and should_be_mentor == False:
-                        await user.remove_roles(FIR_ROLE, reason=self.MENTOR_ROLE_REMOVE_REASON)
-
-                for entry in TRAINING_ROLES:
-                    for item in TRAINING_ROLES[entry]:
-                        training_role = discord.utils.get(guild.roles, id=int(TRAINING_ROLES[entry][item]))
-                        if entry in student_data.keys():
-                            if training_role not in user.roles and item in student_data[entry] and should_be_student:
-                                await user.add_roles(training_role, reason=self.STUDENT_TRAINING_ADD_REASON)
-                            elif training_role in user.roles and item not in student_data[entry]:
-                                await user.remove_roles(training_role, reason=self.STUDENT_TRAINING_REMOVE_REASON)
-
-                        elif training_role in user.roles:
-                            await user.remove_roles(training_role, reason=self.STUDENT_TRAINING_REMOVE_REASON)
-
             except ValueError as e:
                 if mentor_role in user.roles:
                     await user.remove_roles(mentor_role, reason=ROLE_REASONS['no_cid'])
