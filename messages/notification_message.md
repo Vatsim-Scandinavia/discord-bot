@@ -1,1 +1,0 @@
-In order to ensure we don't spam our lovely members with a ton of pings, we've created tags for our staff to ping depending on the content we're posting about. Simply react below with the corresponding emojis to have the roles assigned.
