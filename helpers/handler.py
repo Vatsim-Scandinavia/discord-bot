@@ -11,6 +11,7 @@ class Handler():
     async def get_context(self, bot, interaction: discord.Interaction) -> commands.Context:
         """
         Helper function to get context from interaction
+        :return:
         """
         ctx: commands.Context = await bot.get_context(interaction)
         interaction._baton = ctx

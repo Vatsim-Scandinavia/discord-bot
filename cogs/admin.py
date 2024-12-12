@@ -9,6 +9,7 @@ class AdminCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    # autocomplete is not done yet. It returns weird result consider another metod - TBD
     async def autocomplete_loaded_cogs(self, interaction: discord.Interaction, current: str):
         # Get all loaded cog names
         loaded_cogs = [str(cog) for cog in interaction.client.cogs]
@@ -46,6 +47,7 @@ class AdminCog(commands.Cog):
     @app_commands.checks.has_any_role(*config.STAFF_ROLES)
     @app_commands.autocomplete(cog=autocomplete_loaded_cogs)
     async def unload(self, interaction: discord.Interaction, cog: str):
+        print(cog, flush=True)
         try:
             self.bot.unload_extension(config.COGS_LOAD[cog])
 
