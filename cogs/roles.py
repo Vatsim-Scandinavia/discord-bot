@@ -8,6 +8,7 @@ from discord.ext import commands, tasks
 
 from helpers.config import config
 from helpers.roles import Roles
+from helpers.handler import Handler
 
 class RolesCog(commands.Command):
     def __init__(self, bot):
@@ -58,7 +59,7 @@ class RolesCog(commands.Command):
             examiner_data (list): The API response containing user endorsement data.
         """
         try:
-            cid = re.findall(r"\d+", str(user.nick))
+            cid = Handler.get_cid(user)
             if not cid:
                 raise ValueError("No CID found in member's nickname.")
             

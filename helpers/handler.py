@@ -1,5 +1,6 @@
 import discord
 import aiohttp
+
 from discord.ext import commands
 from helpers.config import config
 
@@ -65,3 +66,31 @@ class Handler():
         except aiohttp.ClientError as e:
             print(f"An error occurred: {e}")
             return [], None
+        
+    async def get_cid(user):
+        """
+        Get CID based on user discord ID
+        
+        Args:
+            user (discord.Member): The Discord member object.
+        """
+        url = f"https://api.vatsim.net/v2/members/discord/{user.id}"
+        headers = {
+            'Accept': 'application/json'
+        }
+        
+        async with aiohttp.ClientSession as session:
+            try:
+                async with session.get(url, headers=headers, params="") as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        return data.get("user_id")
+                        
+                    else:
+                        print(f"Failed to fetch CID for user {user.id}. Status code: {response.status}")
+
+            except aiohttp.ClientError as e:
+                print(f"HTTP error occurred while accessing {url}: {e}")
+                return None
+        
+

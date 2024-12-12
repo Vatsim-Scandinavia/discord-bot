@@ -66,12 +66,7 @@ async def on_member_update(before_update, user: discord.Member):
     vatsim_member = discord.utils.get(user.guild.roles, id=config.VATSIM_MEMBER_ROLE)
 
     # Extract cid from nickname, exit early if not found
-    cid_match = re.search(r'\d+', str(user.nick))
-
-    if not cid_match:
-        return
-    
-    cid = int(cid_match.group())
+    cid = Handler.get_cid(user)
 
     try:
         api_data = await Handler.get_division_members()
