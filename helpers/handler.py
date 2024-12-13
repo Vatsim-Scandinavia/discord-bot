@@ -67,7 +67,7 @@ class Handler():
             print(f"An error occurred: {e}")
             return [], None
         
-    async def get_cid(user):
+    async def get_cid(self, user):
         """
         Get CID based on user discord ID
         
@@ -84,7 +84,7 @@ class Handler():
                 async with session.get(url, headers=headers, params="") as response:
                     if response.status == 200:
                         data = await response.json()
-                        return data.get("user_id")
+                        return int(data.get("user_id"))
                         
                     else:
                         print(f"Failed to fetch CID for user {user.id}. Status code: {response.status}")

@@ -70,4 +70,14 @@ class Roles:
         """
 
         return await self.fetch_data(self, "users", params={"include[]": "endorsements"})
+    
+    async def get_allusers(self) -> Optional[dict]:
+        """
+        Fetch all users with their endorsement data from the API.
+
+        Returns:
+            Optional[dict]: The visiting endorsement data if valid, or None otherwise.
+        """
+
+        return await self.fetch_data(self, "users", params={"include[]": "allUsers"})
         

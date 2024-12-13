@@ -59,7 +59,7 @@ class RolesCog(commands.Command):
             examiner_data (list): The API response containing user endorsement data.
         """
         try:
-            cid = Handler.get_cid(user)
+            cid = Handler.get_cid(self, user)
             if not cid:
                 raise ValueError("No CID found in member's nickname.")
             
@@ -210,3 +210,6 @@ class RolesCog(commands.Command):
         await interaction.response.send_message("User roles refresh in progress...", ephemeral=True)
         await self.check_roles(override=True)
         await interaction.followup.send("User roles refresh process completed.", ephemeral=True)
+
+async def setup(bot):
+    await bot.add_cog(RolesCog(bot))

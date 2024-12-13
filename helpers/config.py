@@ -97,6 +97,7 @@ class Config:
         }
 
         self.CHECK_MEMBERS_INTERVAL = int(os.getenv('CHECK_MEMBERS_INTERVAL', 86400))
+        self.STAFFING_INTERVAL = int(os.getenv('STAFFING_INTERVAL', 0))
 
     def activity(self) -> discord.Activity:
         return discord.Activity(type=discord.ActivityType.watching, name=self.PRESENCE_TEXT)
