@@ -99,6 +99,12 @@ class Config:
         self.CHECK_MEMBERS_INTERVAL = int(os.getenv('CHECK_MEMBERS_INTERVAL', 86400))
         self.STAFFING_INTERVAL = int(os.getenv('STAFFING_INTERVAL', 0))
 
+        # Channel IDs
+        self.EVENTS_CHANNEL = int(os.getenv('EVENTS_CHANNEL', 0))
+        self.RULES_CHANNEL = int(os.getenv('RULES_CHANNEL', 0))
+        self.WELCOME_CHANNEL = int(os.getenv('WELCOME_CHANNEL, 0'))
+        self.ROLES_CHANNEL = int(os.getenv('ROLES_CHANNEL', 0))
+
     def activity(self) -> discord.Activity:
         return discord.Activity(type=discord.ActivityType.watching, name=self.PRESENCE_TEXT)
     
