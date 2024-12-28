@@ -177,7 +177,7 @@ class StaffingCog(commands.Cog):
 
     @app_commands.command(name="book", description="Bot books selected position for selected staffing")
     @app_commands.describe(position="Which position would you like to book?")
-    @app_commands.check(Handler.is_obs())
+    @app_commands.check(Handler.is_obs)
     async def book(self, interaction: discord.Integration, position: str, section: str = None):
         ctx: commands.Context = await self.bot.get_context(interaction)
         interaction._baton = ctx
