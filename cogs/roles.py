@@ -10,7 +10,7 @@ from helpers.config import config
 from helpers.roles import Roles
 from helpers.handler import Handler
 
-class RolesCog(commands.Command):
+class RolesCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.check_roles_loop.start()
@@ -35,17 +35,18 @@ class RolesCog(commands.Command):
         roles_data = await Roles.get_roles(self)
         trainings_data = await Roles.get_training(self)
         examiner_data = await Roles.get_endorsement(self)
+        atc_activity_data = await Roles.get_atc_activity(self)
         
         mentor_role = discord.utils.get(guild.roles, id=config.MENTOR_ROLE)
         training_staff_role = discord.utils.get(guild.roles, id=config.TRAINING_STAFF_ROLE)
         visitor_role = discord.utils.get(guild.roles, id=config.VISITOR_ROLE)
         
         for user in guild.members:
-            await self.process_member_roles(self, user, mentor_role, training_staff_role, visitor_role, roles_data, trainings_data, examiner_data)
+            await self.process_member_roles(self, user, mentor_role, training_staff_role, visitor_role, roles_data, trainings_data, examiner_data, atc_activity_data)
 
         print(f"check_roles finished at {datetime.datetime.now().isoformat()}", flush=True)
 
-    async def process_member_roles(self, user, mentor_role, training_staff_role, visitor_role, roles_data, trainings_data, examiner_data):
+    async def process_member_roles(self, user, mentor_role, training_staff_role, visitor_role, roles_data, trainings_data, examiner_data, atc_activity_data):
         """
         Process and update member roles based on their API data.
 
@@ -57,6 +58,7 @@ class RolesCog(commands.Command):
             roles_data (list): The API response containing user roles.
             trainings_data (list): The API response containing user training data.
             examiner_data (list): The API response containing user endorsement data.
+            atc_activity_data (list): The API response containing ATC activity data.
         """
         try:
             cid = Handler.get_cid(self, user)
@@ -76,6 +78,7 @@ class RolesCog(commands.Command):
                 self.update_fir_roles(self, user, mentor_firs, "mentor", should_be_mentor),
                 self.update_fir_roles(self, user, examiner_firs, "examiner", should_be_examiner),
                 self.update_training_roles(self, user, student_data, should_be_student),
+                self.update_fir_atc_roles(self, user, cid, atc_activity_data)
             ]
 
             await asyncio.gather(*tasks)
@@ -155,7 +158,6 @@ class RolesCog(commands.Command):
     async def update_role(self, user, role, condition, add_reason, remove_reason):
         """
         Add or remove a role based on a condition.
-        :return:
         """
         if condition and role not in user.roles:
             await user.add_roles(role, reason=add_reason)
@@ -199,6 +201,28 @@ class RolesCog(commands.Command):
 
                 condition = area in student_data and rating in student_data[area] and should_be_student
                 await self.update_role(self, user, training_role, condition, config.ROLE_REASONS["training_add"], config.ROLE_REASONS["training_remove"])
+
+    async def update_fir_atc_roles(self, user, cid, atc_activity_data):
+        """
+        Update FIR-specific ATC roles based on activity and rating.
+        """
+        guild = user.guild
+        for entry in atc_activity_data:
+            if entry["id"] != cid:
+                continue
+
+            fir_activity = entry.get("atc_active_areas", {})
+            rating = entry.get("rating", "")
+            for fir, is_active in fir_activity.items():
+                if not is_active:
+                    continue
+
+                fir_roles = config.RATING_FIR_DATA.get(fir.capitalize(), {})
+                role_id = fir_roles.get(rating)
+                if role_id:
+                    fir_role = discord.utils.get(guild.roles, id=role_id)
+                    if fir_role:
+                        await self.update_role(self, user, fir_role, is_active, f"ATC active in {fir} as {rating}", f"Not ATC active in {fir}")
 
     @tasks.loop(seconds=config.CHECK_MEMBERS_INTERVAL)
     async def check_roles_loop(self):

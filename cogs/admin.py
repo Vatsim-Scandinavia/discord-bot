@@ -12,7 +12,7 @@ class AdminCog(commands.Cog):
     # autocomplete is not done yet. It returns weird result consider another metod - TBD
     async def autocomplete_loaded_cogs(self, interaction: discord.Interaction, current: str):
         # Get all loaded cog names
-        loaded_cogs = [str(cog) for cog in interaction.client.cogs]
+        loaded_cogs = [key for key in config.COGS_LOAD.keys()]
 
         # Provide a filtered list of options as user types
         return [
@@ -35,7 +35,7 @@ class AdminCog(commands.Cog):
     @app_commands.autocomplete(cog=autocomplete_unloaded_cogs)
     async def load(self, interaction: discord.Interaction, cog: str):
         try:
-            self.bot.load_extension(config.COGS_LOAD[cog])
+            await self.bot.load_extension(config.COGS_LOAD[cog])
 
         except Exception as e:
             await interaction.response.send_message(f'**`ERROR:`** {type(e).__name__} - {e}')
@@ -49,7 +49,7 @@ class AdminCog(commands.Cog):
     async def unload(self, interaction: discord.Interaction, cog: str):
         print(cog, flush=True)
         try:
-            self.bot.unload_extension(config.COGS_LOAD[cog])
+            await self.bot.unload_extension(config.COGS_LOAD[cog])
 
         except Exception as e:
             await interaction.response.send_message(f'**`ERROR:`** {type(e).__name__} - {e}')
@@ -62,8 +62,8 @@ class AdminCog(commands.Cog):
     @app_commands.autocomplete(cog=autocomplete_loaded_cogs)
     async def reload(self, interaction: discord.Interaction, cog: str):
         try:
-            self.bot.unload_extension(config.COGS_LOAD[cog])
-            self.bot.load_extension(config.COGS_LOAD[cog])
+            await self.bot.unload_extension(config.COGS_LOAD[cog])
+            await self.bot.load_extension(config.COGS_LOAD[cog])
 
         except Exception as e:
             await interaction.response.send_message(f'**`ERROR:`** {type(e).__name__} - {e}')

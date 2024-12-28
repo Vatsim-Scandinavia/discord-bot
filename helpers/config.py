@@ -28,11 +28,17 @@ class Config:
         self.COGS = [
             'cogs.admin',
             'cogs.member',
+            'cogs.roles',
+            'cogs.tasks',
+            'cogs.update_messages',
         ]
 
         self.COGS_LOAD = {
             'admin': 'cogs.admin',
             'member': 'cogs.member',
+            'roles': 'cogs.roles',
+            'tasks': 'cogs.tasks',
+            'update_messages': 'cogs.update_messages',
         }
 
         self.STAFF_ROLES = [
@@ -82,28 +88,70 @@ class Config:
         self.VISITOR_ROLE = int(os.getenv("VISITOR_ROLE", 0))
         self.OBS_ROLE = int(os.getenv("OBS_ROLE", 0))
 
+        # FIR Data
         self.FIR_DATA = [ fir.split(':') for fir in os.getenv('FIR_DATA', '').split(',') if fir]
         self.FIRS, self.FIR_ROLES = zip(*self.FIR_DATA) if self.FIR_DATA else ([], [])
         self.FIR_MENTORS = dict(zip(self.FIRS, self.FIR_ROLES))
 
+        # Examiner Data (same format as FIR data)
         self.EXAMINER_DATA = [ fir.split(':') for fir in os.getenv('EXAMINER_DATA', '').split(',') if fir]
-        self.EXAM_FIRS, self.EXAM_ROLES = zip(*self.EXAMINER_DATA) if self.EXAM_FIRS else ([], [])
+        self.EXAM_FIRS, self.EXAM_ROLES = zip(*self.EXAMINER_DATA) if self.EXAMINER_DATA else ([], [])
         self.FIR_EXAMINERS = dict(zip(self.EXAM_FIRS, self.EXAM_ROLES))
 
+        # Training Data
         self.TRAINING_DATA = os.getenv('TRAINING_DATA', '').split(',')
         self.TRAINING_ROLES = {
             country: {role.split(':')[0]: role.split(':')[1] for role in roles_str.split(',')}
             for country, roles_str in (entry.split('|') for entry in self.TRAINING_DATA if '|' in entry)
         }
 
+        self.CONTROLLER_FIR_DATA = [ fir.split(':') for fir in os.getenv('CONTROLLER_FIR_DATA', '').split(',') if fir]
+        self.CONTROLLER_FIRS, self.CONTROLLER_ROLES = zip(*self.CONTROLLER_FIR_DATA) if self.CONTROLLER_FIR_DATA else ([], [])
+        self.CONTROLLER_FIR_ROLES = dict(zip(self.CONTROLLER_FIRS, self.CONTROLLER_ROLES))
+
+        # Parse RATING_FIR_DATA from the environment variable
+        self.RATING_FIR_DATA_RAW = os.getenv('RATING_FIR_DATA', '')
+        self.RATING_FIR_DATA = {}
+        if self.RATING_FIR_DATA_RAW:
+            fir_entries = self.RATING_FIR_DATA_RAW.split('|')
+            fir_name = fir_entries[0].strip()
+            ratings = {}
+
+            for rating_entry in fir_entries[1:]:
+                rating, role_id = rating_entry.split(':')
+                ratings[rating.strip()] = int(role_id.strip())
+
+            self.RATING_FIR_DATA[fir_name] = ratings
+
+        # Parse REACTION_ROLE_DATA from the environment variable
+        self.REACTION_ROLE_DATA = os.getenv('REACTION_ROLE_DATA', '')
+        self.REACTION_EMOJI, self.REACTION_MESSAGE_IDS, self.REACTION_ROLE_IDS = [], [], []
+
+        if self.REACTION_ROLE_DATA:
+            for reaction_role in self.REACTION_ROLE_DATA.split(','):
+                emoji, message_id, role_id = reaction_role.split('|')
+                self.REACTION_EMOJI.append(emoji)
+                self.REACTION_MESSAGE_IDS.append(message_id)
+                self.REACTION_ROLE_IDS.append(role_id)
+
+        self.REACTION_ROLES = dict(zip(self.REACTION_EMOJI, self.REACTION_ROLE_IDS))
+
+        # Intervals
         self.CHECK_MEMBERS_INTERVAL = int(os.getenv('CHECK_MEMBERS_INTERVAL', 86400))
         self.STAFFING_INTERVAL = int(os.getenv('STAFFING_INTERVAL', 0))
 
         # Channel IDs
         self.EVENTS_CHANNEL = int(os.getenv('EVENTS_CHANNEL', 0))
         self.RULES_CHANNEL = int(os.getenv('RULES_CHANNEL', 0))
-        self.WELCOME_CHANNEL = int(os.getenv('WELCOME_CHANNEL, 0'))
+        self.WELCOME_CHANNEL = int(os.getenv('WELCOME_CHANNEL', 0))
         self.ROLES_CHANNEL = int(os.getenv('ROLES_CHANNEL', 0))
+
+        # Database variables
+        self.BOT_DB_HOST = str(os.getenv('BOT_DB_HOST', ''))
+        self.BOT_DB_PORT = str(os.getenv('BOT_DB_PORT', ''))
+        self.BOT_DB_USER = str(os.getenv('BOT_DB_USER', ''))
+        self.BOT_DB_PASSWORD = str(os.getenv('BOT_DB_PASSWORD', ''))
+        self.BOT_DB_NAME = str(os.getenv('BOT_DB_NAME', ''))
 
     def activity(self) -> discord.Activity:
         return discord.Activity(type=discord.ActivityType.watching, name=self.PRESENCE_TEXT)

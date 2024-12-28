@@ -130,5 +130,8 @@ class TasksCog(commands.Cog):
     @tasks.loop(seconds=config.STAFFING_INTERVAL)
     async def sync_commands_loop(self):
         await self.sync_commands()
+
+async def setup(bot):
+    await bot.add_cog(TasksCog(bot))
         
 

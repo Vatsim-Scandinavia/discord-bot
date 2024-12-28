@@ -19,6 +19,17 @@ class Handler():
 
         return ctx
     
+    def is_obs(interaction: discord.Interaction):
+        """
+        Function checks if user has OBS role
+        :return:
+        """
+        obs_role = discord.utils.get(interaction.guild.roles, id=config.OBS_ROLE)
+        if obs_role in interaction.user.roles:
+            raise discord.app_commands.AppCommandError('You do not have the proper roles to use this command')
+        else:
+            return True
+
     async def get_division_members(self):
         """
         Fetch all division members from the API with pagination.
