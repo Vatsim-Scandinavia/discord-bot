@@ -31,6 +31,7 @@ class Config:
             'cogs.roles',
             'cogs.tasks',
             'cogs.update_messages',
+            'cogs.staffings',
         ]
 
         self.COGS_LOAD = {
@@ -39,6 +40,7 @@ class Config:
             'roles': 'cogs.roles',
             'tasks': 'cogs.tasks',
             'update_messages': 'cogs.update_messages',
+            'staffings': 'cogs.staffings',
         }
 
         self.STAFF_ROLES = [
