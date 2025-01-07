@@ -1,5 +1,6 @@
 import discord
 import aiohttp
+import re
 
 from discord.ext import commands
 from helpers.config import config
@@ -36,9 +37,11 @@ class Handler():
         :return:
         """
         result = []
-        url = config.VATSIM_CHECK_MEMBER_URL
+        url = config.VATSIM_CHECK_MEMBER_URL  # Initialize from config
 
-        # Initialize an aiohttp session for async requests
+        if not url: # Ensure the URL is defined
+            raise ValueError("VATSIM_CHECK_MEMBER_URL is not configured or is None")
+
         async with aiohttp.ClientSession() as session:
             while url:
                 # Fetch data for each page
@@ -62,17 +65,26 @@ class Handler():
         }
 
         try:
+
             async with session.get(url, headers=headers) as response:
+
                 # Process the response
                 if response.status == 200:
                     feedback = await response.json()
-                    data = feedback.get('results', [])
-                    next_url = data.get('next')
-                    return data, next_url
 
+                    data = feedback.get('results', [])
+                    next_url = feedback.get('next')
+
+                    # Replace http with https if needed
+                    if next_url and next_url.startswith('http://'):
+                        next_url = next_url.replace('http://', 'https://')
+
+                    return data, next_url
+                    
                 else:
-                    print(f"Failed to fetch page: {url}. Status code: {response.status}")
+                    print(f"Failed to fetch page. Status: {response.status}, URL: {url}")
                     return [], None
+                    
         
         except aiohttp.ClientError as e:
             print(f"An error occurred: {e}")
@@ -85,23 +97,31 @@ class Handler():
         Args:
             user (discord.Member): The Discord member object.
         """
-        url = f"https://api.vatsim.net/v2/members/discord/{user.id}"
-        headers = {
-            'Accept': 'application/json'
-        }
-        
-        async with aiohttp.ClientSession as session:
-            try:
-                async with session.get(url, headers=headers, params="") as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        return int(data.get("user_id"))
-                        
-                    else:
-                        print(f"Failed to fetch CID for user {user.id}. Status code: {response.status}")
+        if not config.DEBUG:
+            url = f"https://api.vatsim.net/v2/members/discord/{user.id}"
+            headers = {
+                'Accept': 'application/json'
+            }
+            
+            async with aiohttp.ClientSession() as session: # Instantiate ClientSession
+                try:
+                    async with session.get(url, headers=headers) as response:
+                        if response.status == 200:
+                            data = await response.json()
+                            return int(data.get("user_id"))
+                            
+                        else:
+                            print(f"Failed to fetch CID for user {user.id}. Status code: {response.status}")
 
-            except aiohttp.ClientError as e:
-                print(f"HTTP error occurred while accessing {url}: {e}")
-                return None
+                except aiohttp.ClientError as e:
+                    print(f"HTTP error occurred while accessing {url}: {e}")
+                    return None
+        else:
+            cid = re.findall(r'\d+', str(user.nick))
+
+            if len(cid) < 1:
+                raise ValueError
+            
+            return int(cid[0])
         
 

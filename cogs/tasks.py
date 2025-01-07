@@ -13,6 +13,7 @@ from helpers.config import config
 class TasksCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.handler = Handler()
         self.check_members_loop.start()
         self.sync_commands_loop.start()
 
@@ -44,11 +45,11 @@ class TasksCog(commands.Cog):
             print("Roles not configured correctly.", flush=True)
             return
         
-        division_members = await Handler.get_division_members()
+        division_members = await self.handler.get_division_members()
         member_map = {  int(member["id"]): member for member in division_members }
 
         for user in guild.members:
-            await self.proccess_member(self, user, vatsca_role, vatsim_role, member_map)
+            await self.proccess_member(user, vatsca_role, vatsim_role, member_map)
 
         print(f"check_members finished at {datetime.now().isoformat()}", flush=True)
 
@@ -63,14 +64,14 @@ class TasksCog(commands.Cog):
             member_map (dict): A map of division member CIDs to their corresponding API data.
         """
         try:
-            cid = Handler.get_cid(user)
+            cid = await self.handler.get_cid(user)
             if not cid:
                 raise ValueError("No CID found in member's nickname.")
             
             is_vatsca_member = cid in member_map and member_map[cid]["subdivision"] == config.VATSIM_SUBDIVISION
 
             if vatsim_role in user.roles:
-                await self.update_role(self, user, vatsca_role, is_vatsca_member, config.ROLE_REASONS['vatsca_add'], config.ROLE_REASONS['vatsca_remove'])
+                await self.update_role(user, vatsca_role, is_vatsca_member, config.ROLE_REASONS['vatsca_add'], config.ROLE_REASONS['vatsca_remove'])
             elif vatsca_role in user.roles:
                 await user.remove_roles(vatsca_role, reason=config.ROLE_REASONS['no_auth'])
 
@@ -97,7 +98,7 @@ class TasksCog(commands.Cog):
     @app_commands.command(name="checkusers", description="Refresh roles based on division membership.")
     @app_commands.checks.has_any_role(*config.STAFF_ROLES)
     async def checkusers(self, interaction: discord.Interaction):
-        ctx = await Handler.get_context(self, self.bot, interaction)
+        ctx = await self.handler.get_context(self.bot, interaction)
         await ctx.send("Member refresh in progress.", ephemeral=True)
         await self.check_members(override=True)
         await ctx.send("Member refresh completed.", ephemeral=True)
@@ -122,7 +123,7 @@ class TasksCog(commands.Cog):
     @app_commands.command(name="sync", description="Sync slash commands (Staff only).")
     @app_commands.checks.has_any_role(*config.STAFF_ROLES)
     async def sync(self, interaction: discord.Interaction):
-        ctx = await Handler.get_context(self, self.bot, interaction)
+        ctx = await self.handler.get_context(self.bot, interaction)
         await ctx.send("Slash command sync in progress.", ephemeral=True)
         await self.sync_commands(override=True)
         await ctx.send("Slash command sync completed.", ephemeral=True)

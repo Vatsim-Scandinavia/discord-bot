@@ -65,11 +65,14 @@ async def on_member_update(before_update, user: discord.Member):
     vatsca_member = discord.utils.get(user.guild.roles, id=config.VATSCA_MEMBER_ROLE)
     vatsim_member = discord.utils.get(user.guild.roles, id=config.VATSIM_MEMBER_ROLE)
 
+    # Create an instance of Handler
+    handler = Handler()
+
     # Extract cid from nickname, exit early if not found
-    cid = Handler.get_cid(user)
+    cid = await handler.get_cid(user)
 
     try:
-        api_data = await Handler.get_division_members()
+        api_data = await handler.get_division_members()
 
         should_have_vatsca = any(
             int(entry['id']) == cid and str(entry["subdivision"]) == str(config.VATSIM_SUBDIVISION)

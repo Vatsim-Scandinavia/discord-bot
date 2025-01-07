@@ -1,4 +1,5 @@
 import discord
+import asyncio
 
 from discord import app_commands
 from discord.ext import commands
@@ -11,12 +12,12 @@ class UpdateCountryMessage(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    async def send_or_update_message(self, ctx, channel_id, message_id, title, content, author = None, text = None):
+    async def send_or_update_message(self, interaction: discord.Interaction, channel_id, message_id, title, content, author = None, text = None):
         """
         Handles sending or updating a message in a specified channel.
 
         Args:
-            ctx: Context
+            interaction: The interaction object from the slash command.
             channel_id (int): The ID of the channel to send the message in.
             message_id (int): The ID of the existing message to update, or None for a new message.
             title (str): The title of the message.
@@ -24,9 +25,16 @@ class UpdateCountryMessage(commands.Cog):
             author (discord.User, optional): The author of the message. Defaults to None.
             text (str, optional): The text of the message. Defaults to None.
         """
-        channel = discord.utils.get(ctx.guild.channels, id=channel_id)
+        guild = interaction.guild
+        if not guild:
+            await interaction.followup.send("Guild not found.", ephemeral=True)
+            return
+        
+        channel = discord.utils.get(guild.channels, id=channel_id)
         if not channel:
-            await ctx.send(f"Channel with ID {channel_id} not found.", delete_after=5)
+            followup_message  = await interaction.followup.send(f"Channel with ID {channel_id} not found.")
+            await asyncio.sleep(5)
+            await followup_message.delete()
             return
         
         try:
@@ -36,11 +44,15 @@ class UpdateCountryMessage(commands.Cog):
                     await message.edit(content=text, embed=embed(title=title, description=content, author=author))
             else:
                 await channel.send(content=text, embed=embed(title=title, description=content, author=author))
-            await ctx.send("Message successfully updated.", delete_after=5)
+            followup_message = await interaction.followup.send("Message successfully updated.")
+            await asyncio.sleep(5)
+            await followup_message.delete()
             
         except Exception as e:
             print(f"Error updating message: {e}", flush=True)
-            await ctx.send("An error occurred while updating the message.", delete_after=5)
+            followup_message = await interaction.followup.send("An error occurred while updating the message.")
+            await asyncio.sleep(5)
+            await followup_message.delete()
 
     def read_file(self, filepath):
         """
@@ -64,31 +76,30 @@ class UpdateCountryMessage(commands.Cog):
     )
     @app_commands.checks.has_any_role(*config.STAFF_ROLES)
     async def update(self, interaction: discord.Interaction, option: app_commands.Choice[str], message_id: str = None):
-        ctx = await Handler.get_context(self, self.bot, interaction)
-        await ctx.send("Processing request...", delete_after=5)
-
+        await interaction.response.defer()  # Defer response while processing
+        
         author = {
             "name": self.bot.user.name,
             "url": config.DIVISION_URL,
-            "icon": self.bot.user.avatar.url
+            "icon": self.bot.user.display_avatar
         }
         
         if option.value == "channels":
             content = self.read_file("messages/countries.md")
-            await self.send_or_update_message(self, ctx, config.ROLES_CHANNEL, message_id, "Available Channel Roles", content)
+            await self.send_or_update_message(interaction, config.ROLES_CHANNEL, message_id, "Available Channel Roles", content)
 
         elif option.value == "notifications":
             content = self.read_file("messages/notification.md")
             text = self.read_file("messages/notification_message.md")
-            await self.send_or_update_message(ctx, config.ROLES_CHANNEL, message_id, "Available Country Roles", content, text=text)
+            await self.send_or_update_message(interaction, config.ROLES_CHANNEL, message_id, "Available Country Roles", content, text=text)
 
         elif option.value == "welcome":
             content = self.read_file("messages/welcome.md")
-            await self.send_or_update_message(ctx, config.WELCOME_CHANNEL, message_id, "Welcome", content, author=author)
+            await self.send_or_update_message(interaction, config.WELCOME_CHANNEL, message_id, "Welcome", content, author=author)
 
         elif option.value == "rules":
             content = self.read_file("messages/rules.md")
-            await self.send_or_update_message(ctx, config.RULES_CHANNEL, message_id, "Rules", content, author=author)
+            await self.send_or_update_message(interaction, config.RULES_CHANNEL, message_id, "Rules", content, author=author)
 
 async def setup(bot):
     await bot.add_cog(UpdateCountryMessage(bot))
