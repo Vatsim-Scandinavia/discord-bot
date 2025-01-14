@@ -6,9 +6,10 @@ import asyncio
 from discord import app_commands
 from discord.ext import commands, tasks
 
-from helpers.config import config
-from helpers.roles import Roles
+from core.exceptions import CIDNotFoundException, GuildNotFoundException
+from helpers.config import CC_API_TOKEN, CC_API_URL, config
 from helpers.handler import Handler
+from services.controlcenter import ControlCenterClient
 
 class RolesCog(commands.Cog):
     def __init__(self, bot):

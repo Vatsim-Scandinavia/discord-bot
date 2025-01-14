@@ -1,5 +1,6 @@
 import discord
 import os
+from typing import Union
 import sentry_sdk
 import signal
 import re
@@ -15,6 +16,7 @@ from helpers.handler import Handler
 intents = discord.Intents.all()
 intents.message_content = True
 
+# TODO: Create a custom implementation of the Bot class to handle errors and other events outside of bot.py.
 bot = commands.Bot(command_prefix=config.PREFIX, description=config.DESCRIPTION, intents=intents, help_command=None, case_sensitive=True)
 
 
