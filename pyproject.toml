@@ -3,8 +3,9 @@ name = "discord-bot"
 version = "2.0.0"
 description = "A Discord bot for VATSIM Scandinavia that verifies members, posts events, creates staffing threads, updates rules, and performs other miscellaneous tasks."
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.8, <3.14"
 dependencies = [
+    "audioop-lts>=0.2.1 ; python_full_version >= '3.13'",
     "discord==1.7.3",
     "discord-py==2.4.0",
     "emoji==2.12.1",
