@@ -50,7 +50,7 @@ class Roles:
         Returns:
             Optional[List[Any]]: A list of users and their roles or None if the request fails.
         """
-        return await self.fetch_data(self, "users", params={"include[]": "roles"})
+        return await self.fetch_data("users", params={"include[]": "roles"})
     
     async def get_training(self) -> Optional[List[Any]]:
         """
@@ -59,7 +59,7 @@ class Roles:
         Returns:
             Optional[List[Any]]: A list of users and their training data or None if the request fails.
         """
-        return await self.fetch_data(self, "users", params={"include[]": "training"})
+        return await self.fetch_data("users", params={"include[]": "training"})
     
     async def get_endorsement(self) -> Optional[dict]:
         """
@@ -69,7 +69,7 @@ class Roles:
             Optional[dict]: The visiting endorsement data if valid, or None otherwise.
         """
 
-        return await self.fetch_data(self, "users", params={"include[]": "endorsements"})
+        return await self.fetch_data("users", params={"include[]": "endorsements"})
     
     async def get_atc_activity(self) -> Optional[dict]:
         """
@@ -78,6 +78,13 @@ class Roles:
         Returns:
             Optional[dict]: The visiting endorsement data if valid, or None otherwise.
         """
+        params = {
+            "include[]": [
+                "allUsers",
+                "activeAreas",
+            ],
+            "onlyAtcActive": 1
+        }
 
-        return await self.fetch_data(self, "users", params={"include[]": "allUsers", "include[]": "activeAreas"})
+        return await self.fetch_data("users", params=params)
         

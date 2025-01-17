@@ -58,10 +58,14 @@ class Config:
             'no_auth': 'User did not authenticate via the Community Website',
             'mentor_add': 'Member is now a mentor',
             'mentor_remove': 'Member is no longer a mentor',
+            'examiner_add': 'Member is now an examiner',
+            'examiner_remove': 'Member is no longer an examiner',
             'training_add': 'Member is now in training',
             'training_remove': 'Member is no longer in training',
             'training_staff_add': 'Member is now Traning Staff',
             'training_staff_remove': 'Member is no longer Training Staff',
+            'visitor_add': 'Member is now Visiting Controller',
+            'visitor_remove': 'Member is no longer Visiting Controller',
             'reaction_add': 'Member reacted to a message',
             'reaction_remove': 'Member removed a reaction from a message',
         }
@@ -124,6 +128,8 @@ class Config:
                 ratings[rating.strip()] = int(role_id.strip())
 
             self.RATING_FIR_DATA[fir_name] = ratings
+
+        self.c1_equivalent_ratings = {"ADM", "SUP", "C1", "C2", "C3", "I1", "I3"}
 
         # Parse REACTION_ROLE_DATA from the environment variable
         self.REACTION_ROLE_DATA = os.getenv('REACTION_ROLE_DATA', '')
