@@ -4,6 +4,7 @@ import sentry_sdk
 import signal
 import re
 import asyncio
+import emoji
 
 from discord.ext import commands
 from discord.ext.commands import BadArgument, CommandInvokeError
@@ -103,6 +104,88 @@ async def on_member_update(before_update, user: discord.Member):
     except Exception as e:
         print(f"Unexpected error: {e}", flush=True)
 
+async def send_dm(user, message):
+    """Attempts to send a DM to the user and handles cases where DMs are closed."""
+    try:
+        await user.send(message)
+    except discord.Forbidden:
+        print(f"Could not send DM to {user.name}. They have DMs disabled.")
+
+@bot.event
+async def on_reaction_add(payload):
+    if payload.guild_id is None:
+        return
+    
+    if payload.user_id == bot.user.id: # Ignore bot reactions
+        return
+    
+    guild = bot.get_guild(payload.guild_id)
+    user = guild.get_member(payload.user_id)
+
+    if not user: # User not found
+        return
+    
+    if payload.message_id in config.REACTION_MESSAGE_IDS:
+        emoji_name = emoji.demojize(payload.emoji.name)
+
+        if emoji_name in config.REACTION_ROLES:
+            role = discord.utils.get(guild.roles, id=config.REACTION_ROLES[emoji_name])
+
+            if role and role not in user.roles:
+                await user.add_roles(role)
+                await send_dm(user, f'You have been given the `{role.name}` role because you reacted with {payload.emoji}')
+
+@bot.event
+async def on_raw_reaction_remove(payload):
+    if payload.guild_id is None:  # Ignore DMs
+        return
+    
+    if payload.user_id == bot.user.id: # Ignore bot reactions
+        return
+
+    guild = bot.get_guild(payload.guild_id)
+    user = guild.get_member(payload.user_id)
+    if not user:  # User not found
+        return
+
+    if payload.message_id in config.REACTION_MESSAGE_IDS:
+        emoji_name = emoji.demojize(payload.emoji.name)
+        if emoji_name in config.REACTION_ROLES:
+            role = discord.utils.get(guild.roles, id=config.REACTION_ROLES[emoji_name])
+            if role and role in user.roles:
+                await user.remove_roles(role, reason=config.ROLE_REASONS['reaction_remove'])
+                await send_dm(user, f'You no longer have the `{role.name}` role because you removed your reaction.')
+
+@bot.tree.error
+async def on_app_command_error(interaction: discord.Interaction, error: discord.app_commands.AppCommandError):
+    """
+    Handles errors for application commands.
+    """
+    if not interaction.response.is_done():
+        await interaction.response.defer(ephemeral=True)
+
+    error_map = {
+        discord.app_commands.MissingPermissions: "You do not have the required permissions to use this command.",
+        discord.app_commands.BotMissingPermissions: "The bot is missing the required permissions to execute this command.",
+        discord.app_commands.CommandNotFound: "The command you are trying to use does not exist.",
+        discord.app_commands.CheckFailure: "You do not meet the requirements to run this command.",
+        discord.app_commands.CommandOnCooldown: lambda e: f"Command is on cooldown. Try again in {e.retry_after:.2f} seconds.",
+        discord.app_commands.MissingRole: lambda e: f"You need the `{e.missing_role}` role to use this command.",
+        discord.app_commands.MissingAnyRole: lambda e: f"You need one of these roles: `{', '.join(e.missing_roles)}`.",
+    }
+
+    error_message = error_map.get(type(error), f"An unexpected error occurred: {error}")
+
+    if callable(error_message): # Handle dynamic error messages
+        error_message = error_message(error)
+
+    try:
+        await interaction.followup.send(error_message, ephemeral=True)
+
+    except discord.HTTPException as e:
+        print(f"Error sending error message: {e}")
+
+    print(f"Command Error: {error}")
 
 # Load all cogs at startup
 @bot.event
