@@ -25,6 +25,7 @@ class StaffingCog(commands.Cog):
     def __init__(self, bot) -> None:
         self.bot = bot
         self.autoreset.start()
+        self.staffing_async = StaffingAsync()
 
     def cog_unload(self):
         self.autoreset.cancel()
@@ -38,8 +39,9 @@ class StaffingCog(commands.Cog):
     
     # A function to dynamically fetch and return a list of titles as choices
     async def get_title_choices(self, interaction: Interaction, current: str) -> List[app_commands.Choice[str]]:
+
         # Fetch the latest available titles from the database
-        titles = StaffingAsync._get_titles()
+        titles = await self.staffing_async._get_titles()
         
         # Return titles that match the user's input
         return [
@@ -50,7 +52,7 @@ class StaffingCog(commands.Cog):
     # Autocomplete function to fetch and filter titles in real-time
     async def avail_title_autocomplete(self, interaction: Interaction, current: str):
         # Fetch the latest available titles from the database
-        titles = StaffingAsync._get_avail_titles()
+        titles = self.staffing_async._get_avail_titles()
         
         # Return titles that match the user's input
         return [
@@ -60,19 +62,18 @@ class StaffingCog(commands.Cog):
 
     @app_commands.command(name="setupstaffing", description="Bot setups staffing information")
     @app_commands.describe(title="What should the title of the staffing be?", week_int="What should the week interval be? eg. 1 then the date will be selected each week.", section_amount="What should the section amount be? eg. 3 then there will be 3 sections.", restrict_booking="Should the staffing restrict booking to first section before allowing other sections too?")
-    @app_commands.autocomplete(title=get_title_choices)
+    @app_commands.autocomplete(title=avail_title_autocomplete)
     @app_commands.checks.has_any_role(*config.STAFF_ROLES)
     async def setup_staffing(self, interaction: Interaction, title: str, week_int: app_commands.Range[int, 1, 4], section_amount: app_commands.Range[int, 1, 4], restrict_booking: Literal["Yes", "No"], channel: TextChannel):
-        ctx: commands.Context = await self.bot.get_context(interaction)
-        interaction._baton = ctx
-        dates = await StaffingAsync._geteventdate(self, title)
-        description = await StaffingAsync._get_description(self, ctx)
+        ctx = await Handler.get_context(self, self.bot, interaction)
+        dates = await self.staffing_async._geteventdate(title)
+        description = await self.staffing_async._get_description(ctx)
         description = description + "\n\nTo book a position, write `/book`, press TAB and then write the callsign.\nTo unbook a position, use `/unbook`."
         i = 1
         section_positions = {}
         for _ in range(section_amount):
-            section_title = await StaffingAsync._setup_section(self, ctx, i)
-            section_pos = await StaffingAsync._setup_section_pos(self, ctx, section_title)
+            section_title = await self.staffing_async._setup_section(ctx, i)
+            section_pos = await self.staffing_async._setup_section_pos(ctx, section_title)
             section_positions[section_title] = section_pos
             i += 1
 
@@ -124,9 +125,8 @@ class StaffingCog(commands.Cog):
     @app_commands.checks.has_any_role(*config.STAFF_ROLES)
     async def refreshevent(self, interaction: discord.Integration, title: str):
         id = DB.select(table="staffing", columns=['id'], where=['title'], value={'title': title})[0]
-        await StaffingAsync._updatemessage(self, id)
-        ctx: commands.Context = await self.bot.get_context(interaction)
-        interaction._baton = ctx
+        await self.staffing_async._updatemessage(id)
+        ctx = await Handler.get_context(self, self.bot, interaction)
         await ctx.send(f"{ctx.author.mention} Event `{title}` has been refreshed", delete_after=5, ephemeral=True)
 
     @app_commands.command(name="manreset", description="Bot manually resets selected event")
@@ -135,8 +135,7 @@ class StaffingCog(commands.Cog):
     @app_commands.checks.has_any_role(*config.STAFF_ROLES)
     async def manreset(self, interaction: discord.Integration, title: str):
         await self.bot.wait_until_ready()
-        ctx: commands.Context = await self.bot.get_context(interaction)
-        interaction._baton = ctx
+        ctx = await Handler.get_context(self, self.bot, interaction)
         try:
             id = DB.select(table="staffing", columns=['id'], where=['title'], value={'title': title})[0]
             staffing = DB.select(table='staffing', columns=['*'], where=['id'], value={'id': id})
@@ -146,10 +145,10 @@ class StaffingCog(commands.Cog):
             await ctx.send(f"{ctx.author.mention} Started manual reset of `{title}` at `{str(datetime.now().isoformat())}`", delete_after=5, ephemeral=True)
 
             DB.update(self=self, table='positions', where=['event'], value={'event': id}, columns=['user', 'booking_id'], values={'user': '', 'booking_id': ''})
-            newdate = await StaffingAsync._geteventdate(self=self, title=title, interval=week)
+            newdate = await self.staffing_async._geteventdate(title=title, interval=week)
 
             DB.update(self=self, table='staffing', where=['title'], value={'title': title}, columns=['date'], values={'date': newdate[0]})
-            await StaffingAsync._updatemessage(self=self, id=id)
+            await self.staffing_async._updatemessage(id=id)
 
             channel = self.bot.get_channel(int(staffing[4]))
             await channel.send("The chat is being automatic reset!")
@@ -165,8 +164,7 @@ class StaffingCog(commands.Cog):
     @app_commands.autocomplete(title=avail_title_autocomplete)
     @app_commands.checks.has_any_role(*config.STAFF_ROLES)
     async def updatestaffing(self, interaction: discord.Integration, title: str):
-        ctx: commands.Context = await self.bot.get_context(interaction)
-        interaction._baton = ctx
+        ctx= await Handler.get_context(self, self.bot, interaction)
         try:
             id = DB.select(table="staffing", columns=['id'], where=['title'], value={'title': title})[0]
             await ctx.send('Select an option', view=SelectView(id=id, ctx=ctx, bot=self.bot))
@@ -179,8 +177,7 @@ class StaffingCog(commands.Cog):
     @app_commands.describe(position="Which position would you like to book?")
     @app_commands.check(Handler.is_obs)
     async def book(self, interaction: discord.Integration, position: str, section: str = None):
-        ctx: commands.Context = await self.bot.get_context(interaction)
-        interaction._baton = ctx
+        ctx = await Handler.get_context(self, self.bot, interaction)
         try:
             vatsim_member = discord.utils.get(ctx.guild.roles, id=config.VATSIM_MEMBER_ROLE)
             vatsca_member = discord.utils.get(ctx.guild.roles, id=config.VATSCA_MEMBER_ROLE)
@@ -201,12 +198,12 @@ class StaffingCog(commands.Cog):
                 if any(ctx.channel.id in channel for channel in event_channel):
                     if any(position.upper() + ':' in match for match in positions):
                         if eventDetails[1] == 0:
-                            await StaffingAsync._book(self, ctx, eventDetails, event, usernick, position, section)
+                            await self.staffing_async._book(ctx, eventDetails, event, usernick, position, section)
                         else:
                             if any(position.upper() + ':' in match for match in sec_pos) and any('' in pos for pos in main_pos) or any(position.upper() + ':' in match for match in reg_pos) and any('' in pos for pos in main_pos):
                                 await ctx.send(f'<@{usernick}> All main positions is required to be booked before booking any secondary positions.', delete_after=5)
                             else:
-                                await StaffingAsync._book(self, ctx, eventDetails, event, usernick, position)
+                                await self.staffing_async._book(ctx, eventDetails, event, usernick, position)
                     else:
                         await ctx.send(f"<@{usernick}> The bot could not find the position you tried to book.")
                 else:
@@ -239,13 +236,13 @@ class StaffingCog(commands.Cog):
                             request = await Booking.delete_booking(self, int(cid[0]), int(booking[0]))
                             if request == 200:
                                 DB.update(self=self, table='positions', columns=['booking_id', 'user',], values={'booking_id': '', 'user': ''}, where=['user', 'event'], value={'user': f'<@{usernick}>', 'event': event[0]}, limit=1)
-                                await StaffingAsync._updatemessage(self, event[0])
+                                await self.staffing_async._updatemessage(event[0])
                                 cancel = True
                             else:
                                 await ctx.send(f"<@{usernick}> Cancelling failed, Control Center responded with error {request}, please try again later", delete_after=5)
                         else:
                             DB.update(self=self, table='positions', columns=['booking_id', 'user',], values={'booking_id': '', 'user': ''}, where=['user', 'event'], value={'user': f'<@{usernick}>', 'event': event[0]}, limit=1)
-                            await StaffingAsync._updatemessage(self, event[0])
+                            await self.staffing_async._updatemessage(event[0])
                             cancel = True
                     
                     if cancel == True:
@@ -277,9 +274,9 @@ class StaffingCog(commands.Cog):
             if now.date() > date:
                 print(f"Started autoreset of {title} at {str(datetime.now().isoformat())}", flush=True)
                 DB.update(self=self, table='positions', where=['event'], value={'event': event}, columns=['user', 'booking_id'], values={'user': '', 'booking_id': ''})
-                newdate = await StaffingAsync._geteventdate(self=self, title=title, interval=week)
+                newdate = await self.staffing_async._geteventdate(title=title, interval=week)
                 DB.update(self=self, table='staffing', where=['id'], value={'id': event}, columns=['date'], values={'date': newdate[0]})
-                await StaffingAsync._updatemessage(self=self, id=event)
+                await self.staffing_async._updatemessage(id=event)
                 channel = self.bot.get_channel(int(staffing[4]))
                 await channel.send("The chat is being automatic reset!")
                 await asyncio.sleep(5)

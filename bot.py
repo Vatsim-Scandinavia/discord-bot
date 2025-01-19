@@ -95,6 +95,7 @@ async def on_member_update(before_update, user: discord.Member):
 
         if tasks:
             await asyncio.gather(*tasks)
+
     except discord.Forbidden as e:
         print(f"Bot lacks permission for this action: {e}", flush=True)
 
@@ -112,11 +113,8 @@ async def send_dm(user, message):
         print(f"Could not send DM to {user.name}. They have DMs disabled.")
 
 @bot.event
-async def on_reaction_add(payload):
-    if payload.guild_id is None:
-        return
-    
-    if payload.user_id == bot.user.id: # Ignore bot reactions
+async def on_raw_reaction_add(payload):
+    if payload.guild_id is None or payload.user_id == bot.user.id:
         return
     
     guild = bot.get_guild(payload.guild_id)
@@ -125,36 +123,38 @@ async def on_reaction_add(payload):
     if not user: # User not found
         return
     
-    if payload.message_id in config.REACTION_MESSAGE_IDS:
-        emoji_name = emoji.demojize(payload.emoji.name)
+    emoji_name = emoji.demojize(payload.emoji.name) # Convert emoji to :emoji_name: format
+    message_id = str(payload.message_id) # Ensure consistency with config
 
-        if emoji_name in config.REACTION_ROLES:
-            role = discord.utils.get(guild.roles, id=config.REACTION_ROLES[emoji_name])
+    if message_id in config.REACTION_MESSAGE_IDS and emoji_name in config.REACTION_ROLES:
+        role_id = int(config.REACTION_ROLES[emoji_name])
+        role = discord.utils.get(guild.roles, id=role_id)
 
-            if role and role not in user.roles:
-                await user.add_roles(role)
-                await send_dm(user, f'You have been given the `{role.name}` role because you reacted with {payload.emoji}')
+        if role and role not in user.roles:
+            await user.add_roles(role, reason=config.ROLE_REASONS['reaction_add'])
+            await send_dm(user, f'You have been given the `{role.name}` role because you reacted with {payload.emoji}')
 
 @bot.event
 async def on_raw_reaction_remove(payload):
-    if payload.guild_id is None:  # Ignore DMs
-        return
-    
-    if payload.user_id == bot.user.id: # Ignore bot reactions
+    if payload.guild_id is None or payload.user_id == bot.user.id:
         return
 
     guild = bot.get_guild(payload.guild_id)
     user = guild.get_member(payload.user_id)
+
     if not user:  # User not found
         return
+    
+    emoji_name = emoji.demojize(payload.emoji.name)  # Convert emoji to :emoji_name: format
+    message_id = str(payload.message_id)  # Ensure consistency with config
 
-    if payload.message_id in config.REACTION_MESSAGE_IDS:
-        emoji_name = emoji.demojize(payload.emoji.name)
-        if emoji_name in config.REACTION_ROLES:
-            role = discord.utils.get(guild.roles, id=config.REACTION_ROLES[emoji_name])
-            if role and role in user.roles:
-                await user.remove_roles(role, reason=config.ROLE_REASONS['reaction_remove'])
-                await send_dm(user, f'You no longer have the `{role.name}` role because you removed your reaction.')
+    if message_id in config.REACTION_MESSAGE_IDS and emoji_name in config.REACTION_ROLES:
+        role_id = int(config.REACTION_ROLES[emoji_name])
+        role = discord.utils.get(guild.roles, id=role_id)
+
+        if role and role in user.roles:
+            await user.remove_roles(role, reason=config.ROLE_REASONS['reaction_remove'])
+            await send_dm(user, f'You no longer have the `{role.name}` role because you removed your reaction.')
 
 @bot.tree.error
 async def on_app_command_error(interaction: discord.Interaction, error: discord.app_commands.AppCommandError):
@@ -186,6 +186,10 @@ async def on_app_command_error(interaction: discord.Interaction, error: discord.
         print(f"Error sending error message: {e}")
 
     print(f"Command Error: {error}")
+
+@bot.event
+async def on_error(event, *args, **kwargs):
+    print(f"Error in {event}: {args} {kwargs}", flush=True)
 
 # Load all cogs at startup
 @bot.event

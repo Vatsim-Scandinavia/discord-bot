@@ -80,6 +80,11 @@ class Config:
         self.CC_API_URL = str(os.getenv('CC_API_URL', ''))
         self.CC_API_TOKEN = str(os.getenv('CC_API_TOKEN', ''))
 
+        # Event Calendar API
+        self.EVENT_CALENDAR_URL = str(os.getenv('EVENT_CALENDAR_URL', ''))
+        self.EVENT_API_TOKEN = str(os.getenv('EVENT_API_TOKEN', ''))
+        self.EVENT_CALENDAR_TYPE = int(os.getenv('EVENT_CALENDAR_TYPE', ''))
+
         # Adjacent API keys
         self.SENTRY_KEY = str(os.getenv("SENTRY_KEY"))
 
