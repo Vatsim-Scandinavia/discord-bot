@@ -320,7 +320,7 @@ class StaffingAsync():
         2 weeks 14 and etc.
         """
         # Fetch event data using fetch_data
-        events = await self.fetch_data(f"/calendars/{self.calendar_type}/events")
+        events = await self._fetch_data(f"/calendars/{self.calendar_type}/events")
         staffing_exists = DB.select(table="staffing", columns=['title'], amount="all")
 
            # Find the event with the given title

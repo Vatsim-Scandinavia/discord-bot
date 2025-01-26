@@ -97,31 +97,11 @@ class Handler():
         Args:
             user (discord.Member): The Discord member object.
         """
-        if not config.DEBUG:
-            url = f"https://api.vatsim.net/v2/members/discord/{user.id}"
-            headers = {
-                'Accept': 'application/json'
-            }
-            
-            async with aiohttp.ClientSession() as session: # Instantiate ClientSession
-                try:
-                    async with session.get(url, headers=headers) as response:
-                        if response.status == 200:
-                            data = await response.json()
-                            return int(data.get("user_id"))
-                            
-                        else:
-                            print(f"Failed to fetch CID for user {user.id}. Status code: {response.status}")
+        cid = re.findall(r'\d+', str(user.nick))
 
-                except aiohttp.ClientError as e:
-                    print(f"HTTP error occurred while accessing {url}: {e}")
-                    return None
-        else:
-            cid = re.findall(r'\d+', str(user.nick))
-
-            if len(cid) < 1:
-                raise ValueError
+        if len(cid) < 1:
+            raise ValueError
             
-            return int(cid[0])
+        return int(cid[0])
         
 
