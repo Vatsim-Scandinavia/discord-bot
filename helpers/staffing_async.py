@@ -321,16 +321,19 @@ class StaffingAsync():
         """
         # Fetch event data using fetch_data
         events = await self._fetch_data(f"calendars/{self.calendar_type}/events")
-        staffing_exists = DB.select(table="staffing", columns=['title'], amount="all")
 
+        if not events:
+            print(f"Error: No events retrieved from the calendar.")
+            return None, None, None, None
+        
         # Find the event with the given title
         event_data = next((event for event in events if event.get("title") == title), None)
 
         if not event_data:
-            print(f"Event '{title}' not found in the calendar.")
+            print(f"Error: Event '{title}' not found.")
             return None, None, None, None
         
-         # Extract event start and end times
+        # Extract event start and end times
         start_time = event_data.get("start_time")
         end_time = event_data.get("end_time")
 
@@ -353,9 +356,15 @@ class StaffingAsync():
         new_date = today + timedelta(days=days_until_next)
 
         # Get the current scheduled date if staffing exists
+        staffing_exists = DB.select(table="staffing", columns=['title'], amount="all")
         current = None
         if title in [item[0] for item in staffing_exists]:
-            current = DB.select(table="staffing", columns=['date'], where=['title'], value={'title': title})[0]
+            current_data = DB.select(table="staffing", columns=['date'], where=['title'], value={'title': title})
+
+            if current_data:
+                current = current_data[0]
+            else:
+                print(f"Warning: No current staffing date found for '{title}'.")
 
         return new_date, formatted_start_time, end_time, current
 
@@ -363,49 +372,47 @@ class StaffingAsync():
         try:
             event = DB.select(table='staffing', columns=['*'], where=['id'], value={'id': id})
 
+            if not event:
+                print(f"Error: No staffing data found for ID {id}.")
+                return
+
             title = event[1]
             description = event[3]
             channel_id = event[4]
             message_id = event[5]
             interval = event[6]
-            first_section = event[7]
-            second_section = event[8]
-            third_section = event[9]
-            fourth_section = event[10]
+            first_section, second_section, third_section, fourth_section = event[7:11]
 
             dates = await StaffingAsync._geteventdate(self, title, interval)
-            start_time = dates[1]
-            end_time = dates[2]
 
-            format_staffing_message = ""
+            if dates is None or any(d is None for d in dates[:3]):  # Ensure valid dates
+                print(f"Error: Missing event details for '{title}'. Skipping message update.")
+                return
+        
+            start_time, end_time = dates[1], dates[2]
+            date = dates[3] if dates[3] else dates[0]
+            formatted_date = date.strftime("%A %d/%m/%Y") if date else "Unknown Date"
 
-            if format_staffing_message != "":
-                format_staffing_message += "\n"
+            format_staffing_message = f'{title} staffing - {formatted_date} {start_time} - {end_time}z\n\n{description}'
 
-            date = dates[3]
-            if date is None:
-                date = dates[0]
-            formatted_date = date.strftime("%A %d/%m/%Y")
-
-            section_positions = {}
-            section_positions[first_section] = DB.select(table='positions', columns=['*'], where=['event', 'type'], value={'event': id, 'type': 1}, amount='all')
-            section_positions[second_section] = DB.select(table='positions', columns=['*'], where=['event', 'type'], value={'event': id, 'type': 2}, amount='all')
-            section_positions[third_section] = DB.select(table='positions', columns=['*'], where=['event', 'type'], value={'event': id, 'type': 3}, amount='all')
-            section_positions[fourth_section] = DB.select(table='positions', columns=['*'], where=['event', 'type'], value={'event': id, 'type': 4}, amount='all')
+            section_positions = {
+                first_section: DB.select(table='positions', columns=['*'], where=['event', 'type'], value={'event': id, 'type': 1}, amount='all'),
+                second_section: DB.select(table='positions', columns=['*'], where=['event', 'type'], value={'event': id, 'type': 2}, amount='all'),
+                third_section: DB.select(table='positions', columns=['*'], where=['event', 'type'], value={'event': id, 'type': 3}, amount='all'),
+                fourth_section: DB.select(table='positions', columns=['*'], where=['event', 'type'], value={'event': id, 'type': 4}, amount='all')
+            }
 
 
             pos_info = ''
-            for x in section_positions:
-                if x is not None:
-                    pos_data = []
-                    for pos in section_positions[x]:
-                        if pos[6] is not None and pos[7] is not None:
-                            pos_data.append(f':'.join(str(pos[6]).split(':')[:2]) + ' - ' + ':'.join(str(pos[7]).split(':')[:2]) + f' ‖ {pos[1]} {pos[2]}')
-                        else:
-                            pos_data.append(f'{pos[1]} {pos[2]}')
-                    pos_info += f'\n\n{x}:\n' + '\n' .join(position for position in pos_data)
-                
-            format_staffing_message += f'{title} staffing - {formatted_date} {start_time} - {end_time}z\n\n{description}{pos_info}'
+            for section, positions in section_positions.items():
+                if section and positions:
+                    pos_data = [
+                        f'{pos[6][:5]} - {pos[7][:5]} ‖ {pos[1]} {pos[2]}' if pos[6] and pos[7] else f'{pos[1]} {pos[2]}'
+                        for pos in positions
+                    ]
+                    pos_info += f'\n\n{section}:\n' + '\n'.join(pos_data)
+
+            format_staffing_message += pos_info
 
             channel = self.bot.get_channel(int(channel_id))
             message = await channel.fetch_message(int(message_id))
