@@ -97,7 +97,8 @@ class RolesCog(commands.Cog):
             print(f"Error processing roles for {user.name}: {e}", flush=True)
         
         finally:
-            print(f"Finished processing roles for {user.name}.")
+            if config.DEBUG:
+                print(f"Finished processing roles for {user.name}.")
 
 
     def get_mentor_roles(self, cid, data):
