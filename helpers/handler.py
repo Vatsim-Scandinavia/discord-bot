@@ -5,8 +5,14 @@ import re
 from discord.ext import commands
 from helpers.config import config
 
-class Handler():
-    
+
+class VATSIMDivisionMemberFetchException(Exception):
+    def __init__(self) -> None:
+        super().__init__("An error occurred while fetching VATSIM division members.")
+
+
+class Handler:
+
     def __init__(self) -> None:
         pass
 
@@ -19,7 +25,7 @@ class Handler():
         interaction._baton = ctx
 
         return ctx
-    
+
     def is_obs(interaction: discord.Interaction):
         """
         Function checks if user has OBS role
@@ -39,61 +45,55 @@ class Handler():
         result = []
         url = config.VATSIM_CHECK_MEMBER_URL  # Initialize from config
 
-        if not url: # Ensure the URL is defined
+        if not url:  # Ensure the URL is defined
             raise ValueError("VATSIM_CHECK_MEMBER_URL is not configured or is None")
 
         async with aiohttp.ClientSession() as session:
             while url:
-                # Fetch data for each page
-                data, url = await self._fetch_page(session, url)
+                # We'd like to capture any non-valid responses sooner rather than earlier
+                try:
+                    data, url = await self._fetch_page(session, url)
+                except Exception as e:
+                    raise VATSIMDivisionMemberFetchException from e
 
-                if data:
-                    result.extend(data)
-                
-                else:
-                    break # Stop if data is not available or an error occurred
+                # Stop if data is not available or an error occurred
+                if not data:
+                    break
+
+                result.extend(data)
 
         return result
 
-    async def _fetch_page(self, session, url):
+    async def _fetch_page(self, session: aiohttp.ClientSession, url):
         """
         Fetch data from a single page and return the next URL if available.
-        :return:
+
+        Note: Fails hard and early if at any point a request fails.
         """
         headers = {
             'Authorization': f'Token {config.VATSIM_API_TOKEN}',
         }
 
-        try:
+        async with session.get(url, headers=headers) as response:
+            response.raise_for_status()
 
-            async with session.get(url, headers=headers) as response:
+            try:
+                feedback = await response.json()
+            except Exception as e:
+                raise Exception("An error occurred while parsing JSON") from e
+            data = feedback.get("results", [])
+            next_url = feedback.get("next")
 
-                # Process the response
-                if response.status == 200:
-                    feedback = await response.json()
+            # Replace http with https if needed
+            if next_url and next_url.startswith("http://"):
+                next_url = next_url.replace("http://", "https://")
 
-                    data = feedback.get('results', [])
-                    next_url = feedback.get('next')
+            return data, next_url
 
-                    # Replace http with https if needed
-                    if next_url and next_url.startswith('http://'):
-                        next_url = next_url.replace('http://', 'https://')
-
-                    return data, next_url
-                    
-                else:
-                    print(f"Failed to fetch page. Status: {response.status}, URL: {url}")
-                    return [], None
-                    
-        
-        except aiohttp.ClientError as e:
-            print(f"An error occurred: {e}")
-            return [], None
-        
     async def get_cid(self, user):
         """
         Get CID based on user discord ID
-        
+
         Args:
             user (discord.Member): The Discord member object.
         """
@@ -101,7 +101,7 @@ class Handler():
 
         if len(cid) < 1:
             raise ValueError
-            
+
         return int(cid[0])
         
 
