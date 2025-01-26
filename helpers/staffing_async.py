@@ -362,7 +362,7 @@ class StaffingAsync():
             current_data = DB.select(table="staffing", columns=['date'], where=['title'], value={'title': title})
 
             if current_data:
-                current = datetime.strptime(str(current_data[0]), "%Y-%m-%d %H:%M:%S")
+                current = datetime.strptime(str(current_data[0]), "%Y-%m-%d")
             else:
                 print(f"Warning: No current staffing date found for '{title}'.")
                 current = None
