@@ -367,6 +367,10 @@ class StaffingAsync():
                 print(f"Warning: No current staffing date found for '{title}'.")
                 current = None
 
+        new_date = datetime.strptime(str(new_date), "%Y-%m-%d") if new_date else None
+        formatted_start_time = datetime.strptime(str(formatted_start_time), "%H:%M") if formatted_start_time else None
+        end_time = datetime.strptime(str(end_time), "%H:%M") if end_time else None
+
         return new_date, formatted_start_time, end_time, current
 
     async def _updatemessage(self, id):
