@@ -124,15 +124,18 @@ class Config:
         self.RATING_FIR_DATA_RAW = os.getenv('RATING_FIR_DATA', '')
         self.RATING_FIR_DATA = {}
         if self.RATING_FIR_DATA_RAW:
-            fir_entries = self.RATING_FIR_DATA_RAW.split('|')
-            fir_name = fir_entries[0].strip()
-            ratings = {}
+            fir_entries = self.RATING_FIR_DATA_RAW.split(',')
 
-            for rating_entry in fir_entries[1:]:
-                rating, role_id = rating_entry.split(':')
-                ratings[rating.strip()] = int(role_id.strip())
+            for fir_entry in fir_entries:
+                parts = fir_entry.split('|')
+                fir_name = parts[0].strip()
+                ratings = {}
 
-            self.RATING_FIR_DATA[fir_name] = ratings
+                for rating_entry in fir_entries[1:]:
+                    rating, role_id = rating_entry.split(':')
+                    ratings[rating.strip()] = int(role_id.strip())
+
+                self.RATING_FIR_DATA[fir_name] = ratings
 
         self.c1_equivalent_ratings = {"ADM", "SUP", "C1", "C2", "C3", "I1", "I3"}
 
