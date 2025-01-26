@@ -341,12 +341,12 @@ class StaffingAsync():
             print(f"Start time not found for event '{title}'.")
             return None, None, None, None
 
-        start_time = datetime.strptime(start_time, "%Y-%m-%dT%H:%M:%S")  # Convert to datetime
+        start_time = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")  # Convert to datetime
         formatted_start_time = start_time.strftime("%H:%M")
 
         # Handle missing end time (default: 2 hours after start)
         if end_time:
-            end_time = datetime.strptime(end_time, "%Y-%m-%dT%H:%M:%S").strftime("%H:%M")
+            end_time = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S").strftime("%H:%M")
         else:
             end_time = (start_time + timedelta(hours=2)).strftime("%H:%M")
 
