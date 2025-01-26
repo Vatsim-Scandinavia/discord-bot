@@ -1,9 +1,10 @@
-import discord
 import os
-from dotenv import load_dotenv
 from distutils.util import strtobool
 
+import discord
 import discord.ext
+from discord.ext.commands import Bot
+from dotenv import load_dotenv
 
 load_dotenv('.env')
 
@@ -28,6 +29,7 @@ class Config:
         self.COGS = [
             'cogs.admin',
             'cogs.member',
+            'cogs.publisher',
             'cogs.roles',
             'cogs.tasks',
             'cogs.update_messages',
@@ -37,6 +39,7 @@ class Config:
         self.COGS_LOAD = {
             'admin': 'cogs.admin',
             'member': 'cogs.member',
+            'publisher': 'cogs.publisher',
             'roles': 'cogs.roles',
             'tasks': 'cogs.tasks',
             'update_messages': 'cogs.update_messages',
@@ -175,7 +178,7 @@ class Config:
     def status(self) -> discord.Status:
         return discord.Status.online
     
-    async def load_cogs(self, bot: discord.ext.commands.Bot) -> None:
+    async def load_cogs(self, bot: Bot) -> None:
         for cog in self.COGS:
             try:
                 await bot.load_extension(cog)
