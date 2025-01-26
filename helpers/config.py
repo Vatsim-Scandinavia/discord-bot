@@ -131,7 +131,7 @@ class Config:
                 fir_name = parts[0].strip()
                 ratings = {}
 
-                for rating_entry in fir_entries[1:]:
+                for rating_entry in parts[1:]:
                     rating, role_id = rating_entry.split(':')
                     ratings[rating.strip()] = int(role_id.strip())
 
