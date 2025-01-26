@@ -1,223 +1,105 @@
-from secrets import choice
 import discord
+import asyncio
 
 from discord import app_commands
 from discord.ext import commands
 
-from helpers.config import ROLES_CHANNEL, GUILD_ID, RULES_CHANNEL, DIVISION_URL, WELCOME_CHANNEL
 from helpers.message import embed
-from helpers.message import staff_roles
-
+from helpers.handler import Handler
+from helpers.config import config
 
 class UpdateCountryMessage(commands.Cog):
-
     def __init__(self, bot):
         self.bot = bot
 
-    guild_ids = [GUILD_ID]
-    
+    async def send_or_update_message(self, interaction: discord.Interaction, channel_id, message_id, title, content, author = None, text = None):
+        """
+        Handles sending or updating a message in a specified channel.
 
-    @app_commands.command(name="update", description="Function posts updated countries message.")
-    @app_commands.choices(option=[
-        app_commands.Choice(name="Channels", value="1"),
-        app_commands.Choice(name="Notifications", value="2"),
-        app_commands.Choice(name="Welcome", value="3"),
-        app_commands.Choice(name="Rules", value="4")
-    ])
-    @app_commands.checks.has_any_role(*staff_roles())
-    async def update(self, interaction: discord.Integration, *, message_id: str = None, option: app_commands.Choice[str]):
+        Args:
+            interaction: The interaction object from the slash command.
+            channel_id (int): The ID of the channel to send the message in.
+            message_id (int): The ID of the existing message to update, or None for a new message.
+            title (str): The title of the message.
+            content (str): The content of the message.
+            author (discord.User, optional): The author of the message. Defaults to None.
+            text (str, optional): The text of the message. Defaults to None.
         """
-        Function posts updated countries message
-        :param ctx:
-        :param message_id:
-        :return:
-        """
-        ctx: commands.Context = await self.bot.get_context(interaction)
-        interaction._baton = ctx 
-        if option.value == "1":
-            channel = discord.utils.get(ctx.guild.channels, id=ROLES_CHANNEL)
-            if channel:
-                author = {
-                    'name': self.bot.user.name,
-                    'url': DIVISION_URL,
-                    'icon': self.bot.user.display_avatar,
-                }
-                if message_id is None:
-                    try:
-                        await ctx.send("Message is being generated", delete_after=5)
-                        text = self._read_file()
-                        msg = embed(title='Available Channel Roles', description=text)
-                        await channel.send(embed=msg)
-                    except Exception as e:
-                        print(e, flush=True)
-                else:
-                    message_id = int(message_id)
-                    message = await ctx.fetch_message(message_id)
-                    
-                    if message:
-                        try:
-                            await ctx.send("Message is being generated", delete_after=5)
-                            text = self._read_file()
-                            msg = embed(title='Available Channel Roles', description=text)
-                            await message.edit(embed=msg)
-                        except Exception as e:
-                            print(e, flush=True)
+        guild = interaction.guild
+        if not guild:
+            await interaction.followup.send("Guild not found.", ephemeral=True)
+            return
         
-        elif option.value == "2":
-            """
-            Function posts updated countries message
-            :param ctx:
-            :param message_id:
-            :return:
-            """
-            channel = discord.utils.get(ctx.guild.channels, id=ROLES_CHANNEL)
+        channel = discord.utils.get(guild.channels, id=channel_id)
+        if not channel:
+            followup_message  = await interaction.followup.send(f"Channel with ID {channel_id} not found.")
+            await asyncio.sleep(5)
+            await followup_message.delete()
+            return
         
-            if channel:
-                author = {
-                    'name': self.bot.user.name,
-                    'url': DIVISION_URL,
-                    'icon': self.bot.user.avatar.url,
-                }
-                if message_id is None:
-                    try:
-                        await ctx.send("Message is being generated", delete_after=5)
-                        embd = self._read_embed__file()
-                        text = self._read_message_file()
-                        msg = embed(title='Available Country Roles', description=embd)
-                        await channel.send(text, embed=msg)
-                    except Exception as e:
-                        print(e, flush=True)
-                else:
-                    message_id = int(message_id)
-                    message = await ctx.fetch_message(message_id)
+        try:
+            if message_id:
+                message = await channel.fetch_message(int(message_id))
+                if message:
+                    await message.edit(content=text, embed=embed(title=title, description=content, author=author))
+            else:
+                await channel.send(content=text, embed=embed(title=title, description=content, author=author))
+            followup_message = await interaction.followup.send("Message successfully updated.")
+            await asyncio.sleep(5)
+            await followup_message.delete()
+            
+        except Exception as e:
+            print(f"Error updating message: {e}", flush=True)
+            followup_message = await interaction.followup.send("An error occurred while updating the message.")
+            await asyncio.sleep(5)
+            await followup_message.delete()
+
+    def read_file(self, filepath):
+        """
+        Reads content from a specified file and returns it as a string.
+        """
+        try:
+            with open(filepath, 'r') as file:
+                return file.read()
+        except FileNotFoundError:
+            print(f"File '{filepath}' not found.")
+            return ""
         
-                    if message:
-                        try:
-                            await ctx.send("Message is being generated", delete_after=5)
-                            embd = self._read_embed__file()
-                            text = self._read_message_file()
-                            msg = embed(title='Available Country Roles', description=embd)
-                            await message.edit(content=text, embed=msg)
-                        except Exception as e:
-                            print(e, flush=True)
-        elif option.value == "3":
-            """
-            Function posts updated welcome
-            :param ctx:
-            :param message_id:
-            :return:
-            """
-            channel = discord.utils.get(ctx.guild.channels, id=WELCOME_CHANNEL)
-            if channel:
-                author = {
-                    'name': self.bot.user.name,
-                    'url': DIVISION_URL,
-                    'icon': self.bot.user.avatar.url,
-                }
-                if message_id is None:
-                    try:
-                        await ctx.send("Message is being generated", delete_after=5)
-                        text = self._read_welcome_file()
-                        msg = embed(title='Welcome', description=text, author=author)
-                        await channel.send(embed=msg)
-                    except Exception as e:
-                        print(e, flush=True)
-                else:
-                    message_id = int(message_id)
-                    message = await ctx.fetch_message(message_id)
-    
-                    if message:
-                        try:
-                            await ctx.send("Message is being generated", delete_after=5)
-                            text = self._read_welcome_file()
-                            msg = embed(title='Welcome', description=text, author=author)
-                            await message.edit(embed=msg)
-                        except Exception as e:
-                            print(e, flush=True)
-        elif option.value == "4":
-            """
-            Function posts updated rules
-            :param ctx:
-            :param message_id:
-            :return:
-            """
-            channel = discord.utils.get(ctx.guild.channels, id=RULES_CHANNEL)
-            if channel:
-                author = {
-                    'name': self.bot.user.name,
-                    'url': DIVISION_URL,
-                    'icon': self.bot.user.avatar.url,
-                }
-                if message_id is None:
-                    try:
-                        await ctx.send("Message is being generated", delete_after=5)
-                        text = self._read_rules_file()
-                        msg = embed(title='Rules', description=text, author=author)
-                        await channel.send(embed=msg)
-                    except Exception as e:
-                        print(e, flush=True)
-                else:
-                    message_id = int(message_id)
-                    message = await ctx.fetch_message(message_id)
-    
-                    if message:
-                        try:
-                            await ctx.send("Message is being generated", delete_after=5)
-                            text = self._read_rules_file()
-                            msg = embed(title='Rules', description=text, author=author)
-                            await message.edit(embed=msg)
-                        except Exception as e:
-                            print(e, flush=True)
+    @app_commands.command(name="update", description="Post or update country-related messages.")
+    @app_commands.choices(
+        option=[
+            app_commands.Choice(name="Channels", value="channels"),
+            app_commands.Choice(name="Notifications", value="notifications"),
+            app_commands.Choice(name="Welcome", value="welcome"),
+            app_commands.Choice(name="Rules", value="rules"),
+        ]
+    )
+    @app_commands.checks.has_any_role(*config.STAFF_ROLES)
+    async def update(self, interaction: discord.Interaction, option: app_commands.Choice[str], message_id: str = None):
+        await interaction.response.defer()  # Defer response while processing
+        
+        author = {
+            "name": self.bot.user.name,
+            "url": config.DIVISION_URL,
+            "icon": self.bot.user.display_avatar
+        }
+        
+        if option.value == "channels":
+            content = self.read_file("messages/countries.md")
+            await self.send_or_update_message(interaction, config.ROLES_CHANNEL, message_id, "Available Channel Roles", content)
 
+        elif option.value == "notifications":
+            content = self.read_file("messages/notification.md")
+            text = self.read_file("messages/notification_message.md")
+            await self.send_or_update_message(interaction, config.ROLES_CHANNEL, message_id, "Available Country Roles", content, text=text)
 
-    def _read_file(self) -> str:
-        """
-        Function reads and returns welcome and rules message stored in countries.md
-        :return:
-        """
-        file = open('messages/countries.md', mode='r')
-        data = file.read()
-        file.close()
-        return data
+        elif option.value == "welcome":
+            content = self.read_file("messages/welcome.md")
+            await self.send_or_update_message(interaction, config.WELCOME_CHANNEL, message_id, "Welcome", content, author=author)
 
-    def _read_embed__file(self) -> str:
-        """
-        Function reads and returns welcome and rules message stored in countries.md
-        :return:
-        """
-        file = open('messages/notification.md', mode='r')
-        data = file.read()
-        file.close()
-        return data
-
-    def _read_message_file(self) -> str:
-        """
-        Function reads and returns welcome and rules message stored in countries.md
-        :return:
-        """
-        file = open('messages/notification_message.md', mode='r')
-        data = file.read()
-        file.close()
-        return data
-    def _read_welcome_file(self) -> str:
-        """
-        Function reads and returns welcome and welcome message stored in welcome.md
-        :return:
-        """
-        file = open('messages/welcome.md', mode='r')
-        data = file.read()
-        file.close()
-        return data
-    def _read_rules_file(self) -> str:
-        """
-        Function reads and returns welcome and rules message stored in rules.md
-        :return:
-        """
-        file = open('messages/rules.md', mode='r')
-        data = file.read()
-        file.close()
-        return data
-
+        elif option.value == "rules":
+            content = self.read_file("messages/rules.md")
+            await self.send_or_update_message(interaction, config.RULES_CHANNEL, message_id, "Rules", content, author=author)
 
 async def setup(bot):
     await bot.add_cog(UpdateCountryMessage(bot))

@@ -3,168 +3,181 @@ import os
 from dotenv import load_dotenv
 from distutils.util import strtobool
 
+import discord.ext
+
 load_dotenv('.env')
 
-DESCRIPTION = 'This is a new VATSCA Discord Bot'
-PRESENCE_TEXT = 'VATSCA Airspace'
+class Config:
+    def __init__(self):
+        """
+        Environment Variables
+        """
+        
+        # Essential variables
+        self.BOT_TOKEN = os.getenv("BOT_TOKEN", "")
+        self.GUILD_ID = int(os.getenv('GUILD_ID', 0))
+        self.DEBUG = bool(strtobool(os.getenv('DEBUG', 'False')))
 
-VATSCA_BLUE = 0x43c6e7
+        self.PREFIX = "/"
+        self.VATSCA_BLUE = 0x43c6e7
 
-COGS = [
-    'cogs.admin',
-    'cogs.member',
-    'cogs.tasks',
-    'cogs.events',
-    'cogs.update_messages',
-    'cogs.staffings',
-    'cogs.roles'
-]
+        self.DESCRIPTION = 'This is a new VATSCA Discord Bot'
+        self.PRESENCE_TEXT = "VATSCA Airspace"
 
-COGS_LOAD = {
-    'admin': 'cogs.admin',
-    'member': 'cogs.member',
-    'check_members': 'cogs.tasks',
-    'events': 'cogs.events',
-    'update': 'cogs.update_messages',
-    'staffings': 'cogs.staffings',
-    'check_roles': 'cogs.roles'
-}
+        # Cogs and admin roles
+        self.COGS = [
+            'cogs.admin',
+            'cogs.member',
+            'cogs.roles',
+            'cogs.tasks',
+            'cogs.update_messages',
+            'cogs.staffings',
+        ]
 
-STAFF_ROLES = [
-    'Web',
-    'Discord Moderator',
-    'Discord Administrator',
-    'Board',
-    'Staff',
-]
+        self.COGS_LOAD = {
+            'admin': 'cogs.admin',
+            'member': 'cogs.member',
+            'roles': 'cogs.roles',
+            'tasks': 'cogs.tasks',
+            'update_messages': 'cogs.update_messages',
+            'staffings': 'cogs.staffings',
+        }
 
-ROLE_REASONS = {
-    'vatsca_add': 'Member is now part of VATSCA',
-    'vatsca_remove': 'Member is no longer part of VATSCA',
-    'no_cid': 'User does not have a VATSIM ID in his/her nickname.',
-    'no_auth': 'User did not authenticate via the Community Website',
-    'mentor_add': 'Member is now a mentor',
-    'mentor_remove': 'Member is no longer a mentor',
-    'training_add': 'Member is now in training',
-    'training_remove': 'Member is no longer in training',
-    'training_staff_add': 'Member is now Traning Staff',
-    'training_staff_remove': 'Member is no longer Training Staff',
-    'reaction_add': 'Member reacted to a message',
-    'reaction_remove': 'Member removed a reaction from a message',
-}
+        self.STAFF_ROLES = [
+            'Web',
+            'Discord Moderator',
+            'Discord Administrator',
+            'Board',
+            'Staff',
+        ]
 
-AVAILABLE_EVENT_DAYS = [
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
-    'Sunday'
-]
+        self.ROLE_REASONS = {
+            'vatsca_add': 'Member is now part of VATSCA',
+            'vatsca_remove': 'Member is no longer part of VATSCA',
+            'no_cid': 'User does not have a VATSIM ID in his/her nickname.',
+            'no_auth': 'User did not authenticate via the Community Website',
+            'mentor_add': 'Member is now a mentor',
+            'mentor_remove': 'Member is no longer a mentor',
+            'examiner_add': 'Member is now an examiner',
+            'examiner_remove': 'Member is no longer an examiner',
+            'training_add': 'Member is now in training',
+            'training_remove': 'Member is no longer in training',
+            'training_staff_add': 'Member is now Traning Staff',
+            'training_staff_remove': 'Member is no longer Training Staff',
+            'visitor_add': 'Member is now Visiting Controller',
+            'visitor_remove': 'Member is no longer Visiting Controller',
+            'reaction_add': 'Member reacted to a message',
+            'reaction_remove': 'Member removed a reaction from a message',
+        }
 
-# Environment variables
-DEBUG = bool(strtobool(os.getenv('DEBUG', 'False')))
+        # VATSIM API
+        self.VATSIM_API_TOKEN = str(os.getenv("VATSIM_API_TOKEN", ""))
+        self.VATSIM_CHECK_MEMBER_URL = str(os.getenv("VATSIM_CHECK_MEMBER_URL", ""))
+        self.VATSIM_SUBDIVISION = str(os.getenv("VATSIM_SUBDIVISION", ""))
+        self.DIVISION_URL = str(os.getenv("DIVISION_URL", ""))
 
-BOT_TOKEN = str(os.getenv('BOT_TOKEN'))
-FORUM_API_TOKEN = os.getenv('FORUM_API_TOKEN')
-VATSIM_API_TOKEN = str(os.getenv('VATSIM_API_TOKEN'))
+        # CC API
+        self.CC_API_URL = str(os.getenv('CC_API_URL', ''))
+        self.CC_API_TOKEN = str(os.getenv('CC_API_TOKEN', ''))
 
-EVENT_CALENDAR_URL = str(os.getenv('EVENT_CALENDAR_URL'))
-EVENT_CALENDAR_TYPE = int(os.getenv('EVENT_CALENDAR_TYPE'))
-EVENT_API_TOKEN = os.getenv('EVENT_API_TOKEN')
+        # Event Calendar API
+        self.EVENT_CALENDAR_URL = str(os.getenv('EVENT_CALENDAR_URL', ''))
+        self.EVENT_API_TOKEN = str(os.getenv('EVENT_API_TOKEN', ''))
+        self.EVENT_CALENDAR_TYPE = int(os.getenv('EVENT_CALENDAR_TYPE', ''))
 
-CC_API_URL = str(os.getenv('CC_API_URL'))
-CC_API_TOKEN = str(os.getenv('CC_API_TOKEN'))
+        # Adjacent API keys
+        self.SENTRY_KEY = str(os.getenv("SENTRY_KEY"))
 
-VATSIM_CHECK_MEMBER_URL = str(os.getenv('VATSIM_CHECK_MEMBER_URL'))
-VATSIM_SUBDIVISION = str(os.getenv('VATSIM_SUBDIVISION'))
-DIVISION_URL = str(os.getenv('DIVISION_URL'))
+        self.METAR_API_KEY = str(os.getenv("METAR_API_KEY", ""))
 
-BOT_DB_HOST = str(os.getenv('BOT_DB_HOST'))
-BOT_DB_PORT = str(os.getenv('BOT_DB_PORT'))
-BOT_DB_USER = str(os.getenv('BOT_DB_USER'))
-BOT_DB_PASSWORD = str(os.getenv('BOT_DB_PASSWORD'))
-BOT_DB_NAME = str(os.getenv('BOT_DB_NAME'))
+        # Role IDs
+        self.VATSCA_MEMBER_ROLE = int(os.getenv("VATSCA_MEMBER_ROLE", 0))
+        self.VATSIM_MEMBER_ROLE = int(os.getenv("VATSIM_MEMBER_ROLE", 0))
+        self.EVENTS_ROLE = int(os.getenv("EVENTS_ROLE", 0))
+        self.MENTOR_ROLE = int(os.getenv("MENTOR_ROLE", 0))
+        self.TRAINING_STAFF_ROLE = int(os.getenv("TRAINING_STAFF_ROLE", 0))
+        self.VISITOR_ROLE = int(os.getenv("VISITOR_ROLE", 0))
+        self.OBS_ROLE = int(os.getenv("OBS_ROLE", 0))
 
-SENTRY_KEY = str(os.getenv('SENTRY_KEY'))
+        # FIR Data
+        self.FIR_DATA = [ fir.split(':') for fir in os.getenv('FIR_DATA', '').split(',') if fir]
+        self.FIRS, self.FIR_ROLES = zip(*self.FIR_DATA) if self.FIR_DATA else ([], [])
+        self.FIR_MENTORS = dict(zip(self.FIRS, self.FIR_ROLES))
 
-VATSCA_MEMBER_ROLE = int(os.getenv('VATSCA_MEMBER_ROLE'))
-VATSIM_MEMBER_ROLE = int(os.getenv('VATSIM_MEMBER_ROLE'))
-EVENTS_ROLE = int(os.getenv('EVENTS_ROLE'))
-MENTOR_ROLE = int(os.getenv('MENTOR_ROLE'))
-TRAINING_STAFF_ROLE = int(os.getenv('TRAINING_STAFF_ROLE'))
-OBS_ROLE = int(os.getenv('OBS_ROLE'))
+        # Examiner Data (same format as FIR data)
+        self.EXAMINER_DATA = [ fir.split(':') for fir in os.getenv('EXAMINER_DATA', '').split(',') if fir]
+        self.EXAM_FIRS, self.EXAM_ROLES = zip(*self.EXAMINER_DATA) if self.EXAMINER_DATA else ([], [])
+        self.FIR_EXAMINERS = dict(zip(self.EXAM_FIRS, self.EXAM_ROLES))
 
-FIR_DATA = str(os.getenv('FIR_DATA')).split(',')
-FIRS = []
-FIR_ROLES = []
-for fir in FIR_DATA:
-    FIRS.append(fir.split(':')[0])
-    FIR_ROLES.append(fir.split(':')[1])
+        # Training Data
+        self.TRAINING_DATA = os.getenv('TRAINING_DATA', '').split(',')
+        self.TRAINING_ROLES = {
+            country: {role.split(':')[0]: role.split(':')[1] for role in roles_str.split(',')}
+            for country, roles_str in (entry.split('|') for entry in self.TRAINING_DATA if '|' in entry)
+        }
 
-FIR_MENTORS = dict(zip(FIRS, FIR_ROLES))
+        self.CONTROLLER_FIR_DATA = [ fir.split(':') for fir in os.getenv('CONTROLLER_FIR_DATA', '').split(',') if fir]
+        self.CONTROLLER_FIRS, self.CONTROLLER_ROLES = zip(*self.CONTROLLER_FIR_DATA) if self.CONTROLLER_FIR_DATA else ([], [])
+        self.CONTROLLER_FIR_ROLES = dict(zip(self.CONTROLLER_FIRS, self.CONTROLLER_ROLES))
 
-TRAINING_DATA = str(os.getenv('TRAINING_DATA')).split(',')
-TRAINING_ROLES = {}
+        # Parse RATING_FIR_DATA from the environment variable
+        self.RATING_FIR_DATA_RAW = os.getenv('RATING_FIR_DATA', '')
+        self.RATING_FIR_DATA = {}
+        if self.RATING_FIR_DATA_RAW:
+            fir_entries = self.RATING_FIR_DATA_RAW.split('|')
+            fir_name = fir_entries[0].strip()
+            ratings = {}
 
-for entry in TRAINING_DATA:
-    entry_parts = entry.split('|', 1)
-    country = entry_parts[0]
-    roles_str = entry_parts[1]
+            for rating_entry in fir_entries[1:]:
+                rating, role_id = rating_entry.split(':')
+                ratings[rating.strip()] = int(role_id.strip())
 
-    role_parts = roles_str.split(',')
+            self.RATING_FIR_DATA[fir_name] = ratings
 
-    roles_dict = {}
+        self.c1_equivalent_ratings = {"ADM", "SUP", "C1", "C2", "C3", "I1", "I3"}
 
-    for part in role_parts:
-        role_name, role_id = part.split(':')
-        roles_dict[role_name] = role_id
+        # Parse REACTION_ROLE_DATA from the environment variable
+        self.REACTION_ROLE_DATA = os.getenv('REACTION_ROLE_DATA', '')
+        self.REACTION_EMOJI, self.REACTION_MESSAGE_IDS, self.REACTION_ROLE_IDS = [], [], []
 
-    if country in TRAINING_ROLES:
-        TRAINING_ROLES[country].update(roles_dict)
-    else:
-        TRAINING_ROLES[country] = roles_dict
+        if self.REACTION_ROLE_DATA:
+            for reaction_role in self.REACTION_ROLE_DATA.split(','):
+                emoji, message_id, role_id = reaction_role.split('|')
+                self.REACTION_EMOJI.append(emoji)
+                self.REACTION_MESSAGE_IDS.append(message_id)
+                self.REACTION_ROLE_IDS.append(role_id)
 
-REACTION_ROLE_DATA = str(os.getenv('REACTION_ROLE_DATA')).split(',')
-REACTION_EMOJI = []
-REACTION_MESSAGE_IDS = []
-REACTION_ROLE_IDS = []
-for reaction_role in REACTION_ROLE_DATA:
-    REACTION_EMOJI.append(reaction_role.split('|')[0])
-    REACTION_MESSAGE_IDS.append(reaction_role.split('|')[1])
-    REACTION_ROLE_IDS.append(reaction_role.split('|')[2])
+        self.REACTION_ROLES = dict(zip(self.REACTION_EMOJI, self.REACTION_ROLE_IDS))
 
-REACTION_ROLES = dict(zip(REACTION_EMOJI, REACTION_ROLE_IDS))
+        # Intervals
+        self.CHECK_MEMBERS_INTERVAL = int(os.getenv('CHECK_MEMBERS_INTERVAL', 86400))
+        self.STAFFING_INTERVAL = int(os.getenv('STAFFING_INTERVAL', 0))
 
-GUILD_ID = int(os.getenv('GUILD_ID'))
-STAFFING_INTERVAL = int(os.getenv('STAFFING_INTERVAL'))
+        # Channel IDs
+        self.EVENTS_CHANNEL = int(os.getenv('EVENTS_CHANNEL', 0))
+        self.RULES_CHANNEL = int(os.getenv('RULES_CHANNEL', 0))
+        self.WELCOME_CHANNEL = int(os.getenv('WELCOME_CHANNEL', 0))
+        self.ROLES_CHANNEL = int(os.getenv('ROLES_CHANNEL', 0))
 
-CHECK_MENTORS_INTERVAL = int(os.getenv('CHECK_MENTORS_INTERVAL'))
+        # Database variables
+        self.BOT_DB_HOST = str(os.getenv('BOT_DB_HOST', ''))
+        self.BOT_DB_PORT = str(os.getenv('BOT_DB_PORT', ''))
+        self.BOT_DB_USER = str(os.getenv('BOT_DB_USER', ''))
+        self.BOT_DB_PASSWORD = str(os.getenv('BOT_DB_PASSWORD', ''))
+        self.BOT_DB_NAME = str(os.getenv('BOT_DB_NAME', ''))
 
-EVENTS_CHANNEL = int(os.getenv('EVENTS_CHANNEL'))
-WELCOME_CHANNEL = int(os.getenv('WELCOME_CHANNEL'))
-RULES_CHANNEL = int(os.getenv('RULES_CHANNEL'))
-ROLES_CHANNEL = int(os.getenv('ROLES_CHANNEL'))
+    def activity(self) -> discord.Activity:
+        return discord.Activity(type=discord.ActivityType.watching, name=self.PRESENCE_TEXT)
+    
+    def status(self) -> discord.Status:
+        return discord.Status.online
+    
+    async def load_cogs(self, bot: discord.ext.commands.Bot) -> None:
+        for cog in self.COGS:
+            try:
+                await bot.load_extension(cog)
+            except Exception as e:
+                print(f'Failed to load cog - {cog}. \n Error: {e}', flush=True)
+            
 
-BOT_CHANNEL = int(os.getenv('BOT_CHANNEL'))
-
-CHECK_MEMBERS_INTERVAL = int(os.getenv('CHECK_MEMBERS_INTERVAL', 86400))
-POST_EVENTS_INTERVAL = int(os.getenv('POST_EVENTS_INTERVAL', 30))
-GET_EVENTS_INTERVAL = int(os.getenv('GET_EVENTS_INTERVAL', 900))
-DELETE_EVENTS_INTERVAL = int(os.getenv('DELETE_EVENTS_INTERVAL'))
-
-def activity() -> discord.Activity:
-    return discord.Activity(type=discord.ActivityType.watching, name=PRESENCE_TEXT)
-
-
-def status() -> discord.Status:
-    return discord.Status.online
-
-
-async def load_cogs(bot: discord.ext.commands.Bot) -> None:
-    for cog in COGS:
-        try:
-            await bot.load_extension(cog)
-        except Exception as e:
-            print(f'Failed to load cog - {cog}. \n Error: {e}', flush=True)
+config = Config()

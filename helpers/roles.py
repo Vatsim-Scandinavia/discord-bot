@@ -1,43 +1,90 @@
 import aiohttp
-import os
-from aiohttp.client import request
-import json
+import datetime
+from typing import Any, List, Optional
+from helpers.config import config
 
-import requests
+class Roles:
+    """
+    Helper class to interact with the API for roles and training data.
+    """
 
-from helpers.config import CC_API_URL, CC_API_TOKEN
+    def __init__(self) -> None:
+        self.base_url = config.CC_API_URL
+        self.headers = {
+            "Authorization": f"Bearer {config.CC_API_TOKEN}",
+            "Accept": "application/json"
+        }
 
-class Roles():
+    async def fetch_data(self, endpoint: str, params: Optional[dict] = None) -> Optional[List[Any]]:
+        """
+        Generic method to fetch data from the API.
+
+        Args:
+            endpoint (str): The API endpoint to query.
+            params (dict, optional): Query parameters to include in the request.
+
+        Returns:
+            Optional[List[Any]]: The parsed JSON response data or None if the request fails.
+        """
+
+        url = f"{self.base_url}/{endpoint}"
+
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.get(url, headers=self.headers, params=params) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        return data.get("data", [])
+                    else:
+                        print(f"Error fetching data from {url}. Status code: {response.status}")
+                        return None
+                    
+            except aiohttp.ClientError as e:
+                print(f"HTTP error occurred while accessing {url}: {e}")
+                return None
+            
+    async def get_roles(self) -> Optional[List[Any]]:
+        """
+        Fetch all users with their roles from the API.
+
+        Returns:
+            Optional[List[Any]]: A list of users and their roles or None if the request fails.
+        """
+        return await self.fetch_data("users", params={"include[]": "roles"})
     
-    def __init__(self):
+    async def get_training(self) -> Optional[List[Any]]:
         """
-        Create a Roles object
+        Fetch all users with their training data from the API.
+
+        Returns:
+            Optional[List[Any]]: A list of users and their training data or None if the request fails.
+        """
+        return await self.fetch_data("users", params={"include[]": "training"})
+    
+    async def get_endorsement(self) -> Optional[dict]:
+        """
+        Fetch all users with their endorsement data from the API.
+
+        Returns:
+            Optional[dict]: The visiting endorsement data if valid, or None otherwise.
         """
 
-    async def get_roles(self):
+        return await self.fetch_data("users", params={"include[]": "endorsements"})
+    
+    async def get_atc_activity(self) -> Optional[dict]:
         """
-        Get all mentors from the API
+        Fetch all users with their endorsement data from the API.
+
+        Returns:
+            Optional[dict]: The visiting endorsement data if valid, or None otherwise.
         """
-        request = requests.get(CC_API_URL + '/users', headers={'Authorization': 'Bearer ' + CC_API_TOKEN, 'Accept': 'application/json'},
-        params={
-            'include[]': 'roles'
-        })
-        if request.status_code == requests.codes.ok:
-            feedback = request.json()
-            return feedback["data"]
-        else:
-            return False
+        params = {
+            "include[]": [
+                "allUsers",
+                "activeAreas",
+            ],
+            "onlyAtcActive": 1
+        }
+
+        return await self.fetch_data("users", params=params)
         
-    async def get_training(self):
-        """
-        Get all traning data from the API
-        """
-        request = requests.get(CC_API_URL + '/users', headers={'Authorization': 'Bearer ' + CC_API_TOKEN, 'Accept': 'application/json'}, 
-        params={
-            'include[]': 'training'
-        })
-        if request.status_code == requests.codes.ok:
-            feedback = request.json()
-            return feedback["data"]
-        else:
-            return False

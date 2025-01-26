@@ -1,36 +1,42 @@
 import re
 import requests
-from typing import Literal, List
+import aiohttp
 
+from typing import List, Any, Optional
 from datetime import datetime, timedelta
 
+from helpers.config import config
 from helpers.booking import Booking
-
-from helpers.config import AVAILABLE_EVENT_DAYS
-from helpers.database import db_connection
 from helpers.db import DB
 
 
 class StaffingAsync():
 
     def __init__(self) -> None:
-        pass
+        self.base_url = config.EVENT_CALENDAR_URL
+        self.calendar_type = config.EVENT_CALENDAR_TYPE
+        self.headers = {
+            "Authorization": f"Bearer {config.CC_API_TOKEN}",
+            "Accept": "application/json"
+        }
 
     #
     # ----------------------------------
     # ASYNC DATA FUNCTIONS
     # ----------------------------------
     #
-    def _get_titles() -> List[str]:
+    async def _get_titles(self) -> List[str]:
         """
         Function to fetch and return a list of unique event titles from the database
         excluding titles already used in staffing.
         """
-        # Fetch event names and staffing titles from the database
-        events = DB.select(table='events', columns=['name'], amount='all')
+        # Fetch event names asynchronously
+        events = await self._fetch_data(f"calendars/{self.calendar_type}/events")
+
+        # Fetch staffing titles from the database
         staffings = DB.select(table="staffing", columns=['title'], amount='all')
 
-        formatted_staffings = set(" ".join(map(str, staffing)) for staffing in staffings)
+        formatted_staffings = {str(staffing[0]) for staffing in staffings}
         formatted_events = []
 
         # If no events are found, append a message indicating no availability
@@ -38,24 +44,54 @@ class StaffingAsync():
             formatted_events.append('None is available. Please try again later.')
         else:
             for event in events:
-                formatted_event = " ".join(map(str, event))
+                formatted_event = str(event.get('title', ''))
                 # Add the event only if it is not already present in staffing
-                if formatted_event not in formatted_staffings:
+                if formatted_event and formatted_event not in formatted_staffings:
                     formatted_events.append(formatted_event)
     
         # Return a list of unique event titles
         return list(set(formatted_events))
 
-    def _get_avail_titles() -> List[str]:
+    def _get_avail_titles(self) -> List[str]:
         staffings = DB.select(table="staffing", columns=['title'], amount='all')
     
         if not staffings:
             return ['None is available. Please try again later.']
         
         # Use a set to avoid duplicates
-        formatted_staffings = {" ".join(map(str, staffing)) for staffing in staffings}
+        formatted_staffings = {str(staffing[0]) for staffing in staffings}
 
-        return list(formatted_staffings)
+        return list(set(formatted_staffings))
+    
+    async def _fetch_data(self, endpoint: str, params: Optional[dict] = None) -> Optional[List[Any]]:
+        """
+        Generic method to fetch data from the API.
+
+        Args:
+            endpoint (str): The API endpoint to query.
+            params (dict, optional): Query parameters to include in the request.
+
+        Returns:
+            Optional[List[Any]]: The parsed JSON response data or None if the request fails.
+        """
+        url = f"{self.base_url}/{endpoint}"
+
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.get(url, headers=self.headers, params=params) as response:
+                    if response.status == 200:
+                        resp = await response.json()
+                        data = resp.get("data", [])
+                        if data:
+                            return data
+                        
+                        return resp
+                    else:
+                        print(f"Error fetching data from {url}. Status code: {response.status}")
+                        return None
+            except aiohttp.ClientError as e:
+                print(f"HTTP error occurred while accessing {url}: {e}")
+                return None
         
     async def _get_description(self, ctx):
         """
@@ -283,27 +319,45 @@ class StaffingAsync():
         1 week = 7
         2 weeks 14 and etc.
         """
-        start = DB.select(table="events", columns=["start_time"], where=[
-                                  "name"], value={'name': title})[0]
-        start_time = start.strftime("%H:%M")
-
-        end = DB.select(table='events', columns=['end_time'], where=[
-                                'name'], value={'name': title})[0]
-
+        # Fetch event data using fetch_data
+        events = await self.fetch_data(f"/calendars/{self.calendar_type}/events")
         staffing_exists = DB.select(table="staffing", columns=['title'], amount="all")
 
-        if end is not None:
-            end_time = end.strftime("%H:%M")
+           # Find the event with the given title
+        event_data = next((event for event in events if event.get("title") == title), None)
+
+        if not event_data:
+            print(f"Event '{title}' not found in the calendar.")
+            return None, None, None, None
+        
+         # Extract event start and end times
+        start_time = event_data.get("start_time")
+        end_time = event_data.get("end_time")
+
+        if not start_time:
+            print(f"Start time not found for event '{title}'.")
+            return None, None, None, None
+
+        start_time = datetime.strptime(start_time, "%Y-%m-%dT%H:%M:%S")  # Convert to datetime
+        formatted_start_time = start_time.strftime("%H:%M")
+
+        # Handle missing end time (default: 2 hours after start)
+        if end_time:
+            end_time = datetime.strptime(end_time, "%Y-%m-%dT%H:%M:%S").strftime("%H:%M")
         else:
-            end_formatted = start + timedelta(hours=2)
-            end_time = end_formatted.strftime("%H:%M")
+            end_time = (start_time + timedelta(hours=2)).strftime("%H:%M")
+
+        # Calculate the new event date based on interval
         today = datetime.today()
-        days = (start.weekday() - today.weekday() + interval * 7) % (interval * 7)
-        newdate = today + timedelta(days=days)
+        days_until_next = (start_time.weekday() - today.weekday() + interval * 7) % (interval * 7)
+        new_date = today + timedelta(days=days_until_next)
+
+        # Get the current scheduled date if staffing exists
         current = None
         if title in [item[0] for item in staffing_exists]:
-            current = DB.select(table="staffing", columns=['date'], where=['title'], value={'title' : title})[0]
-        return newdate, start_time, end_time, current
+            current = DB.select(table="staffing", columns=['date'], where=['title'], value={'title': title})[0]
+
+        return new_date, formatted_start_time, end_time, current
 
     async def _updatemessage(self, id):
         try:

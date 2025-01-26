@@ -1,5 +1,4 @@
-import discord, asyncio
-from discord.ext import commands
+import discord
 from helpers.staffing_async import StaffingAsync
 from helpers.db import DB
 

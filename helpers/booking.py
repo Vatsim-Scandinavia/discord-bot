@@ -5,7 +5,7 @@ import json
 
 import requests
 
-from helpers.config import CC_API_URL, CC_API_TOKEN
+from helpers.config import config
 
 class Booking():
     
@@ -18,7 +18,7 @@ class Booking():
         """
         Get all bookings from the API
         """
-        request = requests.get(CC_API_URL + '/bookings', headers={'Authorization': 'Bearer ' + CC_API_TOKEN, 'Accept': 'application/json'})
+        request = requests.get(config.CC_API_URL + '/bookings', headers={'Authorization': 'Bearer ' + config.CC_API_TOKEN, 'Accept': 'application/json'})
         if request.status_code == requests.codes.ok:
             feedback = request.json()
             return feedback["data"]
@@ -38,7 +38,7 @@ class Booking():
             'source': 'DISCORD'
         }
 
-        request = requests.post(url=CC_API_URL + "/bookings/create", headers={'Authorization': 'Bearer ' + CC_API_TOKEN, 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json'}, data=data)
+        request = requests.post(url=config.CC_API_URL + "/bookings/create", headers={'Authorization': 'Bearer ' + config.CC_API_TOKEN, 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json'}, data=data)
         
         return request
 
@@ -46,7 +46,7 @@ class Booking():
         """
         Delete a booking from the API
         """
-        request = requests.delete(url=CC_API_URL + "/bookings/" + str(booking_id), headers={'Authorization': 'Bearer ' + CC_API_TOKEN, 'Accept': 'application/json'})
+        request = requests.delete(url=config.CC_API_URL + "/bookings/" + str(booking_id), headers={'Authorization': 'Bearer ' + config.CC_API_TOKEN, 'Accept': 'application/json'})
         if request.status_code == requests.codes.ok:
             return 200
         else:
