@@ -1,15 +1,20 @@
+import asyncio
+import emoji
+
 import discord
 import os
-from typing import Union
-import sentry_sdk
-import signal
 import re
-import asyncio
+import signal
+from typing import Union
+
+import discord
+import sentry_sdk
+from discord import app_commands
 import emoji
 
 from discord.ext import commands
 from discord.ext.commands import BadArgument, CommandInvokeError
-from discord import app_commands
+
 from helpers.config import config
 from helpers.handler import Handler
 
@@ -63,7 +68,7 @@ async def on_member_update(before_update, user: discord.Member):
     # Return if the nickname hasn't changed
     if before_update.nick == user.nick:
         return
-    
+
     # Define role objects
     vatsca_member = discord.utils.get(user.guild.roles, id=config.VATSCA_MEMBER_ROLE)
     vatsim_member = discord.utils.get(user.guild.roles, id=config.VATSIM_MEMBER_ROLE)
@@ -196,12 +201,18 @@ async def on_error(event, *args, **kwargs):
 # Load all cogs at startup
 @bot.event
 async def on_connect():
+    """Handler for on_connect"""
     await config.load_cogs(bot)
 
-# Signal handling for graceful shutdown
-def handle_exit_signal(signal_number, frame):
+
+def handle_exit_signal(_signal_number, _frame):
+    """Callback for exit signals"""
     print("Received shutdown signal. Closing bot...", flush=True)
-    asyncio.create_task(bot.close())
+    tasks = set()
+    cleanup = asyncio.create_task(bot.close())
+    tasks.add(cleanup)
+    cleanup.add_done_callback(tasks.discard)
+
 
 # Register signals
 signal.signal(signal.SIGINT, handle_exit_signal) # For CTRL + C

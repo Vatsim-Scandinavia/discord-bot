@@ -1,6 +1,6 @@
-import requests
+import aiohttp
 from pydantic import BaseModel
-from typing import List, Literal, Optional, Dict, Any
+from typing import List, Literal, Optional, Union
 from datetime import datetime
 
 
@@ -12,7 +12,7 @@ class UserBase(BaseModel):
     email: str
     first_name: str
     last_name: str
-    rating: str
+    rating: Literal["SUSP", "OBS", "S1", "S2", "S3", "C1", "C3", "ADM", "SUP"]
     region: str
     division: str
     subdivision: str
@@ -76,7 +76,7 @@ class ControlCenterClient:
         """
         Initialize the ControlCenterClient with a shared requests session.
         """
-        self._session = requests.Session()
+        self._session = aiohttp.ClientSession()
         self._base_url = api_url
         self._session.headers.update(
             {"Authorization": f"Bearer {api_token}", "Accept": "application/json"}

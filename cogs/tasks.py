@@ -14,13 +14,14 @@ class TasksCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.handler = Handler()
-        self.check_members_loop.start()
-        self.sync_commands_loop.start()
+        self.check_members.start()
+        self.sync_commands.start()
 
     def cog_unload(self):
-        self.check_members_loop.cancel()
-        self.sync_commands_loop.cancel()
+        self.check_members.cancel()
+        self.sync_commands.cancel()
 
+    @tasks.loop(seconds=config.CHECK_MEMBERS_INTERVAL)
     async def check_members(self, override = False):
         """
         Checks guild members and updates roles based on stored membership data.
@@ -53,6 +54,7 @@ class TasksCog(commands.Cog):
 
         print(f"check_members finished at {datetime.now().isoformat()}", flush=True)
 
+    @tasks.loop(minutes=1)
     async def proccess_member(self, user, vatsca_role, vatsim_role, member_map):
         """
         Processes a single member to determine role assignments.
@@ -67,7 +69,7 @@ class TasksCog(commands.Cog):
             cid = await self.handler.get_cid(user)
             if not cid:
                 raise ValueError("No CID found in member's nickname.")
-            
+
             is_vatsca_member = cid in member_map and member_map[cid]["subdivision"] == config.VATSIM_SUBDIVISION
 
             if vatsim_role in user.roles:
@@ -78,7 +80,7 @@ class TasksCog(commands.Cog):
         except ValueError as e:
             if vatsca_role in user.roles:
                 await user.remove_roles(vatsca_role, reason=config.ROLE_REASONS['no_cid'])
-        
+
         except Exception as e:
             print(f"Error processing member {user}: {e}", flush=True)
 
@@ -90,8 +92,7 @@ class TasksCog(commands.Cog):
             await user.add_roles(role, reason=add_reason)
         elif not should_have_role and role in user.roles:
             await user.remove_roles(role, reason=remove_reason)
-    
-    @tasks.loop(seconds=config.CHECK_MEMBERS_INTERVAL)
+
     async def check_members_loop(self):
         await self.check_members()
 
@@ -103,6 +104,7 @@ class TasksCog(commands.Cog):
         await self.check_members(override=True)
         await ctx.send("Member refresh completed.", ephemeral=True)
 
+    @tasks.loop(seconds=config.STAFFING_INTERVAL)
     async def sync_commands(self, override = False):
         """
         Syncs slash commands with Discord servers.
@@ -110,13 +112,13 @@ class TasksCog(commands.Cog):
         if config.DEBUG and not override:
             print("sync_commands skipped due to DEBUG ON. You can start manually with the command instead.", flush=True)
             return
-        
+
         guild = self.bot.get_guild(config.GUILD_ID)
         try:
             print(f"sync_commands started at {datetime.now().isoformat()}", flush=True)
             await self.bot.tree.sync(guild=guild) if guild else await self.bot.tree.sync()
             print(f"sync_commands finished at {datetime.now().isoformat()}", flush=True)
-        
+
         except Exception as e:
             print(f"Failed to sync commands: {e}", flush=True)
 
@@ -127,10 +129,6 @@ class TasksCog(commands.Cog):
         await ctx.send("Slash command sync in progress.", ephemeral=True)
         await self.sync_commands(override=True)
         await ctx.send("Slash command sync completed.", ephemeral=True)
-
-    @tasks.loop(seconds=config.STAFFING_INTERVAL)
-    async def sync_commands_loop(self):
-        await self.sync_commands()
 
 async def setup(bot):
     await bot.add_cog(TasksCog(bot))
