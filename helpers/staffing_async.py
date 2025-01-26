@@ -334,8 +334,8 @@ class StaffingAsync():
             return None, None, None, None
         
         # Extract event start and end times
-        start_time = event_data.get("start_time")
-        end_time = event_data.get("end_time")
+        start_time = event_data.get("start_date")
+        end_time = event_data.get("end_date")
 
         if not start_time:
             print(f"Start time not found for event '{title}'.")
