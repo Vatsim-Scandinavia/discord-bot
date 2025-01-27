@@ -5,7 +5,6 @@ from discord import app_commands
 from discord.ext import commands
 
 from helpers.message import embed
-from helpers.handler import Handler
 from helpers.config import config
 
 class UpdateCountryMessage(commands.Cog):

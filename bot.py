@@ -1,14 +1,11 @@
 import discord
-import os
 import sentry_sdk
 import signal
-import re
 import asyncio
 import emoji
 
 from discord.ext import commands
 from discord.ext.commands import BadArgument, CommandInvokeError
-from discord import app_commands
 from helpers.config import config
 from helpers.handler import Handler
 

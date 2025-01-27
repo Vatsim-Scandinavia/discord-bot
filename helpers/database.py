@@ -1,6 +1,5 @@
 import mysql.connector
 from mysql.connector import Error
-import os
 from helpers.config import config
 
 _connection = None
@@ -15,7 +14,7 @@ def db_connection():
           # Check if connection is still alive
         try:
             _connection.ping(reconnect=False, attempts=3, delay=5)
-        except mysql.connector.InterfaceError as err:
+        except mysql.connector.InterfaceError:
             print("[MySQL] Connection lost. Reconnecting...", flush=True)
             _connection = init_connection()
 

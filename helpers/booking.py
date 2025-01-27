@@ -1,7 +1,3 @@
-import aiohttp
-import os
-from aiohttp.client import request
-import json
 
 import requests
 
