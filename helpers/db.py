@@ -1,7 +1,7 @@
 from helpers.database import db_connection
 
-class DB():
 
+class DB:
     def __init__(self) -> None:
         pass
 
@@ -9,9 +9,9 @@ class DB():
         """
         Simplified method of making a MySQL connection and inserting values into a table
         """
-        mydb = db_connection() # Establish DB connection
-        cursor = mydb.cursor() # Initialize interaction with DB
-        cols = ', ' .join(columns)
+        mydb = db_connection()  # Establish DB connection
+        cursor = mydb.cursor()  # Initialize interaction with DB
+        cols = ', '.join(columns)
         vals = ''
         i = 0
         for val in values:
@@ -20,17 +20,27 @@ class DB():
                 vals += f'"{val}"'
             else:
                 vals += f'"{val}", '
-        cursor.execute(f'INSERT INTO {table} ({cols}) VALUES ({vals})') # Execute DB command
-        mydb.commit() # Commit above mentioned changes
+        cursor.execute(
+            f'INSERT INTO {table} ({cols}) VALUES ({vals})'
+        )  # Execute DB command
+        mydb.commit()  # Commit above mentioned changes
 
-    def select(table: str, columns: list, where: list = False, value: dict = False, amount: str = False):
+    def select(
+        table: str,
+        columns: list,
+        where: list = False,
+        value: dict = False,
+        amount: str = False,
+    ):
         """
         Simplified method of making a MySQL connection and selecting values from a table
         """
-        mydb = db_connection() # Establish DB connection
-        cursor = mydb.cursor(buffered=True) # Initialize interaction with DB with buffered results
+        mydb = db_connection()  # Establish DB connection
+        cursor = mydb.cursor(
+            buffered=True
+        )  # Initialize interaction with DB with buffered results
         if len(columns) > 1:
-            cols = ', ' .join(columns) # Format columns
+            cols = ', '.join(columns)  # Format columns
         else:
             cols = columns[0]
         if value and where:
@@ -38,22 +48,36 @@ class DB():
             i = 0
             for val in where:
                 i += 1
-                if i == len(where): # Define if it is the last where statement
-                    whereStatement += f'{val} = "{value[val]}"' # Format where statement
+                if i == len(where):  # Define if it is the last where statement
+                    whereStatement += (
+                        f'{val} = "{value[val]}"'  # Format where statement
+                    )
                 else:
-                    whereStatement += f'{val} = "{value[val]}" and ' # Format where statement
-            cursor.execute(f'SELECT {cols} FROM {table} WHERE {whereStatement}') # Execute SQL statement 
+                    whereStatement += (
+                        f'{val} = "{value[val]}" and '  # Format where statement
+                    )
+            cursor.execute(
+                f'SELECT {cols} FROM {table} WHERE {whereStatement}'
+            )  # Execute SQL statement
         else:
-            cursor.execute(f'SELECT {cols} FROM {table}') # Execute SQL statement 
-        
-        if amount and amount != 'all': # Determine type of result
+            cursor.execute(f'SELECT {cols} FROM {table}')  # Execute SQL statement
+
+        if amount and amount != 'all':  # Determine type of result
             return cursor.fetchmany(int(amount))
         elif amount and amount == 'all':
             return cursor.fetchall()
         else:
             return cursor.fetchone()
 
-    def update(self, table: str, columns: list, where: list, value: dict, values: dict = False, limit: int = None):
+    def update(
+        self,
+        table: str,
+        columns: list,
+        where: list,
+        value: dict,
+        values: dict = False,
+        limit: int = None,
+    ):
         """
         Simplified method of making a MySQL connection and updating values in a table
         """
