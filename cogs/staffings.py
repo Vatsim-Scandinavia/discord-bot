@@ -245,7 +245,7 @@ class StaffingCog(commands.Cog):
                             await self.staffing_async._updatemessage(self.bot, event[0])
                             cancel = True
                     
-                    if cancel == True:
+                    if cancel is True:
                         await ctx.send(f"<@{usernick}> Confirmed cancelling of your booking(s)!", delete_after=5)
             else:
                 await ctx.send(f"<@{usernick}> Please use the correct channel", delete_after=5)
@@ -261,7 +261,7 @@ class StaffingCog(commands.Cog):
     @tasks.loop(seconds=config.STAFFING_INTERVAL)
     async def autoreset(self, override=False):
         await self.bot.wait_until_ready()
-        if config.DEBUG == True and override == False:
+        if config.DEBUG is True and override is False:
                 print("autoreset skipped due to DEBUG ON. You can start manually with command instead.", flush=True)
                 return
         staffings = DB.select(table='staffing', columns=['*'], amount='all')

@@ -426,10 +426,10 @@ class StaffingAsync():
         positions = DB.select(table="positions", columns=['*'], where=['event'], value={'event': event[0]}, amount='all')
         sections = DB.select(table="staffing", columns=['section_1_title', 'section_2_title', 'section_3_title', 'section_4_title'], where=['id'], value={'id': event[0]})
         
-        section_1 = sections[0].lower() if sections[0] != None else None
-        section_2 = sections[1].lower() if sections[1] != None else None
-        section_3 = sections[2].lower() if sections[2] != None else None
-        section_4 = sections[3].lower() if sections[3] != None else None
+        section_1 = sections[0].lower() if sections[0] is not None else None
+        section_2 = sections[1].lower() if sections[1] is not None else None
+        section_3 = sections[2].lower() if sections[2] is not None else None
+        section_4 = sections[3].lower() if sections[3] is not None else None
 
         sections = {
             section_1: '1',
@@ -449,12 +449,12 @@ class StaffingAsync():
         end_time = None
         booking = False
         for pos in positions:
-            if pos[6] == '00:00:00' or pos[6] == None:
+            if pos[6] == '00:00:00' or pos[6] is None:
                 start_time = time[1]
             else:
                 start_time = ':'.join(str(pos[6]).split(':')[:2])
 
-            if pos[7] == '00:00:00' or pos[7] == None:
+            if pos[7] == '00:00:00' or pos[7] is None:
                 end_time = time[2]
             else:
                 end_time = ':'.join(str(pos[7]).split(':')[:2])
@@ -511,5 +511,5 @@ class StaffingAsync():
                             await ctx.send(f"<@{usernick}> Confirmed booking for position `{position.upper()}` for event `{event[1]}`", delete_after=5)
                             booking = True
 
-        if booking == False:
+        if booking is False:
             await ctx.send(f'<@{usernick}> Booking failed, check if you inserted correct postion, section or if the positions is already booked.', delete_after=5)
