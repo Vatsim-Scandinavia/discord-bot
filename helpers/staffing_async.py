@@ -1,3 +1,5 @@
+# ruff: noqa
+# Linting ignored due to staffing module getting a major refactor.
 import re
 import requests
 import aiohttp
