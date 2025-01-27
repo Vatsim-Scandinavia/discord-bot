@@ -362,14 +362,6 @@ class StaffingAsync():
         if title in [item[0] for item in staffing_exists]:
             current = DB.select(table="staffing", columns=['date'], where=['title'], value={'title' : title})[0]
 
-        # new_date = new_date.strftime("%Y-%m-%d") if new_date else None
-        # formatted_start_time = datetime.strptime(str(formatted_start_time), "%H:%M") if formatted_start_time else None
-        # end_time = datetime.strptime(str(end_time), "%H:%M") if end_time else None
-
-        print(f'Start time: {start_time}, End time: {end_time}')
-        print(f'New date: {newdate}')
-        print(f'Current date: {current}')
-
         return newdate, formatted_start_time, end_time, current
 
     async def _updatemessage(self, bot, id):
