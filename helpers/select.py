@@ -40,7 +40,7 @@ class Select(discord.ui.Select):
                 if pos[0] != '':
                     update_ok = False
 
-            if update_ok == True:
+            if update_ok is True:
                 section = await StaffingAsync._section_type(self, self.ctx)
                 section_title = await StaffingAsync._setup_section(self, self.ctx, section)
                 positions = DB.select(table='positions', columns=['position'], where=['type', 'event'], value={'type': section, 'event': self.id})
