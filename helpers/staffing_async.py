@@ -398,9 +398,9 @@ class StaffingAsync():
             date = dates[3] if dates[3] else dates[0]
             formatted_date = date.strftime("%A %d/%m/%Y") if date else "Unknown Date"
 
-            print(start_time)
-            print(end_time)
-            print(formatted_date)
+            print(start_time, flush=True)
+            print(end_time, flush=True)
+            print(formatted_date, flush=True)
 
             format_staffing_message = f'{title} staffing - {formatted_date} {start_time} - {end_time}z\n\n{description}'
 
