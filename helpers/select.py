@@ -68,10 +68,10 @@ class Select(discord.ui.Select):
                                 position for position in section_pos)
                     await interaction.followup.send(f'Section Title updated to `{section_title}`\n\nPositions updated to:\n{formatted_pos_data}')
                 else:
-                    await interaction.followup.send(f'Section has been removed.')
+                    await interaction.followup.send('Section has been removed.')
                 await StaffingAsync._updatemessage(self=self, id=self.id)
             else:
-                await interaction.followup.send(f'Update is not OK. There are still active bookings for this event.')
+                await interaction.followup.send('Update is not OK. There are still active bookings for this event.')
         elif self.values[0] == "Booking restriction":
             await interaction.response.defer()
             restriction = await StaffingAsync._get_retriction(self=self, ctx=self.ctx)
@@ -80,7 +80,7 @@ class Select(discord.ui.Select):
                 'yes': 1
             }
             DB.update(self=self, table='staffing', where=['id'], value={'id': self.id}, columns=['restrict_bookings'], values={'restrict_bookings': restrict_bookings[restriction]})
-            await interaction.followup.send(f'Booking restriction updated.')
+            await interaction.followup.send('Booking restriction updated.')
         elif self.values[0] == "Delete Staffing":
             await interaction.response.defer()
             confirm_delete = await StaffingAsync._getconfirmation(self, self.ctx, title)

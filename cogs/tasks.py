@@ -1,5 +1,3 @@
-import os
-import re
 import discord
 
 from discord import app_commands
@@ -75,7 +73,7 @@ class TasksCog(commands.Cog):
             elif vatsca_role in user.roles:
                 await user.remove_roles(vatsca_role, reason=config.ROLE_REASONS['no_auth'])
 
-        except ValueError as e:
+        except ValueError:
             if vatsca_role in user.roles:
                 await user.remove_roles(vatsca_role, reason=config.ROLE_REASONS['no_cid'])
         

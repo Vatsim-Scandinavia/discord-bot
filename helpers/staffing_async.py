@@ -241,7 +241,7 @@ class StaffingAsync():
         :return:
         """
         try:
-            await ctx.send(f'Which section would you like to update?**FYI this command expires in 1 minute** \nAvailable sections is: `1, 2 or 3`')
+            await ctx.send('Which section would you like to update?**FYI this command expires in 1 minute** \nAvailable sections is: `1, 2 or 3`')
             message = await bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
 
             if len(message.content) < 1:
@@ -284,7 +284,7 @@ class StaffingAsync():
         
     async def _get_local_booking(self, bot, ctx):
         try:
-            await ctx.send(f'Is this positions a local position? Allowed ansers: `Yes` or `No` **FYI this command expires in 1 minutes**')
+            await ctx.send('Is this positions a local position? Allowed ansers: `Yes` or `No` **FYI this command expires in 1 minutes**')
 
             message = await bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
 
@@ -323,7 +323,7 @@ class StaffingAsync():
         events = await self._fetch_data(f"calendars/{self.calendar_type}/events")
 
         if not events:
-            print(f"Error: No events retrieved from the calendar.")
+            print("Error: No events retrieved from the calendar.")
             return None, None, None, None
         
         # Find the event with the given title
@@ -405,7 +405,7 @@ class StaffingAsync():
                     pos_data = []
                     for pos in section_positions[x]:
                         if pos[6] is not None and pos[7] is not None:
-                            pos_data.append(f':'.join(str(pos[6]).split(':')[:2]) + ' - ' + ':'.join(str(pos[7]).split(':')[:2]) + f' ‖ {pos[1]} {pos[2]}')
+                            pos_data.append(':'.join(str(pos[6]).split(':')[:2]) + ' - ' + ':'.join(str(pos[7]).split(':')[:2]) + f' ‖ {pos[1]} {pos[2]}')
                         else:
                             pos_data.append(f'{pos[1]} {pos[2]}')
                     pos_info += f'\n\n{x}:\n' + '\n' .join(position for position in pos_data)

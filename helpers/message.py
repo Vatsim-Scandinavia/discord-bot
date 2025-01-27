@@ -1,7 +1,5 @@
-import re
 import discord
 
-from markdownify import markdownify as md
 from helpers.config import config
 
 
