@@ -21,3 +21,73 @@ dependencies = [
     "typing-extensions==4.12.2",
     "websockets==13.0.1",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.9.3",
+]
+
+[tool.ruff.lint]
+extend-select = [
+    "TRY", # enable tryceratops
+    "FLY", # enable flynt
+    # TODO: evaluate whether this is sustainable
+    "ALL", # enable all the checks
+]
+ignore = [
+    # formatter incompatibilities
+    "D203", "D211", "D212", "COM812", "Q000", "Q003", "E501",
+    "ANN", # type annotations missing
+    "FA100", # future rewritable type is fine to ignore
+    # TODO: list of ignored errors we must fix
+    "T201",
+    "D102",
+    "D100",
+    "INP001",
+    "D103",
+    "D401",
+    "PLW1508",
+    "D101",
+    "D107",
+    "SLF001",
+    "BLE001",
+    "N806",
+    "D205",
+    "S608",
+    "FBT002",
+    "D400",
+    "D415",
+    "DTZ005",
+    "EM101",
+    "PLR0913",
+    "PLR2004",
+    "TRY003",
+    "FBT003",
+    "PLW0603",
+    "ASYNC210",
+    "S113",
+    "SIM113",
+    "A002",
+    "ARG001",
+    "ARG002",
+    "C901",
+    "N818",
+    "PERF203",
+    "PLR0915",
+    "TRY301",
+    "FBT001",
+    "SIM108",
+    "SIM117",
+    "PTH123",
+    "PLR0912",
+    "RUF006",
+    "TRY002",
+    "TRY300",
+]
+unfixable = [
+    "T20", # print() needs manual fixing
+    "EM" # easy to not notice the autofix
+]
+
+[tool.ruff.format]
+quote-style = "single"
