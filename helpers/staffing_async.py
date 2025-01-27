@@ -350,10 +350,14 @@ class StaffingAsync():
         else:
             end_time = (start_time + timedelta(hours=2)).strftime("%H:%M")
 
+        print(f'Start time: {start_time}, End time: {end_time}')
+
         # Calculate the new event date based on interval
         today = datetime.today()
         days_until_next = (start_time.weekday() - today.weekday() + interval * 7) % (interval * 7)
         new_date = today + timedelta(days=days_until_next)
+
+        print(f'New date: {new_date}')
 
         # Get the current scheduled date if staffing exists
         staffing_exists = DB.select(table="staffing", columns=['title'], amount="all")
@@ -366,6 +370,8 @@ class StaffingAsync():
             else:
                 print(f"Warning: No current staffing date found for '{title}'.")
                 current = None
+
+        print(f'Current date: {current}')
 
         new_date = datetime.strptime(str(new_date), "%Y-%m-%d") if new_date else None
         formatted_start_time = datetime.strptime(str(formatted_start_time), "%H:%M") if formatted_start_time else None
@@ -397,10 +403,6 @@ class StaffingAsync():
             start_time, end_time = dates[1], dates[2]
             date = dates[3] if dates[3] else dates[0]
             formatted_date = date.strftime("%A %d/%m/%Y") if date else "Unknown Date"
-
-            print(start_time, flush=True)
-            print(end_time, flush=True)
-            print(formatted_date, flush=True)
 
             format_staffing_message = f'{title} staffing - {formatted_date} {start_time} - {end_time}z\n\n{description}'
 
