@@ -1,6 +1,7 @@
 import discord
-from helpers.staffing_async import StaffingAsync
+
 from helpers.db import DB
+from helpers.staffing_async import StaffingAsync
 
 
 class Select(discord.ui.Select):

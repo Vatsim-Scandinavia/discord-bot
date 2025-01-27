@@ -1,13 +1,13 @@
-import discord
-import datetime
 import asyncio
+import datetime
 
+import discord
 from discord import app_commands
 from discord.ext import commands, tasks
 
 from helpers.config import config
-from helpers.roles import Roles
 from helpers.handler import Handler
+from helpers.roles import Roles
 
 
 class RolesCog(commands.Cog):
@@ -89,6 +89,7 @@ class RolesCog(commands.Cog):
             trainings_data (list): The API response containing user training data.
             endorsement_data (list): The API response containing user endorsement data.
             atc_activity_data (list): The API response containing ATC activity data.
+
         """
         try:
             cid = await self.handler.get_cid(user)
@@ -170,6 +171,7 @@ class RolesCog(commands.Cog):
 
         Returns:
             tuple: (should_be_mentor, should_be_training_staff, mentor_firs)
+
         """
         should_be_mentor = False
         should_be_training_staff = False
@@ -202,6 +204,7 @@ class RolesCog(commands.Cog):
 
         Returns:
             tuple: (should_be_examiner, None, examiner_firs)
+
         """
         should_be_examiner = False
         examiner_firs = []
@@ -230,6 +233,7 @@ class RolesCog(commands.Cog):
 
         Returns:
             bool: Whether the user qualifies for the Visitor role.
+
         """
         should_be_visitor = False
 
@@ -268,9 +272,7 @@ class RolesCog(commands.Cog):
         return student_data, should_be_student
 
     async def update_role(self, user, role, condition, add_reason, remove_reason):
-        """
-        Add or remove a role based on a condition.
-        """
+        """Add or remove a role based on a condition."""
         if condition and role not in user.roles:
             await user.add_roles(role, reason=add_reason)
         elif not condition and role in user.roles:
@@ -285,6 +287,7 @@ class RolesCog(commands.Cog):
             fir_data (list): A list of FIRs the user is assigned to.
             role_type (str): The type of role to update ("mentor" or "examiner").
             should_be_assigned (bool): Whether the role should be assigned.
+
         """
         role_map = config.FIR_MENTORS if role_type == 'mentor' else config.FIR_EXAMINERS
         add_reason = config.ROLE_REASONS[f'{role_type}_add']
@@ -329,9 +332,7 @@ class RolesCog(commands.Cog):
                 )
 
     async def update_fir_atc_roles(self, user, cid, atc_activity_data):
-        """
-        Update FIR-specific ATC roles based on activity and rating.
-        """
+        """Update FIR-specific ATC roles based on activity and rating."""
         guild = user.guild
         role_tasks = []
 

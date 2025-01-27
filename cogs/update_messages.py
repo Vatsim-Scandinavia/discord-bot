@@ -1,11 +1,12 @@
-import discord
 import asyncio
+from typing import Optional
 
+import discord
 from discord import app_commands
 from discord.ext import commands
 
-from helpers.message import embed
 from helpers.config import config
+from helpers.message import embed
 
 
 class UpdateCountryMessage(commands.Cog):
@@ -33,6 +34,7 @@ class UpdateCountryMessage(commands.Cog):
             content (str): The content of the message.
             author (discord.User, optional): The author of the message. Defaults to None.
             text (str, optional): The text of the message. Defaults to None.
+
         """
         guild = interaction.guild
         if not guild:
@@ -76,11 +78,9 @@ class UpdateCountryMessage(commands.Cog):
             await followup_message.delete()
 
     def read_file(self, filepath):
-        """
-        Reads content from a specified file and returns it as a string.
-        """
+        """Reads content from a specified file and returns it as a string."""
         try:
-            with open(filepath, 'r') as file:
+            with open(filepath) as file:
                 return file.read()
         except FileNotFoundError:
             print(f"File '{filepath}' not found.")
@@ -102,7 +102,7 @@ class UpdateCountryMessage(commands.Cog):
         self,
         interaction: discord.Interaction,
         option: app_commands.Choice[str],
-        message_id: str = None,
+        message_id: Optional[str] = None,
     ):
         await interaction.response.defer()  # Defer response while processing
 

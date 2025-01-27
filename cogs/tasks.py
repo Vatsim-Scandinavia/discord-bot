@@ -1,12 +1,11 @@
-import discord
+from datetime import datetime
 
+import discord
 from discord import app_commands
 from discord.ext import commands, tasks
 
-from datetime import datetime
-
-from helpers.handler import Handler
 from helpers.config import config
+from helpers.handler import Handler
 
 
 class TasksCog(commands.Cog):
@@ -21,9 +20,7 @@ class TasksCog(commands.Cog):
         self.sync_commands_loop.cancel()
 
     async def check_members(self, override=False):
-        """
-        Checks guild members and updates roles based on stored membership data.
-        """
+        """Checks guild members and updates roles based on stored membership data."""
         await self.bot.wait_until_ready()
 
         if config.DEBUG and not override:
@@ -64,6 +61,7 @@ class TasksCog(commands.Cog):
             vatsca_role (discord.Role): The VATSCA role.
             vatsim_role (discord.Role): The VATSIM role.
             member_map (dict): A map of division member CIDs to their corresponding API data.
+
         """
         try:
             cid = await self.handler.get_cid(user)
@@ -100,9 +98,7 @@ class TasksCog(commands.Cog):
     async def update_role(
         self, user, role, should_have_role, add_reason, remove_reason
     ):
-        """
-        Adds or removes a role based on conditions.
-        """
+        """Adds or removes a role based on conditions."""
         if should_have_role and role not in user.roles:
             await user.add_roles(role, reason=add_reason)
         elif not should_have_role and role in user.roles:
@@ -123,9 +119,7 @@ class TasksCog(commands.Cog):
         await ctx.send('Member refresh completed.', ephemeral=True)
 
     async def sync_commands(self, override=False):
-        """
-        Syncs slash commands with Discord servers.
-        """
+        """Syncs slash commands with Discord servers."""
         if config.DEBUG and not override:
             print(
                 'sync_commands skipped due to DEBUG ON. You can start manually with the command instead.',

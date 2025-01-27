@@ -30,7 +30,6 @@ class Publisher(commands.Cog):
         :param message: The discord message to crosspost.
         :param retries: Number of retries allowed in case of rate limiting.
         """
-
         for _attempt in range(retries):
             try:
                 await message.publish()

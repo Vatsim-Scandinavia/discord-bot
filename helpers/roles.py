@@ -1,12 +1,12 @@
-import aiohttp
 from typing import Any, List, Optional
+
+import aiohttp
+
 from helpers.config import config
 
 
 class Roles:
-    """
-    Helper class to interact with the API for roles and training data.
-    """
+    """Helper class to interact with the API for roles and training data."""
 
     def __init__(self) -> None:
         self.base_url = config.CC_API_URL
@@ -27,8 +27,8 @@ class Roles:
 
         Returns:
             Optional[List[Any]]: The parsed JSON response data or None if the request fails.
-        """
 
+        """
         url = f'{self.base_url}/{endpoint}'
 
         async with aiohttp.ClientSession() as session:
@@ -39,11 +39,10 @@ class Roles:
                     if response.status == 200:
                         data = await response.json()
                         return data.get('data', [])
-                    else:
-                        print(
-                            f'Error fetching data from {url}. Status code: {response.status}'
-                        )
-                        return None
+                    print(
+                        f'Error fetching data from {url}. Status code: {response.status}'
+                    )
+                    return None
 
             except aiohttp.ClientError as e:
                 print(f'HTTP error occurred while accessing {url}: {e}')
@@ -55,6 +54,7 @@ class Roles:
 
         Returns:
             Optional[List[Any]]: A list of users and their roles or None if the request fails.
+
         """
         return await self.fetch_data('users', params={'include[]': 'roles'})
 
@@ -64,6 +64,7 @@ class Roles:
 
         Returns:
             Optional[List[Any]]: A list of users and their training data or None if the request fails.
+
         """
         return await self.fetch_data('users', params={'include[]': 'training'})
 
@@ -73,8 +74,8 @@ class Roles:
 
         Returns:
             Optional[dict]: The visiting endorsement data if valid, or None otherwise.
-        """
 
+        """
         return await self.fetch_data('users', params={'include[]': 'endorsements'})
 
     async def get_atc_activity(self) -> Optional[dict]:
@@ -83,6 +84,7 @@ class Roles:
 
         Returns:
             Optional[dict]: The visiting endorsement data if valid, or None otherwise.
+
         """
         params = {
             'include[]': [

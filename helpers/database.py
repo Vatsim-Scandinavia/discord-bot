@@ -1,5 +1,6 @@
 import mysql.connector
 from mysql.connector import Error
+
 from helpers.config import config
 
 _connection = None
@@ -18,9 +19,8 @@ def db_connection():
             _connection = init_connection()
 
         return _connection
-    else:
-        _connection = init_connection()
-        return _connection
+    _connection = init_connection()
+    return _connection
 
 
 def init_connection():

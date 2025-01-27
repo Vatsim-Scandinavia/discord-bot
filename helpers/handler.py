@@ -1,8 +1,9 @@
-import discord
-import aiohttp
 import re
 
+import aiohttp
+import discord
 from discord.ext import commands
+
 from helpers.config import config
 
 
@@ -27,6 +28,7 @@ class Handler:
 
         return ctx
 
+    @staticmethod
     def is_obs(interaction: discord.Interaction):
         """
         Function checks if user has OBS role
@@ -37,8 +39,7 @@ class Handler:
             raise discord.app_commands.AppCommandError(
                 'You do not have the proper roles to use this command'
             )
-        else:
-            return True
+        return True
 
     async def get_division_members(self):
         """
@@ -95,10 +96,11 @@ class Handler:
 
     async def get_cid(self, user):
         """
-        Get CID based on user discord ID
+        Get CID based on user discord ID.
 
         Args:
             user (discord.Member): The Discord member object.
+
         """
         cid = re.findall(r'\d+', str(user.nick))
 

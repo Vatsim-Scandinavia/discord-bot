@@ -1,9 +1,10 @@
 import discord
-from discord.ext import commands
 from discord import app_commands
+from discord.ext import commands
+
 from helpers.config import config
-from helpers.message import embed
 from helpers.handler import Handler
+from helpers.message import embed
 
 
 class AdminCog(commands.Cog):
@@ -15,7 +16,7 @@ class AdminCog(commands.Cog):
         self, interaction: discord.Interaction, current: str
     ):
         # Get all loaded cog names
-        loaded_cogs = [key for key in config.COGS_LOAD.keys()]
+        loaded_cogs = list(config.COGS_LOAD.keys())
 
         # Provide a filtered list of options as user types
         return [
@@ -28,7 +29,7 @@ class AdminCog(commands.Cog):
         self, interaction: discord.Interaction, current: str
     ):
         all_cogs = [cog.split('.')[-1] for cog in config.COGS]
-        loaded_cogs = [cog for cog in interaction.client.cogs]
+        loaded_cogs = list(interaction.client.cogs)
         unloaded_cogs = [cog for cog in all_cogs if cog not in loaded_cogs]
 
         return [
@@ -94,10 +95,7 @@ class AdminCog(commands.Cog):
     )
     @app_commands.checks.has_any_role(*config.STAFF_ROLES)
     async def cogs(self, interaction: discord.Interaction):
-        """
-        Command which sends a message with all available cogs.
-        """
-
+        """Command which sends a message with all available cogs."""
         fields = [
             {'name': key, 'value': config.COGS_LOAD[key]} for key in config.COGS_LOAD
         ]
