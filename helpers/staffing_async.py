@@ -371,11 +371,6 @@ class StaffingAsync():
         formatted_start_time = datetime.strptime(str(formatted_start_time), "%H:%M") if formatted_start_time else None
         end_time = datetime.strptime(str(end_time), "%H:%M") if end_time else None
 
-        print(new_date)
-        print(formatted_start_time)
-        print(end_time)
-        print(current)
-        
         return new_date, formatted_start_time, end_time, current
 
     async def _updatemessage(self, id):
@@ -402,6 +397,10 @@ class StaffingAsync():
             start_time, end_time = dates[1], dates[2]
             date = dates[3] if dates[3] else dates[0]
             formatted_date = date.strftime("%A %d/%m/%Y") if date else "Unknown Date"
+
+            print(start_time)
+            print(end_time)
+            print(formatted_date)
 
             format_staffing_message = f'{title} staffing - {formatted_date} {start_time} - {end_time}z\n\n{description}'
 
