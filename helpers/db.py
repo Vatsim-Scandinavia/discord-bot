@@ -1,3 +1,5 @@
+from typing import Optional
+
 from helpers.database import db_connection
 
 
@@ -6,9 +8,7 @@ class DB:
         pass
 
     def insert(self, table: str, columns: list, values: list):
-        """
-        Simplified method of making a MySQL connection and inserting values into a table
-        """
+        """Simplified method of making a MySQL connection and inserting values into a table."""
         mydb = db_connection()  # Establish DB connection
         cursor = mydb.cursor()  # Initialize interaction with DB
         cols = ', '.join(columns)
@@ -26,15 +26,13 @@ class DB:
         mydb.commit()  # Commit above mentioned changes
 
     def select(
-        table: str,
+        self: str,
         columns: list,
         where: list = False,
         value: dict = False,
         amount: str = False,
     ):
-        """
-        Simplified method of making a MySQL connection and selecting values from a table
-        """
+        """Simplified method of making a MySQL connection and selecting values from a table."""
         mydb = db_connection()  # Establish DB connection
         cursor = mydb.cursor(
             buffered=True
@@ -57,17 +55,16 @@ class DB:
                         f'{val} = "{value[val]}" and '  # Format where statement
                     )
             cursor.execute(
-                f'SELECT {cols} FROM {table} WHERE {whereStatement}'
+                f'SELECT {cols} FROM {self} WHERE {whereStatement}'
             )  # Execute SQL statement
         else:
-            cursor.execute(f'SELECT {cols} FROM {table}')  # Execute SQL statement
+            cursor.execute(f'SELECT {cols} FROM {self}')  # Execute SQL statement
 
         if amount and amount != 'all':  # Determine type of result
             return cursor.fetchmany(int(amount))
-        elif amount and amount == 'all':
+        if amount and amount == 'all':
             return cursor.fetchall()
-        else:
-            return cursor.fetchone()
+        return cursor.fetchone()
 
     def update(
         self,
@@ -76,11 +73,9 @@ class DB:
         where: list,
         value: dict,
         values: dict = False,
-        limit: int = None,
+        limit: Optional[int] = None,
     ):
-        """
-        Simplified method of making a MySQL connection and updating values in a table
-        """
+        """Simplified method of making a MySQL connection and updating values in a table."""
         mydb = db_connection()
         cursor = mydb.cursor()
         whereStatement = ''
@@ -104,9 +99,7 @@ class DB:
         mydb.commit()
 
     def delete(self, table: str, where: list, value: dict):
-        """
-        Simplified method of making a MySQL connection and deleting a cell from a table
-        """
+        """Simplified method of making a MySQL connection and deleting a cell from a table."""
         mydb = db_connection()
         cursor = mydb.cursor()
         whereStatement = ''

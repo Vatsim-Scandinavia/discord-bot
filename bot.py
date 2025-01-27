@@ -1,11 +1,12 @@
-import discord
-import sentry_sdk
-import signal
 import asyncio
-import emoji
+import signal
 
+import discord
+import emoji
+import sentry_sdk
 from discord.ext import commands
 from discord.ext.commands import BadArgument, CommandInvokeError
+
 from helpers.config import config
 from helpers.handler import Handler
 
@@ -63,7 +64,6 @@ async def on_member_update(before_update, user: discord.Member):
     :param user:
     :return:
     """
-
     # Return if the nickname hasn't changed
     if before_update.nick == user.nick:
         return
@@ -189,9 +189,7 @@ async def on_raw_reaction_remove(payload):
 async def on_app_command_error(
     interaction: discord.Interaction, error: discord.app_commands.AppCommandError
 ):
-    """
-    Handles errors for application commands.
-    """
+    """Handles errors for application commands."""
     if not interaction.response.is_done():
         await interaction.response.defer(ephemeral=True)
 

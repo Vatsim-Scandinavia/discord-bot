@@ -11,10 +11,7 @@ load_dotenv('.env')
 
 class Config:
     def __init__(self):
-        """
-        Environment Variables
-        """
-
+        """Environment Variables."""
         # Essential variables
         self.BOT_TOKEN = os.getenv('BOT_TOKEN', '')
         self.GUILD_ID = int(os.getenv('GUILD_ID', 0))

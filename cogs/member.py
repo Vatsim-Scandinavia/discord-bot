@@ -1,11 +1,10 @@
-import discord
 import aiohttp
-
-from discord.ext import commands
+import discord
 from discord import app_commands
+from discord.ext import commands
 
-from helpers.handler import Handler
 from helpers.config import config
+from helpers.handler import Handler
 from helpers.message import embed
 
 
@@ -28,9 +27,7 @@ class MemberCog(commands.Cog):
 
     @app_commands.command(name='metar', description='Get METAR for an airport')
     async def metar(self, interaction: discord.Interaction, airport: str) -> None:
-        """
-        Function send METAR of specified airport
-        """
+        """Function send METAR of specified airport."""
         ctx = await Handler.get_context(self, self.bot, interaction)
 
         async with aiohttp.ClientSession() as session:
@@ -41,7 +38,7 @@ class MemberCog(commands.Cog):
                     )
                     return
 
-                elif resp.status != 200:
+                if resp.status != 200:
                     print(
                         f'An error occurred fetching METAR from `{airport}`\nResponse: {resp.status}'
                     )
