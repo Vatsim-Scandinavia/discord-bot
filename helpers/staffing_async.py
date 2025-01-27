@@ -93,7 +93,7 @@ class StaffingAsync():
                 print(f"HTTP error occurred while accessing {url}: {e}")
                 return None
         
-    async def _get_description(self, ctx):
+    async def _get_description(self, bot, ctx):
         """
         Function gets the description of the event from a message that'll be included in the staffing message
         :param ctx:
@@ -101,7 +101,7 @@ class StaffingAsync():
         """
         try:
             await ctx.send('Staffing message? **FYI this command expires in 5 minutes**')
-            message = await self.bot.wait_for('message', timeout=300, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
+            message = await bot.wait_for('message', timeout=300, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
 
             if len(message.content) < 1:
                 await ctx.send('Setup cancelled. No message was provided.')
@@ -112,7 +112,7 @@ class StaffingAsync():
             await ctx.send(f'Error getting the Staffing message - {e}')
             raise e
 
-    async def _get_interval(self, ctx):
+    async def _get_interval(self, bot, ctx):
         """
         Function gets the week interval of the event
         :param ctx:
@@ -120,7 +120,7 @@ class StaffingAsync():
         """
         try:
             await ctx.send('Week interval? **FYI this command expires in 5 minutes**')
-            message = await self.bot.wait_for('message', timeout=300, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
+            message = await bot.wait_for('message', timeout=300, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
 
             if len(message.content) < 1:
                 await ctx.send('Setup cancelled. No message was provided.')
@@ -135,7 +135,7 @@ class StaffingAsync():
             await ctx.send(f'Error getting the Staffing message - {e}')
             raise e
 
-    async def _get_retriction(self, ctx):
+    async def _get_retriction(self, bot, ctx):
         """
         Function gets the booking restriction of the event
         :param ctx:
@@ -143,7 +143,7 @@ class StaffingAsync():
         """
         try:
             await ctx.send('Should the event have booking restriction? Allowed ansers: `Yes` or `No` **FYI this command expires in 5 minutes**')
-            message = await self.bot.wait_for('message', timeout=300, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
+            message = await bot.wait_for('message', timeout=300, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
 
             if len(message.content) < 1:
                 await ctx.send('Setup cancelled. No message was provided.')
@@ -160,7 +160,7 @@ class StaffingAsync():
             await ctx.send(f'Error getting the Staffing message - {e}')
             raise e
 
-    async def _setup_section(self, ctx, num: int):
+    async def _setup_section(self, bot, ctx, num: int):
         """
         Function gets the title for positions of the event from a message that'll be included in the staffing message
         :param ctx:
@@ -168,7 +168,7 @@ class StaffingAsync():
         """
         try:
             await ctx.send(f'Section title nr. {num}? **FYI this command expires in 1 minute**')
-            message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
+            message = await bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
 
             if len(message.content) < 1:
                 await ctx.send('Setup cancelled. No message was provided.')
@@ -180,7 +180,7 @@ class StaffingAsync():
             await ctx.send(f'Error getting the third section title - {e}')
             raise e
 
-    async def _setup_section_pos(self, ctx, title):
+    async def _setup_section_pos(self, bot, ctx, title):
         """
         Function gets the positions of the event from a message that'll be included in the staffing message
         :param ctx:
@@ -188,15 +188,15 @@ class StaffingAsync():
         """
         try:
             position = {}
-            times = await StaffingAsync.get_howmanypositions(self, ctx, title)
+            times = await StaffingAsync.get_howmanypositions(self, bot, ctx, title)
 
             i = 1
             for _ in range(int(times)):
                 await ctx.send(f'{title} nr. {i}? **FYI this command expires in 1 minute**')
-                message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
-                start_time = await StaffingAsync._get_start_or_end_time(self, ctx, 'start time')
-                end_time = await StaffingAsync._get_start_or_end_time(self, ctx, 'end time')
-                local_booking = await StaffingAsync._get_local_booking(self, ctx)
+                message = await bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
+                start_time = await StaffingAsync._get_start_or_end_time(self, bot, ctx, 'start time')
+                end_time = await StaffingAsync._get_start_or_end_time(self, bot, ctx, 'end time')
+                local_booking = await StaffingAsync._get_local_booking(self, bot, ctx)
                 position[message.content + ':'] = {
                     'position': message.content  + ':',
                     'start_time': start_time,
@@ -215,7 +215,7 @@ class StaffingAsync():
             await ctx.send(f'Error getting {title} - {e}')
             raise e
 
-    async def get_howmanypositions(self, ctx, type):
+    async def get_howmanypositions(self, bot, ctx, type):
         """
         Function gets the how many positions of the event from a message that'll be included in the staffing message
         :param ctx:
@@ -223,7 +223,7 @@ class StaffingAsync():
         """
         try:
             await ctx.send(f'How many {type} positions? **FYI this command expires in 1 minute**')
-            message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
+            message = await bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
 
             if len(message.content) < 1:
                 await ctx.send('Setup cancelled. No message was provided.')
@@ -234,7 +234,7 @@ class StaffingAsync():
             await ctx.send(f'Error getting amount of positions - {e}')
             raise e
 
-    async def _section_type(self, ctx):
+    async def _section_type(self, bot, ctx):
         """
         Function gets what type of section to update
         :param ctx:
@@ -242,7 +242,7 @@ class StaffingAsync():
         """
         try:
             await ctx.send(f'Which section would you like to update?**FYI this command expires in 1 minute** \nAvailable sections is: `1, 2 or 3`')
-            message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
+            message = await bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
 
             if len(message.content) < 1:
                 await ctx.send('Setup cancelled. No message was provided.')
@@ -258,7 +258,7 @@ class StaffingAsync():
             await ctx.send(f'Error getting the section title - {e}')
             raise e
         
-    async def _get_start_or_end_time(self, ctx, time):
+    async def _get_start_or_end_time(self, bot, ctx, time):
         """
         Function to get the start time
         :param ctx:
@@ -267,7 +267,7 @@ class StaffingAsync():
         try:
             await ctx.send(f'Does this position have a specified {time}? If yes, then insert below (format: `HH:MM`), otherwise type `No`! **FYI this command expires in 1 minute**')
 
-            message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
+            message = await bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
 
             if len(message.content) < 1:
                 await ctx.send('Setup cancelled. No message was provided.')
@@ -282,11 +282,11 @@ class StaffingAsync():
             await ctx.send(f'Error getting the {time} - {e}')
             raise e
         
-    async def _get_local_booking(self, ctx):
+    async def _get_local_booking(self, bot, ctx):
         try:
             await ctx.send(f'Is this positions a local position? Allowed ansers: `Yes` or `No` **FYI this command expires in 1 minutes**')
 
-            message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
+            message = await bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
 
             if 'yes' in message.content.lower() or 'no' in message.content.lower():
                 return True if message.content.lower() == 'yes' else False
@@ -299,10 +299,10 @@ class StaffingAsync():
             await ctx.send(f'Error getting the local booking option - {e}')
             raise e
         
-    async def _getconfirmation(self, ctx, title):
+    async def _getconfirmation(self, bot, ctx, title):
         try:
             await ctx.send(f'To confirm you want to delete staffing {title} type `{title}` in the chat. If you want to cancel the deletion type `CANCEL` in the chat. **FYI this command expires in 1 minute**')
-            message = await self.bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
+            message = await bot.wait_for('message', timeout=60, check=lambda message: message.author == ctx.author and ctx.channel == message.channel)
 
             if len(message.content) < 1:
                 await ctx.send('Deletion cancelled. No message was provided.')
@@ -372,7 +372,7 @@ class StaffingAsync():
 
         return newdate, formatted_start_time, end_time, current
 
-    async def _updatemessage(self, id):
+    async def _updatemessage(self, bot, id):
         try:
             event = DB.select(table='staffing', columns=['*'], where=['id'], value={'id': id})
 
@@ -420,7 +420,7 @@ class StaffingAsync():
                 
             format_staffing_message += f'{title} staffing - {formatted_date} {start_time} - {end_time}z\n\n{description}{pos_info}'
 
-            channel = self.bot.get_channel(int(channel_id))
+            channel = bot.get_channel(int(channel_id))
             message = await channel.fetch_message(int(message_id))
             await message.edit(content=format_staffing_message)
 
@@ -428,7 +428,7 @@ class StaffingAsync():
             print(f'Unable to update message - {e}', flush=True)
             raise e
 
-    async def _book(self, ctx, eventDetails, event, usernick, position, section):
+    async def _book(self, bot, ctx, eventDetails, event, usernick, position, section):
         cid = re.findall(r"\d+", str(ctx.author.nick))[0]
 
         positions = DB.select(table="positions", columns=['*'], where=['event'], value={'event': event[0]}, amount='all')
@@ -482,7 +482,7 @@ class StaffingAsync():
                                 if select[3] == '':
                                     DB.update(self=self, table='positions', columns=['booking_id'], values={'booking_id': feedback['id']}, where=['id'], value={'id': select[0]})
 
-                            await StaffingAsync._updatemessage(self, event[0])
+                            await StaffingAsync._updatemessage(self, bot, event[0])
                             await ctx.send(f"<@{usernick}> Confirmed booking for position `{position.upper()}` for event `{event[1]}`", delete_after=5)
                             booking = True
                         else:
@@ -490,7 +490,7 @@ class StaffingAsync():
 
                     else:
                         DB.update(self=self, table='positions', columns=['user'], values={'user': f'<@{usernick}>'}, where=['position', 'user', 'event'], value={'position': f'{position.upper()}:', 'user': '', 'event': event[0]}, limit=1)
-                        await StaffingAsync._updatemessage(self, event[0])
+                        await StaffingAsync._updatemessage(self, bot, event[0])
                         await ctx.send(f"<@{usernick}> Confirmed booking for position `{position.upper()}` for event `{event[1]}`", delete_after=5)
                         booking = True
                 elif section is not None:
@@ -508,14 +508,14 @@ class StaffingAsync():
                                         DB.update(self=self, table='positions', columns=['booking_id'], values={'booking_id': feedback['id']}, where=['id'], value={'id': select[0]})
 
 
-                                await StaffingAsync._updatemessage(self, event[0])
+                                await StaffingAsync._updatemessage(self, bot, event[0])
                                 await ctx.send(f"<@{usernick}> Confirmed booking for position `{position.upper()}` for event `{event[1]}`", delete_after=5)
                                 booking = True
                             else:
                                 await ctx.send(f"<@{usernick}> Booking failed, Control Center responded with error `{request.json()['message']}` code `{request.status_code}`, please try again later", delete_after=5)
                     else:
                         DB.update(self=self, table='positions', columns=['user'], values={'user': f'<@{usernick}>'}, where=['position', 'type', 'user', 'event'], value={'position': f'{position.upper()}:', 'type': sections[section], 'user': '', 'event': event[0]}, limit=1)
-                        await StaffingAsync._updatemessage(self, event[0])
+                        await StaffingAsync._updatemessage(self, bot, event[0])
                         await ctx.send(f"<@{usernick}> Confirmed booking for position `{position.upper()}` for event `{event[1]}`", delete_after=5)
                         booking = True
 
