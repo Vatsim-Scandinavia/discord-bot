@@ -3,8 +3,17 @@ import discord
 from helpers.config import config
 
 
-def embed(description: str = None, colour=None, title: str = None, author: dict = None, url: str = None, image: str = None, footer: dict = None,
-          fields: list = None, timestamp=None) -> discord.Embed:
+def embed(
+    description: str = None,
+    colour=None,
+    title: str = None,
+    author: dict = None,
+    url: str = None,
+    image: str = None,
+    footer: dict = None,
+    fields: list = None,
+    timestamp=None,
+) -> discord.Embed:
     """
     Function returns embeded styled message
     :param title:
@@ -21,21 +30,22 @@ def embed(description: str = None, colour=None, title: str = None, author: dict 
         colour = config.VATSCA_BLUE
 
     if timestamp:
-        embed = discord.Embed(title=title,
-                              url=url,
-                              description=description,
-                              colour=colour,
-                              timestamp=timestamp)
+        embed = discord.Embed(
+            title=title,
+            url=url,
+            description=description,
+            colour=colour,
+            timestamp=timestamp,
+        )
     else:
-        embed = discord.Embed(title=title,
-                              url=url,
-                              description=description,
-                              colour=colour)
+        embed = discord.Embed(
+            title=title, url=url, description=description, colour=colour
+        )
 
     if author:
-        embed.set_author(name=author['name'],
-                         url=author['url'],
-                         icon_url=author['icon'])
+        embed.set_author(
+            name=author['name'], url=author['url'], icon_url=author['icon']
+        )
 
     if image:
         embed.set_image(url=image)

@@ -2,6 +2,7 @@ import aiohttp
 from typing import Any, List, Optional
 from helpers.config import config
 
+
 class Roles:
     """
     Helper class to interact with the API for roles and training data.
@@ -10,11 +11,13 @@ class Roles:
     def __init__(self) -> None:
         self.base_url = config.CC_API_URL
         self.headers = {
-            "Authorization": f"Bearer {config.CC_API_TOKEN}",
-            "Accept": "application/json"
+            'Authorization': f'Bearer {config.CC_API_TOKEN}',
+            'Accept': 'application/json',
         }
 
-    async def fetch_data(self, endpoint: str, params: Optional[dict] = None) -> Optional[List[Any]]:
+    async def fetch_data(
+        self, endpoint: str, params: Optional[dict] = None
+    ) -> Optional[List[Any]]:
         """
         Generic method to fetch data from the API.
 
@@ -26,22 +29,26 @@ class Roles:
             Optional[List[Any]]: The parsed JSON response data or None if the request fails.
         """
 
-        url = f"{self.base_url}/{endpoint}"
+        url = f'{self.base_url}/{endpoint}'
 
         async with aiohttp.ClientSession() as session:
             try:
-                async with session.get(url, headers=self.headers, params=params) as response:
+                async with session.get(
+                    url, headers=self.headers, params=params
+                ) as response:
                     if response.status == 200:
                         data = await response.json()
-                        return data.get("data", [])
+                        return data.get('data', [])
                     else:
-                        print(f"Error fetching data from {url}. Status code: {response.status}")
+                        print(
+                            f'Error fetching data from {url}. Status code: {response.status}'
+                        )
                         return None
-                    
+
             except aiohttp.ClientError as e:
-                print(f"HTTP error occurred while accessing {url}: {e}")
+                print(f'HTTP error occurred while accessing {url}: {e}')
                 return None
-            
+
     async def get_roles(self) -> Optional[List[Any]]:
         """
         Fetch all users with their roles from the API.
@@ -49,8 +56,8 @@ class Roles:
         Returns:
             Optional[List[Any]]: A list of users and their roles or None if the request fails.
         """
-        return await self.fetch_data("users", params={"include[]": "roles"})
-    
+        return await self.fetch_data('users', params={'include[]': 'roles'})
+
     async def get_training(self) -> Optional[List[Any]]:
         """
         Fetch all users with their training data from the API.
@@ -58,8 +65,8 @@ class Roles:
         Returns:
             Optional[List[Any]]: A list of users and their training data or None if the request fails.
         """
-        return await self.fetch_data("users", params={"include[]": "training"})
-    
+        return await self.fetch_data('users', params={'include[]': 'training'})
+
     async def get_endorsement(self) -> Optional[dict]:
         """
         Fetch all users with their endorsement data from the API.
@@ -68,8 +75,8 @@ class Roles:
             Optional[dict]: The visiting endorsement data if valid, or None otherwise.
         """
 
-        return await self.fetch_data("users", params={"include[]": "endorsements"})
-    
+        return await self.fetch_data('users', params={'include[]': 'endorsements'})
+
     async def get_atc_activity(self) -> Optional[dict]:
         """
         Fetch all users with their endorsement data from the API.
@@ -78,12 +85,11 @@ class Roles:
             Optional[dict]: The visiting endorsement data if valid, or None otherwise.
         """
         params = {
-            "include[]": [
-                "allUsers",
-                "activeAreas",
+            'include[]': [
+                'allUsers',
+                'activeAreas',
             ],
-            "onlyAtcActive": 1
+            'onlyAtcActive': 1,
         }
 
-        return await self.fetch_data("users", params=params)
-        
+        return await self.fetch_data('users', params=params)
