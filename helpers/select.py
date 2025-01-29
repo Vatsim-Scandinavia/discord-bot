@@ -1,6 +1,7 @@
 import discord
 from helpers.staffing_async import StaffingAsync
 from helpers.db import DB
+import helpers.staffings.messages as ask
 
 class Select(discord.ui.Select):
     def __init__(self, id = None, ctx = None, bot = None) -> None:
@@ -20,14 +21,14 @@ class Select(discord.ui.Select):
         title = DB.select(table="staffing", columns=['title'], where=['id'], value={'id': self.id})[0]
         if self.values[0] == "Event interval":
             await interaction.response.defer()
-            week_int = await StaffingAsync._get_interval(self, self.ctx)
+            week_int = await ask.get_interval(self.bot, self.ctx)
             dates = await StaffingAsync._geteventdate(self, self.id)
             DB.update(self=self, table='staffing', where=['id'], value={'id': self.id}, columns=['week_interval', 'date'], values={'week_interval': week_int, 'date': dates[0]})
             await StaffingAsync._updatemessage(self=self, id=self.id)
             await interaction.followup.send(f'Event week interval updated to - `{week_int}`')
         elif self.values[0] == "Staffing message":
             await interaction.response.defer()
-            newdescription = await StaffingAsync._get_description(self, self.ctx)
+            newdescription = await ask.get_description(self.bot, self.ctx)
             newdescription = newdescription + "\n\nTo book a position, write `/book`, press TAB and then write the callsign.\nTo unbook a position, use `/unbook`."
             DB.update(self=self, table='staffing', where=['id'], value={'id': self.id}, columns=['description'], values={'description': newdescription})
             await StaffingAsync._updatemessage(self=self, id=self.id)
@@ -41,11 +42,11 @@ class Select(discord.ui.Select):
                     update_ok = False
 
             if update_ok == True:
-                section = await StaffingAsync._section_type(self, self.ctx)
-                section_title = await StaffingAsync._setup_section(self, self.ctx, section)
+                section = await ask.section_type(self.bot, self.ctx)
+                section_title = await ask.setup_section(self.bot, self.ctx, section)
                 positions = DB.select(table='positions', columns=['position'], where=['type', 'event'], value={'type': section, 'event': self.id})
                 if section_title != 'None':
-                    section_pos = await StaffingAsync._setup_section_pos(self, self.ctx, section_title)
+                    section_pos = await ask.setup_section_pos(self.bot, self.ctx, section_title)
                 columns = {
                     1: 'section_1_title',
                     2: 'section_2_title',
@@ -74,7 +75,7 @@ class Select(discord.ui.Select):
                 await interaction.followup.send(f'Update is not OK. There are still active bookings for this event.')
         elif self.values[0] == "Booking restriction":
             await interaction.response.defer()
-            restriction = await StaffingAsync._get_retriction(self=self, ctx=self.ctx)
+            restriction = await ask.get_restriction(self.bot, self.ctx)
             restrict_bookings = {
                 'no': 0,
                 'yes': 1
@@ -83,7 +84,7 @@ class Select(discord.ui.Select):
             await interaction.followup.send(f'Booking restriction updated.')
         elif self.values[0] == "Delete Staffing":
             await interaction.response.defer()
-            confirm_delete = await StaffingAsync._getconfirmation(self, self.ctx, title)
+            confirm_delete = await ask.get_confirmation(self.bot, self.ctx, title)
             event = DB.select(table='staffing', columns=['title', 'channel_id', 'message_id'], where=['id'], value={'id': self.id})
             if confirm_delete == event[0]:
                 channel_id = event[1]
