@@ -460,7 +460,7 @@ class StaffingAsync():
                 end_time = ':'.join(str(pos[7]).split(':')[:2])
             
             if booking is False:
-                if section == None and position.upper() + ':' == pos[1] and pos[2] == '':
+                if section is None and position.upper() + ':' == pos[1] and pos[2] == '':
                     if int(pos[5]) == 0:
                         request = await Booking.post_booking(self, int(cid), str(date), str(start_time), str(end_time), str(position), int(tag))
 
@@ -505,11 +505,11 @@ class StaffingAsync():
                                 booking = True
                             else:
                                 await ctx.send(f"<@{usernick}> Booking failed, Control Center responded with error `{request.json()['message']}` code `{request.status_code}`, please try again later", delete_after=5)
-                    else:
-                        DB.update(self=self, table='positions', columns=['user'], values={'user': f'<@{usernick}>'}, where=['position', 'type', 'user', 'event'], value={'position': f'{position.upper()}:', 'type': sections[section], 'user': '', 'event': event[0]}, limit=1)
-                        await StaffingAsync._updatemessage(self, bot, event[0])
-                        await ctx.send(f"<@{usernick}> Confirmed booking for position `{position.upper()}` for event `{event[1]}`", delete_after=5)
-                        booking = True
+                        else:
+                            DB.update(self=self, table='positions', columns=['user'], values={'user': f'<@{usernick}>'}, where=['position', 'type', 'user', 'event'], value={'position': f'{position.upper()}:', 'type': sections[section], 'user': '', 'event': event[0]}, limit=1)
+                            await StaffingAsync._updatemessage(self, bot, event[0])
+                            await ctx.send(f"<@{usernick}> Confirmed booking for position `{position.upper()}` for event `{event[1]}`", delete_after=5)
+                            booking = True
 
         if booking == False:
             await ctx.send(f'<@{usernick}> Booking failed, check if you inserted correct postion, section or if the positions is already booked.', delete_after=5)

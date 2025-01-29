@@ -197,7 +197,7 @@ class StaffingCog(commands.Cog):
                 
                 if any(ctx.channel.id in channel for channel in event_channel):
                     if any(position.upper() + ':' in match for match in positions):
-                        if eventDetails[1] == 0:
+                        if int(eventDetails[1]) == 0:
                             await self.staffing_async._book(self.bot, ctx, eventDetails, event, usernick, position, section)
                         else:
                             if any(position.upper() + ':' in match for match in sec_pos) and any('' in pos for pos in main_pos) or any(position.upper() + ':' in match for match in reg_pos) and any('' in pos for pos in main_pos):
