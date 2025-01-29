@@ -15,6 +15,7 @@ from helpers.db import DB
 from helpers.select import SelectView
 from helpers.config import config
 from helpers.handler import Handler
+import helpers.staffings.messages as ask
 
 class StaffingCog(commands.Cog):
     #
@@ -25,7 +26,7 @@ class StaffingCog(commands.Cog):
     def __init__(self, bot) -> None:
         self.bot = bot
         self.autoreset.start()
-        self.staffing_async = StaffingAsync()
+        self.staffing_async = StaffingAsync(base_url=config.EVENT_CALENDAR_URL, calendar_type=config.EVENT_CALENDAR_TYPE, token=config.CC_API_TOKEN)
 
     def cog_unload(self):
         self.autoreset.cancel()
@@ -67,12 +68,12 @@ class StaffingCog(commands.Cog):
     async def setup_staffing(self, interaction: Interaction, title: str, week_int: app_commands.Range[int, 1, 4], section_amount: app_commands.Range[int, 1, 4], restrict_booking: Literal["Yes", "No"], channel: TextChannel):
         ctx = await Handler.get_context(self, self.bot, interaction)
         dates = await self.staffing_async._geteventdate(title)
-        description = await self.staffing_async._get_description(self.bot, ctx)
+        description = await ask.get_description(self.bot, ctx)
         description = description + "\n\nTo book a position, write `/book`, press TAB and then write the callsign.\nTo unbook a position, use `/unbook`."
         i = 1
         section_positions = {}
         for _ in range(section_amount):
-            section_title = await self.staffing_async._setup_section(self.bot, ctx, i)
+            section_title = await ask.setup_section(self.bot, ctx, i)
             section_pos = await self.staffing_async._setup_section_pos(self.bot, ctx, section_title)
             section_positions[section_title] = section_pos
             i += 1
