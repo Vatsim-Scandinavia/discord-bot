@@ -198,12 +198,12 @@ class StaffingCog(commands.Cog):
                 if any(ctx.channel.id in channel for channel in event_channel):
                     if any(position.upper() + ':' in match for match in positions):
                         if eventDetails[1] == 0:
-                            await self.staffing_async._book(ctx, eventDetails, event, usernick, position, section)
+                            await self.staffing_async._book(self.bot, ctx, eventDetails, event, usernick, position, section)
                         else:
                             if any(position.upper() + ':' in match for match in sec_pos) and any('' in pos for pos in main_pos) or any(position.upper() + ':' in match for match in reg_pos) and any('' in pos for pos in main_pos):
                                 await ctx.send(f'<@{usernick}> All main positions is required to be booked before booking any secondary positions.', delete_after=5)
                             else:
-                                await self.staffing_async._book(ctx, eventDetails, event, usernick, position)
+                                await self.staffing_async._book(self.bot, ctx, eventDetails, event, usernick, position)
                     else:
                         await ctx.send(f"<@{usernick}> The bot could not find the position you tried to book.")
                 else:
