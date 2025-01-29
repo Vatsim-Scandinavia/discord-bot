@@ -62,7 +62,7 @@ class StaffingCog(commands.Cog):
 
     @app_commands.command(name="setupstaffing", description="Bot setups staffing information")
     @app_commands.describe(title="What should the title of the staffing be?", week_int="What should the week interval be? eg. 1 then the date will be selected each week.", section_amount="What should the section amount be? eg. 3 then there will be 3 sections.", restrict_booking="Should the staffing restrict booking to first section before allowing other sections too?")
-    @app_commands.autocomplete(title=avail_title_autocomplete)
+    @app_commands.autocomplete(title=get_title_choices)
     @app_commands.checks.has_any_role(*config.STAFF_ROLES)
     async def setup_staffing(self, interaction: Interaction, title: str, week_int: app_commands.Range[int, 1, 4], section_amount: app_commands.Range[int, 1, 4], restrict_booking: Literal["Yes", "No"], channel: TextChannel):
         ctx = await Handler.get_context(self, self.bot, interaction)
