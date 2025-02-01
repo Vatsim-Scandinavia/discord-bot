@@ -1,12 +1,21 @@
-import re
+from typing import Optional
+
 import discord
 
-from markdownify import markdownify as md
 from helpers.config import config
 
 
-def embed(description: str = None, colour=None, title: str = None, author: dict = None, url: str = None, image: str = None, footer: dict = None,
-          fields: list = None, timestamp=None) -> discord.Embed:
+def embed(
+    description: Optional[str] = None,
+    colour=None,
+    title: Optional[str] = None,
+    author: Optional[dict] = None,
+    url: Optional[str] = None,
+    image: Optional[str] = None,
+    footer: Optional[dict] = None,
+    fields: Optional[list] = None,
+    timestamp=None,
+) -> discord.Embed:
     """
     Function returns embeded styled message
     :param title:
@@ -23,21 +32,22 @@ def embed(description: str = None, colour=None, title: str = None, author: dict 
         colour = config.VATSCA_BLUE
 
     if timestamp:
-        embed = discord.Embed(title=title,
-                              url=url,
-                              description=description,
-                              colour=colour,
-                              timestamp=timestamp)
+        embed = discord.Embed(
+            title=title,
+            url=url,
+            description=description,
+            colour=colour,
+            timestamp=timestamp,
+        )
     else:
-        embed = discord.Embed(title=title,
-                              url=url,
-                              description=description,
-                              colour=colour)
+        embed = discord.Embed(
+            title=title, url=url, description=description, colour=colour
+        )
 
     if author:
-        embed.set_author(name=author['name'],
-                         url=author['url'],
-                         icon_url=author['icon'])
+        embed.set_author(
+            name=author['name'], url=author['url'], icon_url=author['icon']
+        )
 
     if image:
         embed.set_image(url=image)

@@ -8,22 +8,20 @@ from dotenv import load_dotenv
 
 load_dotenv('.env')
 
+
 class Config:
     def __init__(self):
-        """
-        Environment Variables
-        """
-        
+        """Environment Variables."""
         # Essential variables
-        self.BOT_TOKEN = os.getenv("BOT_TOKEN", "")
+        self.BOT_TOKEN = os.getenv('BOT_TOKEN', '')
         self.GUILD_ID = int(os.getenv('GUILD_ID', 0))
         self.DEBUG = bool(strtobool(os.getenv('DEBUG', 'False')))
 
-        self.PREFIX = "/"
-        self.VATSCA_BLUE = 0x43c6e7
+        self.PREFIX = '/'
+        self.VATSCA_BLUE = 0x43C6E7
 
         self.DESCRIPTION = 'This is a new VATSCA Discord Bot'
-        self.PRESENCE_TEXT = "VATSCA Airspace"
+        self.PRESENCE_TEXT = 'VATSCA Airspace'
 
         # Cogs and admin roles
         self.COGS = [
@@ -74,10 +72,10 @@ class Config:
         }
 
         # VATSIM API
-        self.VATSIM_API_TOKEN = str(os.getenv("VATSIM_API_TOKEN", ""))
-        self.VATSIM_CHECK_MEMBER_URL = str(os.getenv("VATSIM_CHECK_MEMBER_URL", ""))
-        self.VATSIM_SUBDIVISION = str(os.getenv("VATSIM_SUBDIVISION", ""))
-        self.DIVISION_URL = str(os.getenv("DIVISION_URL", ""))
+        self.VATSIM_API_TOKEN = str(os.getenv('VATSIM_API_TOKEN', ''))
+        self.VATSIM_CHECK_MEMBER_URL = str(os.getenv('VATSIM_CHECK_MEMBER_URL', ''))
+        self.VATSIM_SUBDIVISION = str(os.getenv('VATSIM_SUBDIVISION', ''))
+        self.DIVISION_URL = str(os.getenv('DIVISION_URL', ''))
 
         # CC API
         self.CC_API_URL = str(os.getenv('CC_API_URL', ''))
@@ -89,39 +87,57 @@ class Config:
         self.EVENT_CALENDAR_TYPE = int(os.getenv('EVENT_CALENDAR_TYPE', ''))
 
         # Adjacent API keys
-        self.SENTRY_KEY = str(os.getenv("SENTRY_KEY"))
+        self.SENTRY_KEY = str(os.getenv('SENTRY_KEY'))
 
-        self.METAR_API_KEY = str(os.getenv("METAR_API_KEY", ""))
+        self.METAR_API_KEY = str(os.getenv('METAR_API_KEY', ''))
 
         # Role IDs
-        self.VATSCA_MEMBER_ROLE = int(os.getenv("VATSCA_MEMBER_ROLE", 0))
-        self.VATSIM_MEMBER_ROLE = int(os.getenv("VATSIM_MEMBER_ROLE", 0))
-        self.EVENTS_ROLE = int(os.getenv("EVENTS_ROLE", 0))
-        self.MENTOR_ROLE = int(os.getenv("MENTOR_ROLE", 0))
-        self.TRAINING_STAFF_ROLE = int(os.getenv("TRAINING_STAFF_ROLE", 0))
-        self.VISITOR_ROLE = int(os.getenv("VISITOR_ROLE", 0))
-        self.OBS_ROLE = int(os.getenv("OBS_ROLE", 0))
+        self.VATSCA_MEMBER_ROLE = int(os.getenv('VATSCA_MEMBER_ROLE', 0))
+        self.VATSIM_MEMBER_ROLE = int(os.getenv('VATSIM_MEMBER_ROLE', 0))
+        self.EVENTS_ROLE = int(os.getenv('EVENTS_ROLE', 0))
+        self.MENTOR_ROLE = int(os.getenv('MENTOR_ROLE', 0))
+        self.TRAINING_STAFF_ROLE = int(os.getenv('TRAINING_STAFF_ROLE', 0))
+        self.VISITOR_ROLE = int(os.getenv('VISITOR_ROLE', 0))
+        self.OBS_ROLE = int(os.getenv('OBS_ROLE', 0))
 
         # FIR Data
-        self.FIR_DATA = [ fir.split(':') for fir in os.getenv('FIR_DATA', '').split(',') if fir]
+        self.FIR_DATA = [
+            fir.split(':') for fir in os.getenv('FIR_DATA', '').split(',') if fir
+        ]
         self.FIRS, self.FIR_ROLES = zip(*self.FIR_DATA) if self.FIR_DATA else ([], [])
         self.FIR_MENTORS = dict(zip(self.FIRS, self.FIR_ROLES))
 
         # Examiner Data (same format as FIR data)
-        self.EXAMINER_DATA = [ fir.split(':') for fir in os.getenv('EXAMINER_DATA', '').split(',') if fir]
-        self.EXAM_FIRS, self.EXAM_ROLES = zip(*self.EXAMINER_DATA) if self.EXAMINER_DATA else ([], [])
+        self.EXAMINER_DATA = [
+            fir.split(':') for fir in os.getenv('EXAMINER_DATA', '').split(',') if fir
+        ]
+        self.EXAM_FIRS, self.EXAM_ROLES = (
+            zip(*self.EXAMINER_DATA) if self.EXAMINER_DATA else ([], [])
+        )
         self.FIR_EXAMINERS = dict(zip(self.EXAM_FIRS, self.EXAM_ROLES))
 
         # Training Data
         self.TRAINING_DATA = os.getenv('TRAINING_DATA', '').split(',')
         self.TRAINING_ROLES = {
-            country: {role.split(':')[0]: role.split(':')[1] for role in roles_str.split(',')}
-            for country, roles_str in (entry.split('|') for entry in self.TRAINING_DATA if '|' in entry)
+            country: {
+                role.split(':')[0]: role.split(':')[1] for role in roles_str.split(',')
+            }
+            for country, roles_str in (
+                entry.split('|') for entry in self.TRAINING_DATA if '|' in entry
+            )
         }
 
-        self.CONTROLLER_FIR_DATA = [ fir.split(':') for fir in os.getenv('CONTROLLER_FIR_DATA', '').split(',') if fir]
-        self.CONTROLLER_FIRS, self.CONTROLLER_ROLES = zip(*self.CONTROLLER_FIR_DATA) if self.CONTROLLER_FIR_DATA else ([], [])
-        self.CONTROLLER_FIR_ROLES = dict(zip(self.CONTROLLER_FIRS, self.CONTROLLER_ROLES))
+        self.CONTROLLER_FIR_DATA = [
+            fir.split(':')
+            for fir in os.getenv('CONTROLLER_FIR_DATA', '').split(',')
+            if fir
+        ]
+        self.CONTROLLER_FIRS, self.CONTROLLER_ROLES = (
+            zip(*self.CONTROLLER_FIR_DATA) if self.CONTROLLER_FIR_DATA else ([], [])
+        )
+        self.CONTROLLER_FIR_ROLES = dict(
+            zip(self.CONTROLLER_FIRS, self.CONTROLLER_ROLES)
+        )
 
         # Parse RATING_FIR_DATA from the environment variable
         self.RATING_FIR_DATA_RAW = os.getenv('RATING_FIR_DATA', '')
@@ -140,11 +156,15 @@ class Config:
 
                 self.RATING_FIR_DATA[fir_name] = ratings
 
-        self.c1_equivalent_ratings = {"ADM", "SUP", "C1", "C2", "C3", "I1", "I3"}
+        self.c1_equivalent_ratings = {'ADM', 'SUP', 'C1', 'C2', 'C3', 'I1', 'I3'}
 
         # Parse REACTION_ROLE_DATA from the environment variable
         self.REACTION_ROLE_DATA = os.getenv('REACTION_ROLE_DATA', '')
-        self.REACTION_EMOJI, self.REACTION_MESSAGE_IDS, self.REACTION_ROLE_IDS = [], [], []
+        self.REACTION_EMOJI, self.REACTION_MESSAGE_IDS, self.REACTION_ROLE_IDS = (
+            [],
+            [],
+            [],
+        )
 
         if self.REACTION_ROLE_DATA:
             for reaction_role in self.REACTION_ROLE_DATA.split(','):
@@ -173,17 +193,19 @@ class Config:
         self.BOT_DB_NAME = str(os.getenv('BOT_DB_NAME', ''))
 
     def activity(self) -> discord.Activity:
-        return discord.Activity(type=discord.ActivityType.watching, name=self.PRESENCE_TEXT)
-    
+        return discord.Activity(
+            type=discord.ActivityType.watching, name=self.PRESENCE_TEXT
+        )
+
     def status(self) -> discord.Status:
         return discord.Status.online
-    
+
     async def load_cogs(self, bot: Bot) -> None:
         for cog in self.COGS:
             try:
                 await bot.load_extension(cog)
             except Exception as e:
                 print(f'Failed to load cog - {cog}. \n Error: {e}', flush=True)
-            
+
 
 config = Config()

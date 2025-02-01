@@ -1,5 +1,5 @@
 ---
-name: Docker Build
+name: CI
 
 on:
   push:
@@ -11,6 +11,9 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        architecture: [linux/amd64, linux/arm64]
 
     steps:
       - name: Checkout repository
@@ -46,4 +49,16 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          platforms: ${{ env.TARGET_PLATFORMS }}
+          platforms: ${{ matrix.architecture }}
+
+  lint-ruff:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Lint Python
+        uses: astral-sh/ruff-action@v3
+
+      - name: Check formatting
+        run: ruff format --check
