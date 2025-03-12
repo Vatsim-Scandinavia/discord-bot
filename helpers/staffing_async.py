@@ -40,6 +40,11 @@ class StaffingAsync:
     async def _generate_staffing_message(self, id):
         try:
             staffing = await self.api_helper._fetch_data(f'staffings/{id}')
+
+            if not staffing:
+                print('Error: Staffing not found.')
+                raise ValueError
+
             event = staffing.get('event', {})
 
             date = event.get('start_date')
@@ -71,14 +76,18 @@ class StaffingAsync:
                 section = int(position.get('section', 0))
                 if section in section_titles and section_titles[section]:
                     section_positions[section_titles[section]].append(position)
-
+                    
             pos_info = '\n\n'.join(
                 f"{title}:\n" + "\n".join(
-                    f"{pos.get('start_time', '')[:5]} - {pos.get('end_time', '')[:5]} ‖ {pos.get('callsign', '')}: <@{pos.get('discord_user', '')}>"
-                    if pos.get('discord_user') else  # If booked, format with mention
-                    f"{pos.get('start_time', '')[:5]} - {pos.get('end_time', '')[:5]} ‖ {pos.get('callsign', '')}:" 
-                    if pos.get('start_time') and pos.get('end_time') else
-                    f"{pos.get('callsign', '')}:"
+                    (
+                        f"{(pos.get('start_time') or '')[:5]} - {(pos.get('end_time') or '')[:5]} ‖ {pos.get('callsign', '')}: <@{pos.get('discord_user')}>"
+                        if pos.get('start_time') and pos.get('end_time') and pos.get('discord_user') else
+                        f"{(pos.get('start_time') or '')[:5]} - {(pos.get('end_time') or '')[:5]} ‖ {pos.get('callsign', '')}:"
+                        if pos.get('start_time') and pos.get('end_time') else
+                        f"{pos.get('callsign', '')}: <@{pos.get('discord_user')}>"
+                        if pos.get('discord_user') else
+                        f"{pos.get('callsign', '')}:"
+                    )
                     for pos in positions
                 )
                 for title, positions in section_positions.items() if title
@@ -145,6 +154,10 @@ class StaffingAsync:
 
     async def update_staffing_message(self, bot, id):
         staffing, staffing_msg = await self._generate_staffing_message(id)
+
+        if not staffing or not staffing_msg:
+            print('Failed to generate staffing message.')
+            raise ValueError
 
         channel = bot.get_channel(int(staffing.get('channel_id', 0)))
         message = await channel.fetch_message(int(staffing.get('message_id', 0)))
