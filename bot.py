@@ -221,6 +221,11 @@ async def on_app_command_error(
 async def on_error(event, *args, **kwargs):
     print(f'Error in {event}: {args} {kwargs}', flush=True)
 
+@bot.event
+async def on_message(message: discord.Message):
+    if message.type == discord.MessageType.pins_add and message.author == bot.user:
+        await message.delete()
+
 
 # Load all cogs at startup
 @bot.event

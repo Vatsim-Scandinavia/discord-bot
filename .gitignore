@@ -5,6 +5,3 @@ __pycache__
 .vscode
 
 .idea
-
-staffing-info/
-cogs/old_staffing.py

@@ -26,6 +26,7 @@ class Config:
         # Cogs and admin roles
         self.COGS = [
             'cogs.admin',
+            'cogs.fastapi',
             'cogs.member',
             'cogs.publisher',
             'cogs.roles',
@@ -36,6 +37,7 @@ class Config:
 
         self.COGS_LOAD = {
             'admin': 'cogs.admin',
+            'fastapi': 'cogs.fastapi',
             'member': 'cogs.member',
             'publisher': 'cogs.publisher',
             'roles': 'cogs.roles',
@@ -84,7 +86,11 @@ class Config:
         # Event Calendar API
         self.EVENT_CALENDAR_URL = str(os.getenv('EVENT_CALENDAR_URL', ''))
         self.EVENT_API_TOKEN = str(os.getenv('EVENT_API_TOKEN', ''))
-        self.EVENT_CALENDAR_TYPE = int(os.getenv('EVENT_CALENDAR_TYPE', ''))
+
+        # FastAPI
+        self.FASTAPI_TOKEN = str(os.getenv('FASTAPI_TOKEN', ''))
+        self.FASTAPI_URL = str(os.getenv('FASTAPI_URL', ''))
+        self.FASTAPI_PORT = int(os.getenv('FASTAPI_PORT', 0))
 
         # Adjacent API keys
         self.SENTRY_KEY = str(os.getenv('SENTRY_KEY'))
