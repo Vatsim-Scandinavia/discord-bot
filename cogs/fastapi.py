@@ -38,9 +38,9 @@ class FastAPICog(commands.Cog):
 
         asyncio.create_task(server.serve())
 
-    async def update_staffing(self, id: Annotated[int, Form()]):
+    async def update_staffing(self, id: Annotated[int, Form()], reset: Annotated[bool, Form()] = None):
         try:
-            await self.staffing_async.update_staffing_message(self.bot, id)
+            await self.staffing_async.update_staffing_message(self.bot, id, reset)
 
             return {"message": "Staffing updated successfully"}
         

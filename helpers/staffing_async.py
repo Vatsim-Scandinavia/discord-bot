@@ -1,5 +1,7 @@
 # ruff: noqa
 # Linting ignored due to staffing module getting a major refactor.
+import asyncio
+
 from typing import List
 from collections import defaultdict
 from datetime import datetime
@@ -80,12 +82,15 @@ class StaffingAsync:
             pos_info = '\n\n'.join(
                 f"{title}:\n" + "\n".join(
                     (
-                        f"{(pos.get('start_time') or '')[:5]} - {(pos.get('end_time') or '')[:5]} ‖ {pos.get('callsign', '')}: <@{pos.get('discord_user')}>"
-                        if pos.get('start_time') and pos.get('end_time') and pos.get('discord_user') else
-                        f"{(pos.get('start_time') or '')[:5]} - {(pos.get('end_time') or '')[:5]} ‖ {pos.get('callsign', '')}:"
-                        if pos.get('start_time') and pos.get('end_time') else
+                        f"{self.format_time(pos.get('start_time') or event.get('start_date'))} - {self.format_time(pos.get('end_time') or event.get('end_date'))} ‖ {pos.get('callsign', '')}: <@{pos.get('discord_user')}>"
+                        if pos.get('discord_user') and (pos.get('start_time') or pos.get('end_time')) else
+
+                        f"{self.format_time(pos.get('start_time') or event.get('start_date'))} - {self.format_time(pos.get('end_time') or event.get('end_date'))} ‖ {pos.get('callsign', '')}:"
+                        if pos.get('start_time') or pos.get('end_time') else
+
                         f"{pos.get('callsign', '')}: <@{pos.get('discord_user')}>"
                         if pos.get('discord_user') else
+
                         f"{pos.get('callsign', '')}:"
                     )
                     for pos in positions
@@ -102,6 +107,17 @@ class StaffingAsync:
         except Exception as e:
             print(f'Unable to update message - {e}', flush=True)
             raise e
+        
+    def format_time(self, value):
+        if isinstance(value, str):
+            try:
+                # Handle full datetime string like '2025-03-17 21:00:00'
+                dt = datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
+                return dt.strftime("%H:%M")
+            except ValueError:
+                # If it's already in correct format like '21:00'
+                return value[:5]
+        return ""
 
     async def _book(self, ctx, staffing, position, section):
         try:
@@ -152,7 +168,7 @@ class StaffingAsync:
             await ctx.send(f'Error booking position `{position}` - {e}', delete_after=5, ephemeral=True)
             raise e
 
-    async def update_staffing_message(self, bot, id):
+    async def update_staffing_message(self, bot, id, reset = None):
         staffing, staffing_msg = await self._generate_staffing_message(id)
 
         if not staffing or not staffing_msg:
@@ -162,6 +178,20 @@ class StaffingAsync:
         channel = bot.get_channel(int(staffing.get('channel_id', 0)))
         message = await channel.fetch_message(int(staffing.get('message_id', 0)))
         await message.edit(content=staffing_msg)
+
+        if reset:
+            event = staffing.get('event', {})
+            title = event.get('title', '')
+            print(f'Started autoreset of {title} at {str(datetime.now().isoformat())}')
+
+            await channel.send('The chat is being automatic reset!')
+            await asyncio.sleep(5)
+            await channel.purge(limit=None, check=lambda msg: not msg.pinned)
+
+            print(
+                f'Finished autoreset of {title} at {str(datetime.now().isoformat())}',
+                flush=True,
+            )
 
 
             
