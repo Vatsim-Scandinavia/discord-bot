@@ -2,17 +2,13 @@
 # Linting ignored due to staffing module getting a major refactor.
 import discord
 import asyncio
-import requests
-import uvicorn
 
 from discord import app_commands, Interaction
-from discord.ext import commands, tasks
+from discord.ext import commands
 
-from datetime import datetime, timezone
-from fastapi import FastAPI, HTTPException, Form
-from threading import Thread
+from datetime import datetime
 
-from typing import Annotated, List
+from typing import List
 
 from helpers.api import APIHelper
 from helpers.staffing_async import StaffingAsync
