@@ -38,7 +38,9 @@ class StaffingCog(commands.Cog):
     #
 
     # Autocomplete function to fetch and filter titles in real-time
-    async def avail_title_autocomplete(self, interaction: Interaction, current: str) -> List[app_commands.Choice]:
+    async def avail_title_autocomplete(
+        self, interaction: Interaction, current: str
+    ) -> List[app_commands.Choice]:
         # Fetch the latest available titles from the database
         staffings = await self.staffing_async._get_avail_titles()
 
@@ -58,11 +60,13 @@ class StaffingCog(commands.Cog):
     async def refreshevent(self, interaction: discord.Interaction, staffing: int):
         ctx = await Handler.get_context(self, self.bot, interaction)
 
-        staffing, staffing_msg = await self.staffing_async._generate_staffing_message(staffing)
+        staffing, staffing_msg = await self.staffing_async._generate_staffing_message(
+            staffing
+        )
 
         event = staffing.get('event', '')
         title = event.get('title', '')
-        
+
         channel = self.bot.get_channel(int(staffing.get('channel_id', 0)))
         message = await channel.fetch_message(int(staffing.get('message_id', 0)))
 
@@ -84,7 +88,7 @@ class StaffingCog(commands.Cog):
 
         try:
             staffing = await self.api_helper._fetch_data(f'staffings/{staffing}')
-            
+
             event = staffing.get('event', {})
             title = event.get('title', '')
 
@@ -97,7 +101,9 @@ class StaffingCog(commands.Cog):
             staffing_id = staffing.get('id', 0)
 
             # Send API POST request
-            request = await self.api_helper.post_data(f'staffings/{staffing_id}/reset', {})
+            request = await self.api_helper.post_data(
+                f'staffings/{staffing_id}/reset', {}
+            )
 
             if not request:
                 await ctx.send(
@@ -137,18 +143,28 @@ class StaffingCog(commands.Cog):
         try:
             allowed_roles = {config.VATSIM_MEMBER_ROLE, config.VATSCA_MEMBER_ROLE}
             if not any(role.id in allowed_roles for role in ctx.author.roles):
-                await ctx.send(f'<@{user_id}> You do not have the required role to book positions.', delete_after=5, ephemeral=True)
+                await ctx.send(
+                    f'<@{user_id}> You do not have the required role to book positions.',
+                    delete_after=5,
+                    ephemeral=True,
+                )
                 return
-            
+
             staffings = await self.api_helper._fetch_data('staffings')
-            staffing = next((s for s in staffings if s.get('channel_id') == ctx.channel.id), None)
+            staffing = next(
+                (s for s in staffings if s.get('channel_id') == ctx.channel.id), None
+            )
 
             if not staffing:
-                await ctx.send(f'<@{user_id}> Please use the correct channel.', delete_after=5, ephemeral=True)
+                await ctx.send(
+                    f'<@{user_id}> Please use the correct channel.',
+                    delete_after=5,
+                    ephemeral=True,
+                )
                 return
 
-            section = (section or "").lower()
-            
+            section = (section or '').lower()
+
             await self.staffing_async._book(ctx, staffing, position, section)
         except Exception as e:
             print(f'Error booking position {position} - {e}')
@@ -159,26 +175,41 @@ class StaffingCog(commands.Cog):
     @app_commands.command(
         name='unbook', description='Bot unbooks selected position for selected staffing'
     )
-    async def unbook(self, interaction: discord.Integration, position: str = None, section: str = None):
+    async def unbook(
+        self,
+        interaction: discord.Integration,
+        position: str = None,
+        section: str = None,
+    ):
         ctx = await Handler.get_context(self, self.bot, interaction)
         try:
             staffings = await self.api_helper._fetch_data('staffings')
-            staffing = next((s for s in staffings if s.get('channel_id') == ctx.channel.id), None)
+            staffing = next(
+                (s for s in staffings if s.get('channel_id') == ctx.channel.id), None
+            )
 
             if not staffing:
-                await ctx.send(f'<@{ctx.author.id}> Please use the correct channel.', ephemeral=True)
+                await ctx.send(
+                    f'<@{ctx.author.id}> Please use the correct channel.',
+                    ephemeral=True,
+                )
                 return
-            
-            event = staffing.get('event', {})
-            
-            if not event:
-                print(f'Unbooking failed for user {ctx.author.id}: Event not found for this staffing.')
 
-                await ctx.send(f'<@{ctx.author.id}> Unbooking failed: Event not found for this staffing. Please contact Tech.', ephemeral=True)
+            event = staffing.get('event', {})
+
+            if not event:
+                print(
+                    f'Unbooking failed for user {ctx.author.id}: Event not found for this staffing.'
+                )
+
+                await ctx.send(
+                    f'<@{ctx.author.id}> Unbooking failed: Event not found for this staffing. Please contact Tech.',
+                    ephemeral=True,
+                )
                 return
 
             position = position.upper() if position else None
-            section = (section or "").lower()
+            section = (section or '').lower()
 
             sections_map = {
                 (staffing.get('section_1_title') or '').lower(): '1',
@@ -190,33 +221,46 @@ class StaffingCog(commands.Cog):
             section_id = None
             if section:
                 if section not in sections_map:
-                    await ctx.send(f'<@{ctx.author.id}> Unbooking failed: Invalid section `{section}`. Must be one of {list(sections_map.keys())}', ephemeral=True)
+                    await ctx.send(
+                        f'<@{ctx.author.id}> Unbooking failed: Invalid section `{section}`. Must be one of {list(sections_map.keys())}',
+                        ephemeral=True,
+                    )
                     return
-                
+
                 section_id = sections_map[section]
 
                 if not (1 <= int(section_id) <= 4):  # Double-check it's between 1-4
-                    await ctx.send(f'<@{ctx.author.id}> Unbooking failed: Section `{section_id}` must be between 1 and 4.', ephemeral=True)
+                    await ctx.send(
+                        f'<@{ctx.author.id}> Unbooking failed: Section `{section_id}` must be between 1 and 4.',
+                        ephemeral=True,
+                    )
                     return
-            
+
             data = {
                 'discord_user_id': ctx.author.id,
                 'message_id': staffing.get('message_id', 0),
                 **({'position': position} if position is not None else {}),
                 **({'section': section_id} if section_id is not None else {}),
             }
-            
+
             request = await self.api_helper.post_data('staffings/unbook', data)
 
             if request:
-                await ctx.send(f'<@{ctx.author.id}> Confirmed unbooking for event `{event.get('title', '')}`', delete_after=5, ephemeral=True)
+                await ctx.send(
+                    f'<@{ctx.author.id}> Confirmed unbooking for event `{event.get("title", "")}`',
+                    delete_after=5,
+                    ephemeral=True,
+                )
                 return
 
-                
         except Exception as e:
-            print(f'Error unbooking position user: {ctx.author.id} for event {event.get('title', '')} - {e}')
+            print(
+                f'Error unbooking position user: {ctx.author.id} for event {event.get("title", "")} - {e}'
+            )
 
-            await ctx.send(f'Error unbooking position for event {event.get('title', '')} - {e}')
+            await ctx.send(
+                f'Error unbooking position for event {event.get("title", "")} - {e}'
+            )
             raise e
 
 

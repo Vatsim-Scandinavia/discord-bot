@@ -56,16 +56,20 @@ class StaffingAsync:
                 print('Error: Start or end date not found for event.')
                 raise ValueError
 
-            formatted_date = datetime.strptime(date, "%Y-%m-%d %H:%M:%S").strftime('%A %d/%m/%Y')
+            formatted_date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S').strftime(
+                '%A %d/%m/%Y'
+            )
             start_time = datetime.strptime(date, '%Y-%m-%d %H:%M:%S').strftime('%H:%M')
-            end_time = datetime.strptime(end_date, '%Y-%m-%d %H:%M:%S').strftime('%H:%M')
+            end_time = datetime.strptime(end_date, '%Y-%m-%d %H:%M:%S').strftime(
+                '%H:%M'
+            )
 
             positions = staffing.get('positions', [])
 
             if not positions:
                 print('Error: No positions found for the event.')
                 raise ValueError
-            
+
             section_positions = defaultdict(list)
             section_titles = {
                 1: staffing.get('section_1_title'),
@@ -73,51 +77,51 @@ class StaffingAsync:
                 3: staffing.get('section_3_title'),
                 4: staffing.get('section_4_title'),
             }
-            
+
             for position in positions:
                 section = int(position.get('section', 0))
                 if section in section_titles and section_titles[section]:
                     section_positions[section_titles[section]].append(position)
-                    
+
             pos_info = '\n\n'.join(
-                f"{title}:\n" + "\n".join(
+                f'{title}:\n'
+                + '\n'.join(
                     (
-                        f"{self.format_time(pos.get('start_time') or event.get('start_date'))} - {self.format_time(pos.get('end_time') or event.get('end_date'))} ‖ {pos.get('callsign', '')}: <@{pos.get('discord_user')}>"
-                        if pos.get('discord_user') and (pos.get('start_time') or pos.get('end_time')) else
-
-                        f"{self.format_time(pos.get('start_time') or event.get('start_date'))} - {self.format_time(pos.get('end_time') or event.get('end_date'))} ‖ {pos.get('callsign', '')}:"
-                        if pos.get('start_time') or pos.get('end_time') else
-
-                        f"{pos.get('callsign', '')}: <@{pos.get('discord_user')}>"
-                        if pos.get('discord_user') else
-
-                        f"{pos.get('callsign', '')}:"
+                        f'{self.format_time(pos.get("start_time") or event.get("start_date"))} - {self.format_time(pos.get("end_time") or event.get("end_date"))} ‖ {pos.get("callsign", "")}: <@{pos.get("discord_user")}>'
+                        if pos.get('discord_user')
+                        and (pos.get('start_time') or pos.get('end_time'))
+                        else f'{self.format_time(pos.get("start_time") or event.get("start_date"))} - {self.format_time(pos.get("end_time") or event.get("end_date"))} ‖ {pos.get("callsign", "")}:'
+                        if pos.get('start_time') or pos.get('end_time')
+                        else f'{pos.get("callsign", "")}: <@{pos.get("discord_user")}>'
+                        if pos.get('discord_user')
+                        else f'{pos.get("callsign", "")}:'
                     )
                     for pos in positions
                 )
-                for title, positions in section_positions.items() if title
+                for title, positions in section_positions.items()
+                if title
             )
 
             description = event.get('description', '')
 
-            format_staffing_message = f'{event.get('title', '')} staffing - {formatted_date} {start_time} - {end_time}z\n\n{description}{pos_info}'
+            format_staffing_message = f'{event.get("title", "")} staffing - {formatted_date} {start_time} - {end_time}z\n\n{description}{pos_info}'
 
             return staffing, format_staffing_message
 
         except Exception as e:
             print(f'Unable to update message - {e}', flush=True)
             raise e
-        
+
     def format_time(self, value):
         if isinstance(value, str):
             try:
                 # Handle full datetime string like '2025-03-17 21:00:00'
-                dt = datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
-                return dt.strftime("%H:%M")
+                dt = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
+                return dt.strftime('%H:%M')
             except ValueError:
                 # If it's already in correct format like '21:00'
                 return value[:5]
-        return ""
+        return ''
 
     async def _book(self, ctx, staffing, position, section):
         try:
@@ -134,41 +138,58 @@ class StaffingAsync:
             event = staffing.get('event', {})
 
             if not event:
-                await ctx.send(f'<@{ctx.author.id}> Booking failed: Event not found for this staffing. Please contact Tech.', ephemeral=True)
+                await ctx.send(
+                    f'<@{ctx.author.id}> Booking failed: Event not found for this staffing. Please contact Tech.',
+                    ephemeral=True,
+                )
                 return
-            
+
             # Validate section
             section_id = None
             if section:
                 if section not in sections_map:
-                    await ctx.send(f'<@{ctx.author.id}> Booking failed: Invalid section `{section}`. Must be one of {list(sections_map.keys())}', ephemeral=True)
+                    await ctx.send(
+                        f'<@{ctx.author.id}> Booking failed: Invalid section `{section}`. Must be one of {list(sections_map.keys())}',
+                        ephemeral=True,
+                    )
                     return
-                
+
                 section_id = sections_map[section]
 
                 if not (1 <= int(section_id) <= 4):  # Double-check it's between 1-4
-                    await ctx.send(f'<@{ctx.author.id}> Booking failed: Section `{section_id}` must be between 1 and 4.', ephemeral=True)
+                    await ctx.send(
+                        f'<@{ctx.author.id}> Booking failed: Section `{section_id}` must be between 1 and 4.',
+                        ephemeral=True,
+                    )
                     return
 
             params = {
-                'cid':  int(cid),
+                'cid': int(cid),
                 'position': position,
-                'message_id':   staffing.get('message_id', 0),
-                'discord_user_id':  ctx.author.id,
-                **({'section': section_id} if section_id is not None else {})
+                'message_id': staffing.get('message_id', 0),
+                'discord_user_id': ctx.author.id,
+                **({'section': section_id} if section_id is not None else {}),
             }
 
             request = await self.api_helper.post_data('staffings/book', params)
 
             if request:
-                await ctx.send(f'<@{ctx.author.id}> Confirmed booking for position `{position.upper()}` for event `{event.get('title', '')}`', delete_after=5, ephemeral=True)
+                await ctx.send(
+                    f'<@{ctx.author.id}> Confirmed booking for position `{position.upper()}` for event `{event.get("title", "")}`',
+                    delete_after=5,
+                    ephemeral=True,
+                )
                 return
 
         except Exception as e:
-            await ctx.send(f'Error booking position `{position}` - {e}', delete_after=5, ephemeral=True)
+            await ctx.send(
+                f'Error booking position `{position}` - {e}',
+                delete_after=5,
+                ephemeral=True,
+            )
             raise e
 
-    async def update_staffing_message(self, bot, id, reset = None):
+    async def update_staffing_message(self, bot, id, reset=None):
         staffing, staffing_msg = await self._generate_staffing_message(id)
 
         if not staffing or not staffing_msg:
@@ -192,6 +213,3 @@ class StaffingAsync:
                 f'Finished autoreset of {title} at {str(datetime.now().isoformat())}',
                 flush=True,
             )
-
-
-            
