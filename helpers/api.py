@@ -1,6 +1,7 @@
+from typing import Any, List, Optional
+
 import aiohttp
 
-from typing import List, Any, Optional
 from helpers.config import config
 
 
@@ -24,6 +25,7 @@ class APIHelper:
 
         Returns:
             Optional[List[Any]]: The parsed JSON response data or None if the request fails.
+
         """
         url = f'{self.base_url}/{endpoint}'
 
@@ -40,18 +42,17 @@ class APIHelper:
                             return data
 
                         return resp
-                    else:
-                        resp = await response.json()
-                        error_message = (
-                            resp.get('error')
-                            or resp.get('errors')
-                            or resp.get('message')
-                            or 'Unknown error'
-                        )
-                        print(
-                            f'Error fetching data from {url}. Status code: {response.status} with error message: {error_message}'
-                        )
-                        return None
+                    resp = await response.json()
+                    error_message = (
+                        resp.get('error')
+                        or resp.get('errors')
+                        or resp.get('message')
+                        or 'Unknown error'
+                    )
+                    print(
+                        f'Error fetching data from {url}. Status code: {response.status} with error message: {error_message}'
+                    )
+                    return None
             except aiohttp.ClientError as e:
                 print(f'HTTP error occurred while accessing {url}: {e}')
                 return None

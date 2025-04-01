@@ -1,16 +1,14 @@
 import asyncio
-import uvicorn
-
-from fastapi import FastAPI, HTTPException, Form, Depends
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-
 from typing import Annotated
 
+import uvicorn
 from discord.ext import commands
+from fastapi import Depends, FastAPI, Form, HTTPException
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from helpers.staffing_async import StaffingAsync
 from helpers.api import APIHelper
 from helpers.config import config
+from helpers.staffing_async import StaffingAsync
 
 
 class FastAPICog(commands.Cog):
