@@ -10,6 +10,9 @@ from helpers.api import APIHelper
 from helpers.config import config
 from helpers.staffing_async import StaffingAsync
 
+# Instantiate and re-use the authorization credentials
+security = HTTPBearer()
+
 
 class FastAPICog(commands.Cog):
     def __init__(self, bot):
@@ -36,7 +39,7 @@ class FastAPICog(commands.Cog):
         self.bot.loop.create_task(self.run_fastapi())
 
     @staticmethod
-    def get_token(credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer())):
+    def get_token(credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)]):
         if credentials.credentials != config.FASTAPI_TOKEN:
             raise HTTPException(status_code=401, detail='Unauthorized')
         return credentials.credentials
