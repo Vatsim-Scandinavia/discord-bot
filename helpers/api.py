@@ -86,7 +86,7 @@ class APIHelper:
                             flush=True,
                         )
                         raise Exception(
-                            f'API responded with status code {response.status}. Error msg: {error_message}'
+                            f'API responded with status code {response.status}. Error msg: {error_message}'  # noqa: EM102
                         )
             except aiohttp.ClientError as e:
                 print(f'HTTP error occurred while updating staffing message: {e}')
@@ -119,10 +119,10 @@ class APIHelper:
                             f'Error patching data. Status code: {response.status} with error message: {error_message}'
                         )
                         raise Exception(
-                            f'API responded with status code {response.status}. Error msg: {error_message}'
+                            f'API responded with status code {response.status}. Error msg: {error_message}'  # noqa: EM102
                         )
             except aiohttp.ClientError as e:
                 print(f'HTTP error occurred while updating staffing message: {e}')
-                raise Exception(
-                    f'HTTP error occurred while updating staffing message: {e}'
+                raise Exception(  # noqa: B904
+                    f'HTTP error occurred while updating staffing message: {e}'  # noqa: EM102
                 )

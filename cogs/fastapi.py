@@ -65,7 +65,7 @@ class FastAPICog(commands.Cog):
 
         except Exception as e:
             print(f'Error updating staffing: {e}')
-            raise HTTPException(
+            raise HTTPException(  # noqa: B904
                 status_code=500, detail=f'Staffing update failed. Error: {e}'
             )
 
@@ -99,7 +99,7 @@ class FastAPICog(commands.Cog):
 
         except Exception as e:
             print(f'Error setting up staffing: {e}')
-            raise HTTPException(
+            raise HTTPException(  # noqa: B904
                 status_code=500, detail=f'Staffing setup failed. Error: {e}'
             )
 
