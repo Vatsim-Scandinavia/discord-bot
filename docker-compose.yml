@@ -5,7 +5,7 @@ services:
     container_name: discord-bot
     # image: vatsca/python:latest
     build: .
-    command: bash -c "pip3 install -r requirements.txt && python3 bot.py"
+    command: ["python", "bot.py"]
     restart: unless-stopped
     volumes:
       - ./:/app
