@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 import aiohttp
 
@@ -17,7 +17,7 @@ class Roles:
 
     async def fetch_data(
         self, endpoint: str, params: Optional[dict] = None
-    ) -> Optional[List[Any]]:
+    ) -> Optional[list[Any]]:
         """
         Generic method to fetch data from the API.
 
@@ -48,7 +48,7 @@ class Roles:
                 print(f'HTTP error occurred while accessing {url}: {e}')
                 return None
 
-    async def get_roles(self) -> Optional[List[Any]]:
+    async def get_roles(self) -> Optional[list[Any]]:
         """
         Fetch all users with their roles from the API.
 
@@ -58,7 +58,7 @@ class Roles:
         """
         return await self.fetch_data('users', params={'include[]': 'roles'})
 
-    async def get_training(self) -> Optional[List[Any]]:
+    async def get_training(self) -> Optional[list[Any]]:
         """
         Fetch all users with their training data from the API.
 

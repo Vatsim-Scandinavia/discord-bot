@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 import aiohttp
 
@@ -15,7 +15,7 @@ class APIHelper:
 
     async def _fetch_data(
         self, endpoint: str, params: Optional[dict] = None
-    ) -> Optional[List[Any]]:
+    ) -> Optional[list[Any]]:
         """
         Generic method to fetch data from the API.
 
@@ -59,10 +59,8 @@ class APIHelper:
 
     async def post_data(
         self, endpoint, params: Optional[dict] = None
-    ) -> Optional[List[Any]]:
-        """
-        Post data to URL with requried information.
-        """
+    ) -> Optional[list[Any]]:
+        """Post data to URL with requried information."""
         url = f'{self.base_url}/{endpoint}'
         async with aiohttp.ClientSession() as session:
             try:
@@ -95,10 +93,8 @@ class APIHelper:
 
     async def patch_data(
         self, endpoint, params: Optional[dict] = None
-    ) -> Optional[List[Any]]:
-        """
-        Patch data with specific params to a defined URL.
-        """
+    ) -> Optional[list[Any]]:
+        """Patch data with specific params to a defined URL."""
         url = f'{self.base_url}/{endpoint}'
         async with aiohttp.ClientSession() as session:
             try:
