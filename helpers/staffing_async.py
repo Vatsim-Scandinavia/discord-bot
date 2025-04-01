@@ -52,11 +52,11 @@ class StaffingAsync:
                 print('Error: Start or end date not found for event.')
                 raise ValueError
 
-            formatted_date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S').strftime(
+            formatted_date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S').strftime(  # noqa: DTZ007
                 '%A %d/%m/%Y'
             )
-            start_time = datetime.strptime(date, '%Y-%m-%d %H:%M:%S').strftime('%H:%M')
-            end_time = datetime.strptime(end_date, '%Y-%m-%d %H:%M:%S').strftime(
+            start_time = datetime.strptime(date, '%Y-%m-%d %H:%M:%S').strftime('%H:%M')  # noqa: DTZ007
+            end_time = datetime.strptime(end_date, '%Y-%m-%d %H:%M:%S').strftime(  # noqa: DTZ007
                 '%H:%M'
             )
 
@@ -112,7 +112,7 @@ class StaffingAsync:
         if isinstance(value, str):
             try:
                 # Handle full datetime string like '2025-03-17 21:00:00'
-                dt = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
+                dt = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')  # noqa: DTZ007
                 return dt.strftime('%H:%M')
             except ValueError:
                 # If it's already in correct format like '21:00'
