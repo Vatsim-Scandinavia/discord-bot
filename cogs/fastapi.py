@@ -39,7 +39,9 @@ class FastAPICog(commands.Cog):
         self.bot.loop.create_task(self.run_fastapi())
 
     @staticmethod
-    def get_token(credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)]):
+    def get_token(
+        credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)],
+    ):
         if credentials.credentials != config.FASTAPI_TOKEN:
             raise HTTPException(status_code=401, detail='Unauthorized')
         return credentials.credentials
@@ -56,7 +58,9 @@ class FastAPICog(commands.Cog):
         asyncio.create_task(server.serve())
 
     async def update_staffing(
-        self, id: Annotated[int, Form()], reset: Annotated[Optional[bool], Form()] = None
+        self,
+        id: Annotated[int, Form()],
+        reset: Annotated[Optional[bool], Form()] = None,
     ):
         try:
             await self.staffing_async.update_staffing_message(self.bot, id, reset)

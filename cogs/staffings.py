@@ -127,7 +127,10 @@ class StaffingCog(commands.Cog):
     @app_commands.describe(position='Which position would you like to book?')
     @app_commands.check(Handler.is_obs)
     async def book(
-        self, interaction: discord.Integration, position: str, section: Optional[str] = None
+        self,
+        interaction: discord.Integration,
+        position: str,
+        section: Optional[str] = None,
     ):
         ctx = await Handler.get_context(self, self.bot, interaction)
         user_id = ctx.author.id
