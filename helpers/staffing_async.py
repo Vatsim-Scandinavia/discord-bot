@@ -1,12 +1,8 @@
-# ruff: noqa
 # Linting ignored due to staffing module getting a major refactor.
 import asyncio
-
-from typing import List
 from collections import defaultdict
 from datetime import datetime
 
-from helpers.config import config
 from helpers.api import APIHelper
 from helpers.handler import Handler
 
@@ -21,7 +17,7 @@ class StaffingAsync:
     # ----------------------------------
     #
 
-    async def _get_avail_titles(self) -> List[str]:
+    async def _get_avail_titles(self) -> list[str]:
         staffings = await self.api_helper._fetch_data('staffings')
 
         if not staffings:
@@ -80,7 +76,7 @@ class StaffingAsync:
 
             for position in positions:
                 section = int(position.get('section', 0))
-                if section in section_titles and section_titles[section]:
+                if section_titles.get(section):
                     section_positions[section_titles[section]].append(position)
 
             pos_info = '\n\n'.join(
@@ -110,7 +106,7 @@ class StaffingAsync:
 
         except Exception as e:
             print(f'Unable to update message - {e}', flush=True)
-            raise e
+            raise
 
     def format_time(self, value):
         if isinstance(value, str):
@@ -187,7 +183,7 @@ class StaffingAsync:
                 delete_after=5,
                 ephemeral=True,
             )
-            raise e
+            raise
 
     async def update_staffing_message(self, bot, id, reset=None):
         staffing, staffing_msg = await self._generate_staffing_message(id)
@@ -203,13 +199,13 @@ class StaffingAsync:
         if reset:
             event = staffing.get('event', {})
             title = event.get('title', '')
-            print(f'Started autoreset of {title} at {str(datetime.now().isoformat())}')
+            print(f'Started autoreset of {title} at {datetime.now().isoformat()!s}')
 
             await channel.send('The chat is being automatic reset!')
             await asyncio.sleep(5)
             await channel.purge(limit=None, check=lambda msg: not msg.pinned)
 
             print(
-                f'Finished autoreset of {title} at {str(datetime.now().isoformat())}',
+                f'Finished autoreset of {title} at {datetime.now().isoformat()!s}',
                 flush=True,
             )
