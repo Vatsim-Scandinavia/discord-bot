@@ -1,6 +1,6 @@
 import asyncio
 from datetime import datetime
-from typing import List
+from typing import Optional
 
 import discord
 from discord import Interaction, app_commands
@@ -32,7 +32,7 @@ class StaffingCog(commands.Cog):
     # Autocomplete function to fetch and filter titles in real-time
     async def avail_title_autocomplete(
         self, interaction: Interaction, current: str
-    ) -> List[app_commands.Choice]:
+    ) -> list[app_commands.Choice]:
         # Fetch the latest available titles from the database
         staffings = await self.staffing_async._get_avail_titles()
 
@@ -127,7 +127,7 @@ class StaffingCog(commands.Cog):
     @app_commands.describe(position='Which position would you like to book?')
     @app_commands.check(Handler.is_obs)
     async def book(
-        self, interaction: discord.Integration, position: str, section: str = None
+        self, interaction: discord.Integration, position: str, section: Optional[str] = None
     ):
         ctx = await Handler.get_context(self, self.bot, interaction)
         user_id = ctx.author.id
@@ -162,7 +162,7 @@ class StaffingCog(commands.Cog):
             print(f'Error booking position {position} - {e}')
 
             await ctx.send(f'Error booking position {position} - {e}')
-            raise e
+            raise
 
     @app_commands.command(
         name='unbook', description='Bot unbooks selected position for selected staffing'
@@ -170,8 +170,8 @@ class StaffingCog(commands.Cog):
     async def unbook(
         self,
         interaction: discord.Integration,
-        position: str = None,
-        section: str = None,
+        position: Optional[str] = None,
+        section: Optional[str] = None,
     ):
         ctx = await Handler.get_context(self, self.bot, interaction)
         try:
@@ -253,7 +253,7 @@ class StaffingCog(commands.Cog):
             await ctx.send(
                 f'Error unbooking position for event {event.get("title", "")} - {e}'
             )
-            raise e
+            raise
 
 
 async def setup(bot):
