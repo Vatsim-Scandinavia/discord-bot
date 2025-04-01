@@ -1,19 +1,15 @@
-# ruff: noqa
-# Linting ignored due to staffing module getting a major refactor.
-import discord
 import asyncio
-
-from discord import app_commands, Interaction
-from discord.ext import commands
-
 from datetime import datetime
-
 from typing import List
 
+import discord
+from discord import Interaction, app_commands
+from discord.ext import commands
+
 from helpers.api import APIHelper
-from helpers.staffing_async import StaffingAsync
 from helpers.config import config
 from helpers.handler import Handler
+from helpers.staffing_async import StaffingAsync
 
 
 class StaffingCog(commands.Cog):
@@ -89,7 +85,7 @@ class StaffingCog(commands.Cog):
             title = event.get('title', '')
 
             await ctx.send(
-                f'{ctx.author.mention} Started manual reset of `{title}` at `{str(datetime.now().isoformat())}`',
+                f'{ctx.author.mention} Started manual reset of `{title}` at `{datetime.now().isoformat()!s}`',
                 delete_after=5,
                 ephemeral=True,
             )
@@ -103,7 +99,7 @@ class StaffingCog(commands.Cog):
 
             if not request:
                 await ctx.send(
-                    f'{ctx.author.mention} The bot failed to manual reset `{title}` at `{str(datetime.now().isoformat())}`',
+                    f'{ctx.author.mention} The bot failed to manual reset `{title}` at `{datetime.now().isoformat()!s}`',
                     ephemeral=True,
                 )
                 return
@@ -115,13 +111,13 @@ class StaffingCog(commands.Cog):
             await channel.purge(limit=None, check=lambda msg: not msg.pinned)
 
             await ctx.send(
-                f'{ctx.author.mention} Finished manual reset of `{title}` at `{str(datetime.now().isoformat())}`',
+                f'{ctx.author.mention} Finished manual reset of `{title}` at `{datetime.now().isoformat()!s}`',
                 delete_after=5,
                 ephemeral=True,
             )
         except Exception as e:
             await ctx.send(
-                f'{ctx.author.mention} The bot failed to manual reset `{title}` with error `{e}` at `{str(datetime.now().isoformat())}`',
+                f'{ctx.author.mention} The bot failed to manual reset `{title}` with error `{e}` at `{datetime.now().isoformat()!s}`',
                 ephemeral=True,
             )
 
