@@ -98,7 +98,7 @@ class StaffingAsync:
                 if title
             )
 
-            description = event.get('description', '')
+            description = staffing.get('description', '')
 
             format_staffing_message = f'{event.get("title", "")} staffing - {formatted_date} {start_time} - {end_time}z\n\n{description}{pos_info}'
 
