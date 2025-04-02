@@ -100,7 +100,7 @@ class StaffingAsync:
 
             description = staffing.get('description', '')
 
-            format_staffing_message = f'{event.get("title", "")} staffing - {formatted_date} {start_time} - {end_time}z\n\n{description}{pos_info}'
+            format_staffing_message = f'{event.get("title", "")} staffing - {formatted_date} {start_time} - {end_time}z\n\n{description}\n{pos_info}'
 
             return staffing, format_staffing_message
 
