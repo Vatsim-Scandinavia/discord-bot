@@ -11,9 +11,6 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        architecture: [linux/amd64, linux/arm64]
 
     steps:
       - name: Checkout repository
@@ -49,7 +46,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          platforms: ${{ matrix.architecture }}
+          platforms: ${{ env.TARGET_PLATFORMS }}
 
   lint-ruff:
     runs-on: ubuntu-latest
