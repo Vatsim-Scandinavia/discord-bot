@@ -3,6 +3,9 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 WORKDIR /app
 
+# Expose our HTTP(s) endpoints
+EXPOSE 80 443
+
 # Enable bytecode compilation
 ENV UV_COMPILE_BYTECODE=1
 

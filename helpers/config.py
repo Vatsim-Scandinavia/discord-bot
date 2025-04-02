@@ -89,8 +89,8 @@ class Config:
 
         # FastAPI
         self.FASTAPI_TOKEN = str(os.getenv('FASTAPI_TOKEN', ''))
-        self.FASTAPI_URL = str(os.getenv('FASTAPI_URL', ''))
-        self.FASTAPI_PORT = int(os.getenv('FASTAPI_PORT', 0))
+        self.FASTAPI_URL = str(os.getenv('FASTAPI_URL', '127.0.0.1'))
+        self.FASTAPI_PORT = int(os.getenv('FASTAPI_PORT', 80))
 
         # Adjacent API keys
         self.SENTRY_KEY = str(os.getenv('SENTRY_KEY'))
