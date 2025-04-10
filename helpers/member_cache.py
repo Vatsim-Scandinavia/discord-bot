@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class MemberNick(TypedDict):
     """Cached member information"""
 
-    name: str
+    name: Optional[str]
     nick: str
     cid: int
 
@@ -48,7 +48,7 @@ class MemberCache:
         except Exception as e:
             logger.exception(f'Failed to save nickname cache: {e}')
 
-    async def store(self, member_id: int, nick: str, name: str, cid: int) -> None:
+    async def store(self, member_id: int, nick: str, name: Optional[str], cid: int) -> None:
         """Store original nickname for a member"""
         async with self._lock:
             self._nicknames[str(member_id)] = MemberNick(name=name, nick=nick, cid=cid)

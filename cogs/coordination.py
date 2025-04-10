@@ -119,11 +119,11 @@ class CoordinationCog(commands.Cog):
     async def _restore_nickname(self, member: discord.Member) -> None:
         """Restore the original nickname of a member"""
         modified_member = self._member_cache.get(member.id)
-        original_nick = modified_member['nick']
         if not modified_member:
             logger.warning('Original nickname not found', extra={member: member})
             return
 
+        original_nick = modified_member['nick']
         # Remove the nickname first to avoid issue for those weird users who have higher permissions
         # than the bot itself. This is an additional risk, but one we're fine to make.
         _create_task(self._member_cache.remove_nickname(member.id))
@@ -132,7 +132,9 @@ class CoordinationCog(commands.Cog):
             reason='Removing callsign prefix after leaving voice channel',
         )
 
-    def _format_name(self, prefix: str, name: str, cid: int) -> str:
+    def _format_name(self, prefix: str, name: Optional[str], cid: int) -> str:
+        if name is None:
+            return f'{prefix}: |-{cid}-|'
         return f'{prefix}: {name} - {cid}'
 
     async def _update_member_nickname(
@@ -147,8 +149,8 @@ class CoordinationCog(commands.Cog):
             cid = await self._handler.get_cid(member)
             name = self._handler.get_name(member)
 
-            if not cid or not name:
-                # We weren't able to extract both the name and CID, so we can't proceed
+            if not cid and not name:
+                # We weren't able to extract either of the name and CID, so we can't proceed
                 return
 
             # TODO(thor): remove after validation
@@ -180,6 +182,7 @@ class CoordinationCog(commands.Cog):
                         member_id=member.id, nick=current_nick, name=name, cid=cid
                     )
                 )
+                await self._set_member_nickname(member, callsign, name, cid)
 
         except discord.Forbidden:
             logger.warning(f'Bot lacks permission to change nickname of {member}')
@@ -190,10 +193,11 @@ class CoordinationCog(commands.Cog):
         self, member: discord.Member, callsign: str, name: str, cid: int
     ) -> None:
         """Set the nickname for a member"""
-        ideal_new_name = self._format_name(callsign, name, cid)
-        max_length = max(0, len(name) - (len(ideal_new_name) - 32))
-        short_name = _ellipsify(name, max_length)
-        new_name = self._format_name(callsign, short_name, cid)
+        new_name = self._format_name(callsign, name, cid)
+        if name is not None:
+            max_length = max(0, len(name) - (len(new_name) - 32))
+            short_name = _ellipsify(name, max_length)
+            new_name = self._format_name(callsign, short_name, cid)
 
         if len(new_name) > 32:
             raise ValueError(f'New name exceeds 32 characters: {new_name}')
