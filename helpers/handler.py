@@ -94,17 +94,31 @@ class Handler:
 
             return data, next_url
 
-    async def get_cid(self, user):
+    async def get_cid(self, member: discord.Member):
         """
-        Get CID based on user discord ID.
+        Get CID based on VATSIM Discord member.
 
         Args:
-            user (discord.Member): The Discord member object.
+            member: The Discord guild member.
 
         """
-        cid = re.findall(r'\d+', str(user.nick))
+        cid = re.findall(r'\d+', str(member.nick))
 
         if len(cid) < 1:
             raise ValueError
 
         return int(cid[0])
+
+    def get_name(self, member: discord.Member):
+        """
+        Get presentation name based on VATSIM Discord member.
+
+        Args:
+            member: The Discord guild member.
+
+        """
+        name = re.findall(r'.+?(?= -)', str(member.nick))
+        if not name:
+            raise ValueError
+
+        return name[0]
