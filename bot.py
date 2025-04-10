@@ -247,6 +247,7 @@ signal.signal(signal.SIGTERM, handle_exit_signal)  # For termination signal
 # Start the bot
 if __name__ == '__main__':
     try:
+        discord.utils.setup_logging()
         bot.run(config.BOT_TOKEN)
     except Exception as e:
         print(f'Error starting the bot. Exception - {e}', flush=True)
