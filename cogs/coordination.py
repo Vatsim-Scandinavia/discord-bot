@@ -159,6 +159,10 @@ class CoordinationCog(commands.Cog):
                 await self._restore_nickname(member)
                 return
 
+            # If there's no prefix, then there's nothing to do
+            if not prefix:
+                return
+
             # Add the prefix to the user and and store original nickname before modification
             _create_task(self._member_cache.store_nickname(member.id, current_nick))
             new_name_candidate = self._format_name(prefix, name, cid)
