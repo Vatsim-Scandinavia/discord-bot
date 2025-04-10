@@ -1,6 +1,6 @@
 import os
-from pathlib import Path
 from distutils.util import strtobool
+from pathlib import Path
 
 import discord
 import discord.ext
@@ -202,6 +202,11 @@ class Config:
         self.BOT_DB_USER = str(os.getenv('BOT_DB_USER', ''))
         self.BOT_DB_PASSWORD = str(os.getenv('BOT_DB_PASSWORD', ''))
         self.BOT_DB_NAME = str(os.getenv('BOT_DB_NAME', ''))
+
+        # Coordination
+        self.COORDINATION_ALLOWED_CIDS = set(
+            map(int, filter(None, os.getenv('COORDINATION_ALLOWED_CIDS', '').split(',')))
+        )
 
     def activity(self) -> discord.Activity:
         return discord.Activity(
