@@ -184,7 +184,7 @@ class CoordinationCog(commands.Cog):
                 tasks.extend(
                     [self._update_member_nickname(member) for member in channel.members]
                 )
-        await asyncio.gather(*tasks)
+        _create_task(*tasks)
 
     @commands.Cog.listener()
     async def on_voice_state_update(
