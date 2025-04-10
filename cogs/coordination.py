@@ -108,7 +108,7 @@ class CoordinationCog(commands.Cog):
             # TODO(thor): consider splitting into a separate background task
             await self._update_voice_channel_members()
         except Exception as e:
-            logger.exception(f'Failed to update controllers cache: {e}')
+            logger.exception(f'Failed to update controllers cache')
 
     async def _get_controller_station(self, cid: int) -> Optional[str]:
         """Get the controller's prefix if they're online, None otherwise"""
@@ -178,7 +178,7 @@ class CoordinationCog(commands.Cog):
         except discord.Forbidden:
             logger.warning(f'Bot lacks permission to change nickname of {member}')
         except Exception as e:
-            logger.exception(f'Error updating nickname for {member}: {e}')
+            logger.exception(f'Error updating nickname for {member}')
 
     async def _update_voice_channel_members(self):
         """Update all members in voice channels across all guilds"""
@@ -221,7 +221,7 @@ class CoordinationCog(commands.Cog):
                 'Voice channel nicknames updated.', ephemeral=True
             )
         except Exception as e:
-            logger.exception(f'Error in update_voice command: {e}')
+            logger.exception(f'Error in update_voice command')
             await interaction.followup.send(
                 'An error occurred while updating nicknames.', ephemeral=True
             )
