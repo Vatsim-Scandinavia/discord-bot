@@ -2,11 +2,20 @@ import asyncio
 import json
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Optional, TypedDict
 
 import aiofiles
 
 logger = logging.getLogger(__name__)
+
+
+class MemberNick(TypedDict):
+    """Cached member information"""
+
+    name: str
+    nick: str
+    cid: int
+
 
 class MemberCache:
     """
@@ -15,9 +24,9 @@ class MemberCache:
     Should be sort of thread-safe with asyncio.Lock.
     """
 
-    def __init__(self, folder: Path, file: str = "member_cache.json"):
+    def __init__(self, folder: Path, file: str = 'member_cache.json'):
         self._cache_file = folder.joinpath(file)
-        self._nicknames: dict[str, str] = {}
+        self._nicknames: dict[str, MemberNick] = {}
         self._lock = asyncio.Lock()
         self._load_cache()
 
@@ -28,7 +37,7 @@ class MemberCache:
                 with open(self._cache_file) as f:
                     self._nicknames = json.load(f)
         except Exception as e:
-            logger.exception(f"Failed to load nickname cache: {e}")
+            logger.exception(f'Failed to load nickname cache: {e}')
             self._nicknames = {}
 
     async def _save_cache(self) -> None:
@@ -37,15 +46,15 @@ class MemberCache:
             async with aiofiles.open(self._cache_file, 'w') as f:
                 await f.write(json.dumps(self._nicknames))
         except Exception as e:
-            logger.exception(f"Failed to save nickname cache: {e}")
+            logger.exception(f'Failed to save nickname cache: {e}')
 
-    async def store_nickname(self, member_id: int, nickname: str) -> None:
+    async def store(self, member_id: int, nick: str, name: str, cid: int) -> None:
         """Store original nickname for a member"""
         async with self._lock:
-            self._nicknames[str(member_id)] = nickname
+            self._nicknames[str(member_id)] = MemberNick(name=name, nick=nick, cid=cid)
             await self._save_cache()
 
-    def get_nickname(self, member_id: int) -> Optional[str]:
+    def get(self, member_id: int) -> Optional[MemberNick]:
         """Retrieve original nickname for a member"""
         return self._nicknames.get(str(member_id))
 

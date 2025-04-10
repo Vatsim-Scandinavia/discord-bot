@@ -118,8 +118,9 @@ class CoordinationCog(commands.Cog):
 
     async def _restore_nickname(self, member: discord.Member) -> None:
         """Restore the original nickname of a member"""
-        original_nick = self._member_cache.get_nickname(member.id)
-        if not original_nick:
+        modified_member = self._member_cache.get(member.id)
+        original_nick = modified_member['nick']
+        if not modified_member:
             logger.warning('Original nickname not found', extra={member: member})
             return
 
@@ -145,7 +146,9 @@ class CoordinationCog(commands.Cog):
 
             cid = await self._handler.get_cid(member)
             name = self._handler.get_name(member)
+
             if not cid or not name:
+                # We weren't able to extract both the name and CID, so we can't proceed
                 return
 
             # TODO(thor): remove after validation
@@ -153,32 +156,53 @@ class CoordinationCog(commands.Cog):
                 logger.info(f"Skipping CID {cid} as it's not in {self._allowed_cids}")
                 return
 
-            current_nick = member.nick or member.name
-            prefix = await self._get_controller_station(cid)
-            if not prefix and ':' in current_nick:
+            callsign = await self._get_controller_station(cid)
+            modified_member = self._member_cache.get(member.id)
+            if modified_member and not callsign:
+                # Modified members without callsigns should be restored
                 await self._restore_nickname(member)
                 return
 
-            # If there's no prefix, then there's nothing to do
-            if not prefix:
+            if not callsign:
+                # If there's no callsign, then there's nothing to do
                 return
 
             # Add the prefix to the user and and store original nickname before modification
-            _create_task(self._member_cache.store_nickname(member.id, current_nick))
-            new_name_candidate = self._format_name(prefix, name, cid)
-            max_length = max(0, len(name) - (len(new_name_candidate) - 32))
-            short_name = _ellipsify(name, max_length)
-            new_name = self._format_name(prefix, short_name, cid)
-            await member.edit(
-                nick=new_name[:32],
-                reason='Adding callsign prefix after joining voice channel',
-            )
-            logger.info(f'Updating nickname for {member} to {new_name=}')
+            if modified_member:
+                # We have a modified member, so we need to update their nickname
+                cid = modified_member['cid']
+                name = modified_member['name']
+                await self._set_member_nickname(member, callsign, name, cid)
+            else:
+                current_nick = member.nick or member.name
+                _create_task(
+                    self._member_cache.store(
+                        member_id=member.id, nick=current_nick, name=name, cid=cid
+                    )
+                )
 
         except discord.Forbidden:
             logger.warning(f'Bot lacks permission to change nickname of {member}')
         except Exception as e:
             logger.exception(f'Error updating nickname for {member}')
+
+    async def _set_member_nickname(
+        self, member: discord.Member, callsign: str, name: str, cid: int
+    ) -> None:
+        """Set the nickname for a member"""
+        ideal_new_name = self._format_name(callsign, name, cid)
+        max_length = max(0, len(name) - (len(ideal_new_name) - 32))
+        short_name = _ellipsify(name, max_length)
+        new_name = self._format_name(callsign, short_name, cid)
+
+        if len(new_name) > 32:
+            raise ValueError(f'New name exceeds 32 characters: {new_name}')
+
+        await member.edit(
+            nick=new_name,
+            reason='Adding callsign prefix after joining voice channel',
+        )
+        logger.info(f'Updating nickname for {member} to {new_name=}')
 
     async def _update_voice_channel_members(self):
         """Update all members in voice channels across all guilds"""
