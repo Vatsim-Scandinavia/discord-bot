@@ -6,7 +6,7 @@ from typing import Optional
 
 import aiohttp
 import discord
-from discord import app_commands
+from discord import Member, app_commands
 from discord.ext import commands, tasks
 
 from helpers.config import config
@@ -20,13 +20,19 @@ VATSIM_DATA = '/v3/vatsim-data.json'
 
 
 class VATSIMDataFetchException(Exception):
-    """Custom exception for VATSIM data fetch errors."""
+    """Exception raised when fetching VATSIM data."""
 
     status_code: int
 
     def __init__(self, response: aiohttp.ClientResponse):
         self.status_code = response.status
         super().__init__(f'Failed to fetch VATSIM data: HTTP {self.status_code}')
+
+class MemberNickUpdateException(Exception):
+    """Failed to update the nickname of a member."""
+    
+    def __init__(self, member: Member, *args):
+        super().__init__(*args)
 
 
 class CoordinationCog(commands.Cog):
@@ -100,15 +106,24 @@ class CoordinationCog(commands.Cog):
 
     @tasks.loop(minutes=1, reconnect=True)
     async def _update_controllers_cache(self):
-        """Update the cache of online controllers periodically"""
+        """
+        Update the cache of online controllers periodically
+
+        Note:
+            Once the online controllers map has been populated, this will also initate
+            an update of all current voice channel members in the gulid.
+
+        Todo:
+            - Consider splitting voice channel members update into a separate task.
+
+        """
         try:
             logger.debug('Updating online controllers cache...')
             self._online_controllers = await self._fetch_online_controllers()
             self._last_update = datetime.datetime.now()
-            # TODO(thor): consider splitting into a separate background task
             await self._update_voice_channel_members()
-        except Exception as e:
-            logger.exception(f'Failed to update controllers cache')
+        except Exception:
+            logger.exception('Failed to update controllers cache')
 
     async def _get_controller_station(self, cid: int) -> Optional[str]:
         """Get the controller's prefix if they're online, None otherwise"""
@@ -120,6 +135,7 @@ class CoordinationCog(commands.Cog):
         """Restore the original nickname of a member"""
         modified_member = self._member_cache.get(member.id)
         if not modified_member:
+            # TODO(thor): eliminate this warning and replace it with a debug as it is normal
             logger.warning('Original nickname not found', extra={member: member})
             return
 
@@ -186,7 +202,7 @@ class CoordinationCog(commands.Cog):
 
         except discord.Forbidden:
             logger.warning(f'Bot lacks permission to change nickname of {member}')
-        except Exception as e:
+        except Exception:
             logger.exception(f'Error updating nickname for {member}')
 
     async def _set_member_nickname(
@@ -248,8 +264,8 @@ class CoordinationCog(commands.Cog):
             await interaction.followup.send(
                 'Voice channel nicknames updated.', ephemeral=True
             )
-        except Exception as e:
-            logger.exception(f'Error in update_voice command')
+        except Exception:
+            logger.exception('Error in update_voice command')
             await interaction.followup.send(
                 'An error occurred while updating nicknames.', ephemeral=True
             )
