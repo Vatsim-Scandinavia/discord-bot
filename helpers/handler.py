@@ -119,6 +119,6 @@ class Handler:
         """
         name = re.findall(r'.+?(?= -)', str(member.nick))
         if not name:
-            raise ValueError
+            return None
 
         return name[0]
