@@ -210,7 +210,7 @@ class Config:
             )
         )
         self.COORDINATION_ALLOWED_CALLSIGNS = os.getenv(
-            'COORDINATION_ALLOWED_CALLSIGNS', ''
+            'COORDINATION_ALLOWED_CALLSIGNS', '(?!.*)'
         )
 
     def activity(self) -> discord.Activity:
