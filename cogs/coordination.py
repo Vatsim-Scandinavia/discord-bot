@@ -162,8 +162,10 @@ class CoordinationCog(commands.Cog):
         if cid in self._allowed_cids:
             return True
 
-        if self._allowed_callsigns_pattern and re.match(
-            self._allowed_callsigns_pattern, callsign
+        if (
+            callsign
+            and self._allowed_callsigns_pattern
+            and re.match(self._allowed_callsigns_pattern, callsign)
         ):
             return True
 
