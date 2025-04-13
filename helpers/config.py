@@ -205,7 +205,12 @@ class Config:
 
         # Coordination
         self.COORDINATION_ALLOWED_CIDS = set(
-            map(int, filter(None, os.getenv('COORDINATION_ALLOWED_CIDS', '').split(',')))
+            map(
+                int, filter(None, os.getenv('COORDINATION_ALLOWED_CIDS', '').split(','))
+            )
+        )
+        self.COORDINATION_ALLOWED_CALLSIGNS = os.getenv(
+            'COORDINATION_ALLOWED_CALLSIGNS', ''
         )
 
     def activity(self) -> discord.Activity:

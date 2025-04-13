@@ -2,6 +2,7 @@ import asyncio
 import datetime
 import logging
 from collections.abc import Coroutine
+import re
 from typing import Optional
 
 import aiohttp
@@ -28,9 +29,10 @@ class VATSIMDataFetchException(Exception):
         self.status_code = response.status
         super().__init__(f'Failed to fetch VATSIM data: HTTP {self.status_code}')
 
+
 class MemberNickUpdateException(Exception):
     """Failed to update the nickname of a member."""
-    
+
     def __init__(self, member: Member, *args):
         super().__init__(*args)
 
@@ -67,6 +69,7 @@ class CoordinationCog(commands.Cog):
         self._update_controllers_cache.start()
         # TODO(thor): remove this allow list after validation
         self._allowed_cids = config.COORDINATION_ALLOWED_CIDS
+        self._allowed_callsigns_pattern = config.COORDINATION_ALLOWED_CALLSIGNS
         logger.info('Initialized and started updating controllers cache')
 
     async def cog_unload(self):
@@ -153,6 +156,20 @@ class CoordinationCog(commands.Cog):
             return f'{prefix}: |-{cid}-|'
         return f'{prefix}: {name} - {cid}'
 
+    def _feature_enabled(self, cid: int, callsign: Optional[str] = None) -> bool:
+        """Simple feature gate for gradual rollout"""
+        # TODO(thor): remove after validation
+        if cid in self._allowed_cids:
+            return True
+
+        if self._allowed_callsigns_pattern and re.match(
+            self._allowed_callsigns_pattern, callsign
+        ):
+            return True
+
+        logger.info(f"Skipping {cid=} and {callsign=} as it's not enabled")
+        return False
+
     async def _update_member_nickname(
         self, member: discord.Member, force_remove: bool = False
     ) -> None:
@@ -169,12 +186,10 @@ class CoordinationCog(commands.Cog):
                 # We weren't able to extract either of the name and CID, so we can't proceed
                 return
 
-            # TODO(thor): remove after validation
-            if cid not in self._allowed_cids:
-                logger.info(f"Skipping CID {cid} as it's not in {self._allowed_cids}")
+            callsign = await self._get_controller_station(cid)
+            if not self._feature_enabled(cid, callsign):
                 return
 
-            callsign = await self._get_controller_station(cid)
             modified_member = self._member_cache.get(member.id)
             if modified_member and not callsign:
                 # Modified members without callsigns should be restored
