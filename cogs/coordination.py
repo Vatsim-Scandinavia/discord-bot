@@ -195,11 +195,11 @@ class CoordinationCog(commands.Cog):
                 await self._restore_nickname(member)
                 return
 
-            if not self._feature_enabled(cid, callsign):
-                return
-
             if not callsign:
                 # If there's no callsign, then there's nothing to do
+                return
+
+            if not self._feature_enabled(cid, callsign):
                 return
 
             # Add the prefix to the user and and store original nickname before modification
@@ -259,15 +259,17 @@ class CoordinationCog(commands.Cog):
         after: discord.VoiceState,
     ):
         """Handle voice state changes to update nicknames"""
-        if before.channel == after.channel:
+        if before.channel and after.channel:
+            # The user is still connected to a voice channel
             return
 
-        if after.channel is None:
-            # User left voice voice channels altogether
-            await self._update_member_nickname(member, force_remove=True)
-        else:
-            # The user moved to a different voice channel
+        if after.channel:
+            # The user joined a new voice channel, doesn't matter which
             await self._update_member_nickname(member)
+            return
+
+        # User left voice voice channels altogether
+        await self._update_member_nickname(member, force_remove=True)
 
     @app_commands.command(
         name='updatevoice', description='Update voice channel member nicknames'
