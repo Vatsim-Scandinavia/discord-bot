@@ -189,13 +189,13 @@ class CoordinationCog(commands.Cog):
                 return
 
             callsign = await self._get_controller_station(cid)
-            if not self._feature_enabled(cid, callsign):
-                return
-
             modified_member = self._member_cache.get(member.id)
             if modified_member and not callsign:
                 # Modified members without callsigns should be restored
                 await self._restore_nickname(member)
+                return
+
+            if not self._feature_enabled(cid, callsign):
                 return
 
             if not callsign:
