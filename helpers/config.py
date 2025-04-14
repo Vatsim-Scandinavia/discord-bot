@@ -1,5 +1,6 @@
 import os
 from distutils.util import strtobool
+from pathlib import Path
 
 import discord
 import discord.ext
@@ -16,6 +17,8 @@ class Config:
         self.BOT_TOKEN = os.getenv('BOT_TOKEN', '')
         self.GUILD_ID = int(os.getenv('GUILD_ID', 0))
         self.DEBUG = bool(strtobool(os.getenv('DEBUG', 'False')))
+        self.CACHE_DIR = Path(os.getenv('CACHE_DIR', '/var/cache/discord-bot'))
+        """The cache directory is used to store cached data for the bot"""
 
         self.PREFIX = '/'
         self.VATSCA_BLUE = 0x43C6E7
@@ -26,6 +29,7 @@ class Config:
         # Cogs and admin roles
         self.COGS = [
             'cogs.admin',
+            'cogs.coordination',
             'cogs.fastapi',
             'cogs.member',
             'cogs.publisher',
@@ -37,6 +41,7 @@ class Config:
 
         self.COGS_LOAD = {
             'admin': 'cogs.admin',
+            'coordination': 'cogs.coordination',
             'fastapi': 'cogs.fastapi',
             'member': 'cogs.member',
             'publisher': 'cogs.publisher',
@@ -197,6 +202,16 @@ class Config:
         self.BOT_DB_USER = str(os.getenv('BOT_DB_USER', ''))
         self.BOT_DB_PASSWORD = str(os.getenv('BOT_DB_PASSWORD', ''))
         self.BOT_DB_NAME = str(os.getenv('BOT_DB_NAME', ''))
+
+        # Coordination
+        self.COORDINATION_ALLOWED_CIDS = set(
+            map(
+                int, filter(None, os.getenv('COORDINATION_ALLOWED_CIDS', '').split(','))
+            )
+        )
+        self.COORDINATION_ALLOWED_CALLSIGNS = os.getenv(
+            'COORDINATION_ALLOWED_CALLSIGNS', '(?!.*)'
+        )
 
     def activity(self) -> discord.Activity:
         return discord.Activity(

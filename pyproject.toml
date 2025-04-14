@@ -23,6 +23,8 @@ dependencies = [
     "uvicorn==0.34.0",
     "fastapi==0.115.8",
     "python-multipart==0.0.20",
+    "aiofiles>=24.1.0",
+    "structlog>=25.2.0",
 ]
 
 [dependency-groups]
@@ -42,6 +44,8 @@ ignore = [
     "D203", "D211", "D212", "COM812", "Q000", "Q003", "E501",
     "ANN", # type annotations missing
     "FA100", # future rewritable type is fine to ignore
+    "FIX", # todos, fixmes, etc. are useful
+    "TD003", # We don't need a link for all todos, they're future context
     # TODO: list of ignored errors we must fix
     "T201",
     "D102",
