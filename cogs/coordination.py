@@ -169,7 +169,7 @@ class CoordinationCog(commands.Cog):
     def _format_name(self, prefix: str, name: Optional[str], cid: int) -> str:
         if name is None:
             return f'{prefix}: |-{cid}-|'
-        return f'{self._callsign_prefix}{prefix}{self._callsign_sufix} {name} - {cid}'
+        return f'{self._callsign_prefix}{prefix}{self._callsign_suffix} {name} - {cid}'
 
     def _feature_enabled(self, cid: int, callsign: Optional[str] = None) -> bool:
         """Simple feature gate for gradual rollout"""
