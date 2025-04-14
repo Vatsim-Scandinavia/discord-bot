@@ -34,6 +34,13 @@ class MemberNickUpdateException(Exception):
     """Failed to update the nickname of a member."""
 
 
+class NewNickTooLongException(Exception):
+    """New nickname exceeds the maximum length."""
+
+    def __init__(self, nick: str):
+        super().__init__(f'New nickname exceeds 32 characters: {nick}')
+
+
 class CoordinationCog(commands.Cog):
     """
     A cog for exposing VATSIM controller status in Discord voice channels.
@@ -244,7 +251,7 @@ class CoordinationCog(commands.Cog):
             new_name = self._format_name(callsign, short_name, cid)
 
         if len(new_name) > 32:
-            raise ValueError(f'New name exceeds 32 characters: {new_name}')
+            raise NewNickTooLongException(new_name)
 
         logger.info(
             'Updating nickname',

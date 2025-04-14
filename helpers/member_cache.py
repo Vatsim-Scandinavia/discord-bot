@@ -1,12 +1,12 @@
 import asyncio
 import json
-import logging
 from pathlib import Path
 from typing import Optional, TypedDict
 
 import aiofiles
+import structlog
 
-logger = logging.getLogger(__name__)
+logger = structlog.stdlib.get_logger()
 
 
 class MemberNick(TypedDict):
@@ -28,6 +28,7 @@ class MemberCache:
         self._cache_file = folder.joinpath(file)
         self._nicknames: dict[str, MemberNick] = {}
         self._lock = asyncio.Lock()
+        self._log = logger.bind(path=self._cache_file)
         self._load_cache()
 
     def _load_cache(self) -> None:
@@ -36,8 +37,8 @@ class MemberCache:
             if self._cache_file.exists():
                 with open(self._cache_file) as f:
                     self._nicknames = json.load(f)
-        except Exception as e:
-            logger.exception(f'Failed to load nickname cache: {e}')
+        except Exception:
+            self._log.exception('Failed to load nickname cache')
             self._nicknames = {}
 
     async def _save_cache(self) -> None:
@@ -45,8 +46,8 @@ class MemberCache:
         try:
             async with aiofiles.open(self._cache_file, 'w') as f:
                 await f.write(json.dumps(self._nicknames))
-        except Exception as e:
-            logger.exception(f'Failed to save nickname cache: {e}')
+        except Exception:
+            self._log.exception('Failed to save nickname cache')
 
     async def store(self, member_id: int, nick: str, name: Optional[str], cid: int) -> None:
         """Store original nickname for a member"""
