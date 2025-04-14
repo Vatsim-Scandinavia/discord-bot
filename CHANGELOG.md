@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.1](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.3.0...v2.3.1) (2025-04-14)
+
+
+### Bug Fixes
+
+* **coordination:** broken callsign updating due to typo ([#124](https://github.com/Vatsim-Scandinavia/discord-bot/issues/124)) ([e6e77e7](https://github.com/Vatsim-Scandinavia/discord-bot/commit/e6e77e70ed830b691ed8f133a63a5f160ee40626))
+
 ## [2.3.0](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.2.0...v2.3.0) (2025-04-14)
 
 
