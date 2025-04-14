@@ -1,20 +1,20 @@
 import asyncio
 import datetime
-import logging
-from collections.abc import Coroutine
 import re
+from collections.abc import Coroutine
 from typing import Optional
 
 import aiohttp
 import discord
-from discord import Member, app_commands
+import structlog
+from discord import app_commands
 from discord.ext import commands, tasks
 
 from helpers.config import config
 from helpers.handler import Handler
 from helpers.member_cache import MemberCache
 
-logger = logging.getLogger(__name__)
+logger = structlog.stdlib.get_logger()
 
 VATSIM_BASE_URL = 'https://data.vatsim.net'
 VATSIM_DATA = '/v3/vatsim-data.json'
@@ -32,9 +32,6 @@ class VATSIMDataFetchException(Exception):
 
 class MemberNickUpdateException(Exception):
     """Failed to update the nickname of a member."""
-
-    def __init__(self, member: Member, *args):
-        super().__init__(*args)
 
 
 class CoordinationCog(commands.Cog):
@@ -62,12 +59,14 @@ class CoordinationCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self._bot = bot
         self._handler = Handler()
+        self._callsign_prefix = ''
+        self._callsign_suffix = ':'
         self._last_update: datetime.datetime = None
         self._session = aiohttp.ClientSession(base_url=VATSIM_BASE_URL)
         self._online_controllers: dict[str, str] = {}
         self._member_cache = MemberCache(folder=config.CACHE_DIR)
         self._update_controllers_cache.start()
-        # TODO(thor): remove this allow list after validation
+        # TODO(thor): remove this allow list after validation #122
         self._allowed_cids = config.COORDINATION_ALLOWED_CIDS
         self._allowed_callsigns_pattern = config.COORDINATION_ALLOWED_CALLSIGNS
         logger.info('Initialized and started updating controllers cache')
@@ -138,13 +137,22 @@ class CoordinationCog(commands.Cog):
         """Restore the original nickname of a member"""
         modified_member = self._member_cache.get(member.id)
         if not modified_member:
-            # TODO(thor): eliminate this warning and replace it with a debug as it is normal
-            logger.warning('Original nickname not found', extra={member: member})
+            log = logger.bind(id=member.id, name=member.name, nick=member.nick)
+            if (self._callsign_prefix and self._callsign_prefix in member.nick) or (
+                self._callsign_suffix and self._callsign_suffix in member.nick
+            ):
+                # This is the case where a user for some reason has a prefix, but we've
+                # failed to store their original nickname. This should error.
+                log.error('Can not restore nickname without original nickname')
+                return
+            # No prefix characters identified: that's fine.
+            log.debug('No modification record found, skipping nick restoration')
             return
 
         original_nick = modified_member['nick']
         # Remove the nickname first to avoid issue for those weird users who have higher permissions
         # than the bot itself. This is an additional risk, but one we're fine to make.
+        logger.info('Removing nickname for %s', member)
         _create_task(self._member_cache.remove_nickname(member.id))
         await member.edit(
             nick=original_nick,
@@ -154,7 +162,7 @@ class CoordinationCog(commands.Cog):
     def _format_name(self, prefix: str, name: Optional[str], cid: int) -> str:
         if name is None:
             return f'{prefix}: |-{cid}-|'
-        return f'{prefix}: {name} - {cid}'
+        return f'{self._callsign_prefix}{prefix}{self._callsign_sufix} {name} - {cid}'
 
     def _feature_enabled(self, cid: int, callsign: Optional[str] = None) -> bool:
         """Simple feature gate for gradual rollout"""
@@ -169,13 +177,14 @@ class CoordinationCog(commands.Cog):
         ):
             return True
 
-        logger.info(f"Skipping {cid=} and {callsign=} as it's not enabled")
+        logger.info('Skipping member outside of rollout', cid=cid, callsign=callsign)
         return False
 
     async def _update_member_nickname(
         self, member: discord.Member, force_remove: bool = False
     ) -> None:
         """Update member's nickname based on their controlling station"""
+        log = logger.bind(member=member, nick=member.nick)
         try:
             if not member.voice or force_remove:
                 await self._restore_nickname(member)
@@ -186,6 +195,7 @@ class CoordinationCog(commands.Cog):
 
             if not cid and not name:
                 # We weren't able to extract either of the name and CID, so we can't proceed
+                log.warning("Couldn't extract CID or name from member's nickname")
                 return
 
             callsign = await self._get_controller_station(cid)
@@ -199,6 +209,7 @@ class CoordinationCog(commands.Cog):
                 # If there's no callsign, then there's nothing to do
                 return
 
+            # TODO(thor): remove after validation #122
             if not self._feature_enabled(cid, callsign):
                 return
 
@@ -218,9 +229,9 @@ class CoordinationCog(commands.Cog):
                 await self._set_member_nickname(member, callsign, name, cid)
 
         except discord.Forbidden:
-            logger.warning(f'Bot lacks permission to change nickname of {member}')
+            log.warning('Bot lacks permission to change nickname')
         except Exception:
-            logger.exception(f'Error updating nickname for {member}')
+            log.exception('Error updating nickname')
 
     async def _set_member_nickname(
         self, member: discord.Member, callsign: str, name: str, cid: int
@@ -235,11 +246,16 @@ class CoordinationCog(commands.Cog):
         if len(new_name) > 32:
             raise ValueError(f'New name exceeds 32 characters: {new_name}')
 
+        logger.info(
+            'Updating nickname',
+            member=member,
+            old_nick=member.nick or member.name,
+            new_nick=new_name,
+        )
         await member.edit(
             nick=new_name,
             reason='Adding callsign prefix after joining voice channel',
         )
-        logger.info(f'Updating nickname for {member} to {new_name=}')
 
     async def _update_voice_channel_members(self):
         """Update all members in voice channels across all guilds"""

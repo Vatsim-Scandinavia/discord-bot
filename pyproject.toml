@@ -24,6 +24,7 @@ dependencies = [
     "fastapi==0.115.8",
     "python-multipart==0.0.20",
     "aiofiles>=24.1.0",
+    "structlog>=25.2.0",
 ]
 
 [dependency-groups]
