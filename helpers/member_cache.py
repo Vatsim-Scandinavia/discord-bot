@@ -49,7 +49,9 @@ class MemberCache:
         except Exception:
             self._log.exception('Failed to save nickname cache')
 
-    async def store(self, member_id: int, nick: str, name: Optional[str], cid: int) -> None:
+    async def store(
+        self, member_id: int, nick: str, name: Optional[str], cid: int
+    ) -> None:
         """Store original nickname for a member"""
         async with self._lock:
             self._nicknames[str(member_id)] = MemberNick(name=name, nick=nick, cid=cid)
