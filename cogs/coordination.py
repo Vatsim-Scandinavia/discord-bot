@@ -1,8 +1,9 @@
 import asyncio
 import datetime
 import re
+from asyncio import Task
 from collections.abc import Coroutine
-from typing import Optional
+from typing import Any, Optional
 
 import aiohttp
 import discord
@@ -18,6 +19,10 @@ logger = structlog.stdlib.get_logger()
 
 VATSIM_BASE_URL = 'https://data.vatsim.net'
 VATSIM_DATA = '/v3/vatsim-data.json'
+
+
+OnlineControllers = dict[int, str]
+"""A dictionary mapping VATSIM controller CIDs to their callsigns"""
 
 
 class VATSIMDataFetchException(Exception):
@@ -68,9 +73,9 @@ class CoordinationCog(commands.Cog):
         self._handler = Handler()
         self._callsign_prefix = ''
         self._callsign_suffix = ':'
-        self._last_update: datetime.datetime = None
+        self._last_update: Optional[datetime.datetime] = None
         self._session = aiohttp.ClientSession(base_url=VATSIM_BASE_URL)
-        self._online_controllers: dict[str, str] = {}
+        self._online_controllers: OnlineControllers = {}
         self._member_cache = MemberCache(folder=config.CACHE_DIR)
         self._update_controllers_cache.start()
         # TODO(thor): remove this allow list after validation #122
@@ -94,14 +99,14 @@ class CoordinationCog(commands.Cog):
         ]
         _create_task(*tasks)
 
-    async def _fetch_online_controllers(self) -> dict[int, str]:
+    async def _fetch_online_controllers(self) -> OnlineControllers:
         """Fetch online controllers from VATSIM Datafeed API"""
         try:
             async with self._session.get(VATSIM_DATA) as response:
                 if response.status != 200:
                     raise VATSIMDataFetchException(response)
                 data = await response.json()
-            controllers = {}
+            controllers: dict[int, str] = {}
             for controller in data.get('controllers', []):
                 if controller.get('facility') != 0:
                     cid = int(controller.get('cid'))
@@ -132,7 +137,9 @@ class CoordinationCog(commands.Cog):
             self._last_update = datetime.datetime.now()
             await self._update_voice_channel_members()
         except Exception:
-            logger.exception('Failed to update controllers cache')
+            logger.exception(
+                'Failed to update controllers cache', last_update=self._last_update
+            )
 
     async def _get_controller_station(self, cid: int) -> Optional[str]:
         """Get the controller's prefix if they're online, None otherwise"""
@@ -142,9 +149,12 @@ class CoordinationCog(commands.Cog):
 
     async def _restore_nickname(self, member: discord.Member) -> None:
         """Restore the original nickname of a member"""
+        if not member.nick:
+            return
+
+        log = logger.bind(id=member.id, name=member.name, nick=member.nick)
         modified_member = self._member_cache.get(member.id)
         if not modified_member:
-            log = logger.bind(id=member.id, name=member.name, nick=member.nick)
             if (self._callsign_prefix and self._callsign_prefix in member.nick) or (
                 self._callsign_suffix and self._callsign_suffix in member.nick
             ):
@@ -159,11 +169,11 @@ class CoordinationCog(commands.Cog):
         original_nick = modified_member['nick']
         # Remove the nickname first to avoid issue for those weird users who have higher permissions
         # than the bot itself. This is an additional risk, but one we're fine to make.
-        logger.info('Removing nickname for %s', member)
+        log.info('Removing and restoring nick', stored_nick=original_nick)
         _create_task(self._member_cache.remove_nickname(member.id))
         await member.edit(
             nick=original_nick,
-            reason='Removing callsign prefix after leaving voice channel',
+            reason='Restoring original nickname',
         )
 
     def _format_name(self, prefix: str, name: Optional[str], cid: int) -> str:
@@ -191,7 +201,7 @@ class CoordinationCog(commands.Cog):
         self, member: discord.Member, force_remove: bool = False
     ) -> None:
         """Update member's nickname based on their controlling station"""
-        log = logger.bind(member=member, nick=member.nick)
+        log = logger.bind(member=member.name, nick=member.nick)
         try:
             if not member.voice or force_remove:
                 await self._restore_nickname(member)
@@ -241,7 +251,7 @@ class CoordinationCog(commands.Cog):
             log.exception('Error updating nickname')
 
     async def _set_member_nickname(
-        self, member: discord.Member, callsign: str, name: str, cid: int
+        self, member: discord.Member, callsign: str, name: Optional[str], cid: int
     ) -> None:
         """Set the nickname for a member"""
         new_name = self._format_name(callsign, name, cid)
@@ -249,6 +259,15 @@ class CoordinationCog(commands.Cog):
             max_length = max(0, len(name) - (len(new_name) - 32))
             short_name = _ellipsify(name, max_length)
             new_name = self._format_name(callsign, short_name, cid)
+
+        # Early return if the correct callsign is already part of the nick
+        if member.nick == new_name:
+            logger.info(
+                'Skipping update because nick is already set',
+                member=member.name,
+                nick=new_name,
+            )
+            return
 
         if len(new_name) > 32:
             raise NewNickTooLongException(new_name)
@@ -266,7 +285,7 @@ class CoordinationCog(commands.Cog):
 
     async def _update_voice_channel_members(self):
         """Update all members in voice channels across all guilds"""
-        tasks = []
+        tasks: list[Coroutine[Any, Any, None]] = []
         for guild in self._bot.guilds:
             for channel in guild.voice_channels:
                 tasks.extend(
@@ -313,14 +332,14 @@ class CoordinationCog(commands.Cog):
             )
 
 
-async def setup(bot):
+async def setup(bot: commands.Bot):
     await bot.add_cog(CoordinationCog(bot))
 
 
-_background_tasks = set()
+_background_tasks: set[Task[None]] = set()
 
 
-def _create_task(*coroutines: Coroutine):
+def _create_task(*coroutines: Coroutine[Any, Any, None]):
     """Decorator to run a function in the background without waiting for it to finish"""
     for coroutine in coroutines:
         task = asyncio.create_task(coroutine)
