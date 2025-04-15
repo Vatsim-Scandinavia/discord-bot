@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.2](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.3.1...v2.3.2) (2025-04-15)
+
+
+### Bug Fixes
+
+* **coordination:** do not update controllers with unchanged name ([#127](https://github.com/Vatsim-Scandinavia/discord-bot/issues/127)) ([4bf34bd](https://github.com/Vatsim-Scandinavia/discord-bot/commit/4bf34bd9e5b2d934f9682c1d74bc63b2559d7173))
+
 ## [2.3.1](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.3.0...v2.3.1) (2025-04-14)
 
 
