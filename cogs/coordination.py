@@ -46,6 +46,15 @@ class NewNickTooLongException(Exception):
         super().__init__(f'New nickname exceeds 32 characters: {nick}')
 
 
+class AttemptingDuplicatePrefixException(Exception):
+    """Attempting to set a name with a prefix"""
+
+    def __init__(self, name: str):
+        super().__init__(
+            f'Attempting to dual-prefix a nick that is already prefixed: {name}'
+        )
+
+
 class CoordinationCog(commands.Cog):
     """
     A cog for exposing VATSIM controller status in Discord voice channels.
@@ -254,6 +263,9 @@ class CoordinationCog(commands.Cog):
         self, member: discord.Member, callsign: str, name: Optional[str], cid: int
     ) -> None:
         """Set the nickname for a member"""
+        if name and self._callsign_suffix in name:
+            raise AttemptingDuplicatePrefixException(name=name)
+
         new_name = self._format_name(callsign, name, cid)
         if name is not None:
             max_length = max(0, len(name) - (len(new_name) - 32))
