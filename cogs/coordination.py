@@ -46,6 +46,13 @@ class NewNickTooLongException(Exception):
         super().__init__(f'New nickname exceeds 32 characters: {nick}')
 
 
+class AttemptingDuplicatePrefixException(Exception):
+    """Attempting to set a name with a prefix"""
+
+    def __init__(self, name: str):
+        super().__init__(f'Attempting to dual-prefix a nick that is already prefixed: {name}')
+
+
 class CoordinationCog(commands.Cog):
     """
     A cog for exposing VATSIM controller status in Discord voice channels.
@@ -71,8 +78,8 @@ class CoordinationCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self._bot = bot
         self._handler = Handler()
-        self._callsign_prefix = ''
-        self._callsign_suffix = ':'
+        self._callsign_prefix = config.COORDINATION_CALLSIGN_PREFIX
+        self._callsign_suffix = config.COORDINATION_CALLSIGN_SUFFIX
         self._last_update: Optional[datetime.datetime] = None
         self._session = aiohttp.ClientSession(base_url=VATSIM_BASE_URL)
         self._online_controllers: OnlineControllers = {}
@@ -177,8 +184,13 @@ class CoordinationCog(commands.Cog):
         )
 
     def _format_name(self, prefix: str, name: Optional[str], cid: int) -> str:
+        prefix = prefix.removesuffix("_CTR")
+        prefix = prefix.replace("_", " ")
+        prefix = prefix.replace("  ", " ")
+
         if name is None:
-            return f'{prefix}: |-{cid}-|'
+            return f'{prefix}{self._callsign_suffix} |-{cid}-|'
+
         return f'{self._callsign_prefix}{prefix}{self._callsign_suffix} {name} - {cid}'
 
     def _feature_enabled(self, cid: int, callsign: Optional[str] = None) -> bool:
@@ -254,6 +266,9 @@ class CoordinationCog(commands.Cog):
         self, member: discord.Member, callsign: str, name: Optional[str], cid: int
     ) -> None:
         """Set the nickname for a member"""
+        if name and self._callsign_suffix in name:
+            raise AttemptingDuplicatePrefixException(name=name)
+
         new_name = self._format_name(callsign, name, cid)
         if name is not None:
             max_length = max(0, len(name) - (len(new_name) - 32))
