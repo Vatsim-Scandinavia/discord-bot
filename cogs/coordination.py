@@ -80,8 +80,8 @@ class CoordinationCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self._bot = bot
         self._handler = Handler()
-        self._callsign_prefix = ''
-        self._callsign_suffix = ':'
+        self._callsign_prefix = config.COORDINATION_CALLSIGN_PREFIX
+        self._callsign_suffix = config.COORDINATION_CALLSIGN_SUFFIX
         self._last_update: Optional[datetime.datetime] = None
         self._session = aiohttp.ClientSession(base_url=VATSIM_BASE_URL)
         self._online_controllers: OnlineControllers = {}
@@ -186,8 +186,13 @@ class CoordinationCog(commands.Cog):
         )
 
     def _format_name(self, prefix: str, name: Optional[str], cid: int) -> str:
+        prefix = prefix.removesuffix('_CTR')
+        prefix = prefix.replace('_', ' ')
+        prefix = prefix.replace('  ', ' ')
+
         if name is None:
-            return f'{prefix}: |-{cid}-|'
+            return f'{prefix}{self._callsign_suffix} |-{cid}-|'
+
         return f'{self._callsign_prefix}{prefix}{self._callsign_suffix} {name} - {cid}'
 
     def _feature_enabled(self, cid: int, callsign: Optional[str] = None) -> bool:

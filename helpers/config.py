@@ -204,6 +204,12 @@ class Config:
         self.BOT_DB_NAME = str(os.getenv('BOT_DB_NAME', ''))
 
         # Coordination
+        self.COORDINATION_CALLSIGN_PREFIX = os.getenv(
+            'COORDINATION_CALLSIGN_PREFIX', ''
+        )
+        self.COORDINATION_CALLSIGN_SUFFIX = os.getenv(
+            'COORDINATION_CALLSIGN_PREFIX', ':'
+        )
         self.COORDINATION_ALLOWED_CIDS = set(
             map(
                 int, filter(None, os.getenv('COORDINATION_ALLOWED_CIDS', '').split(','))
