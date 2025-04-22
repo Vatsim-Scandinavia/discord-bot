@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.3.3](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.3.2...v2.3.3) (2025-04-22)
+
+
+### Bug Fixes
+
+* **coordination:** exception on duplicate prefix ([7f58a5c](https://github.com/Vatsim-Scandinavia/discord-bot/commit/7f58a5c0e0c61738b6070d50130314545d199439))
+* **coordination:** remove underscores and CTR suffix ([917c604](https://github.com/Vatsim-Scandinavia/discord-bot/commit/917c604255ed2f5c44f5464b146948c6c99b1cc0))
+* **coordination:** use _SUFFIX environment variable for callsign suffix ([#132](https://github.com/Vatsim-Scandinavia/discord-bot/issues/132)) ([760e3b2](https://github.com/Vatsim-Scandinavia/discord-bot/commit/760e3b22f20882d31accdef6e4e2b28966f4db65))
+
 ## [2.3.2](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.3.1...v2.3.2) (2025-04-15)
 
 
