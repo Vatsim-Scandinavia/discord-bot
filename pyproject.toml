@@ -29,8 +29,18 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "mypy>=1.15.0",
+    "poethepoet>=0.34.0",
+    "pyright>=1.1.399",
     "ruff>=0.9.3",
 ]
+
+[tool.poe.tasks]
+lint.shell      = "poe lint:basic && poe lint:typing"
+"lint:advanced" = "pyright ."
+"lint:basic"    = "ruff check ."
+"lint:typing"   = "mypy ."
+format          = "ruff format ."
 
 [tool.ruff.lint]
 extend-select = [
