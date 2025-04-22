@@ -4,8 +4,24 @@ python.uv_venv_auto = true
 [tools]
 uv = "latest"
 
+[tasks.fix]
+depends = [
+  "fix:format",
+  "fix:code"
+]
+
+[tasks."fix:format"]
+run = "uv run ruff format ."
+
+[tasks."fix:code"]
+run = "uv run ruff check --fix ."
+
 [tasks.lint]
-depends = ["lint:format", "lint:code"]
+depends = [
+  "lint:format",
+  "lint:code",
+  "lint:types"
+]
 
 [tasks."lint:format"]
 run = "uv run ruff format --check ."
@@ -13,3 +29,5 @@ run = "uv run ruff format --check ."
 [tasks."lint:code"]
 run = "uv run ruff check ."
 
+[tasks."lint:types"]
+run = "uv run mypy ."
