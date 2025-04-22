@@ -113,8 +113,8 @@ async def on_connect():
 
 
 # Signal handling for graceful shutdown
-def handle_exit_signal(signal_number, frame):
-    print('Received shutdown signal. Closing bot...', flush=True)
+def handle_exit_signal(signal_number, _):
+    print(f'Received shutdown signal ({signal_number}). Closing bot...', flush=True)
     asyncio.create_task(bot.close())
 
 
