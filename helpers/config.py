@@ -208,7 +208,7 @@ class Config:
             'COORDINATION_CALLSIGN_PREFIX', ''
         )
         self.COORDINATION_CALLSIGN_SUFFIX = os.getenv(
-            'COORDINATION_CALLSIGN_PREFIX', ':'
+            'COORDINATION_CALLSIGN_SUFFIX', ':'
         )
         self.COORDINATION_ALLOWED_CIDS = set(
             map(
