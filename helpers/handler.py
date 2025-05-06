@@ -95,7 +95,7 @@ class Handler:
 
             return data, next_url
 
-    async def get_cid(self, member: discord.Member):
+    def get_cid(self, member: discord.Member):
         """
         Get CID based on VATSIM Discord member.
 

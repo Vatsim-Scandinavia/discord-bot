@@ -76,7 +76,7 @@ async def on_member_update(before_update, user: discord.Member):
     handler = Handler()
 
     # Extract cid from nickname, exit early if not found
-    cid = await handler.get_cid(user)
+    cid = handler.get_cid(user)
 
     try:
         api_data = await handler.get_division_members()

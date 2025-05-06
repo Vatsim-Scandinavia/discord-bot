@@ -92,7 +92,7 @@ class RolesCog(commands.Cog):
 
         """
         try:
-            cid = await self.handler.get_cid(user)
+            cid = self.handler.get_cid(user)
             if not cid:
                 raise ValueError("No CID found in member's nickname.")
 
