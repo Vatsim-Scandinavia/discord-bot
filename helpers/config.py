@@ -173,11 +173,9 @@ class Config:
 
         # Parse REACTION_ROLE_DATA from the environment variable
         self.REACTION_ROLE_DATA = os.getenv('REACTION_ROLE_DATA', '')
-        self.REACTION_EMOJI, self.REACTION_MESSAGE_IDS, self.REACTION_ROLE_IDS = (
-            [],
-            [],
-            [],
-        )
+        self.REACTION_EMOJI: list[str] = []
+        self.REACTION_MESSAGE_IDS: list[str] = []
+        self.REACTION_ROLE_IDS: list[str] = []
 
         if self.REACTION_ROLE_DATA:
             for reaction_role in self.REACTION_ROLE_DATA.split(','):

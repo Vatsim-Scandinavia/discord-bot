@@ -1,11 +1,18 @@
 import re
-from typing import Optional
+from typing import Optional, TypedDict
 
 import aiohttp
 import discord
 from discord.ext import commands
 
 from helpers.config import config
+
+
+class DivisionMember(TypedDict):
+    """Division member data."""
+
+    id: int
+    subdivision: str
 
 
 class VATSIMDivisionMemberFetchException(Exception):
@@ -42,12 +49,12 @@ class Handler:
             )
         return True
 
-    async def get_division_members(self):
+    async def get_division_members(self) -> list[DivisionMember]:
         """
         Fetch all division members from the API with pagination.
         :return:
         """
-        result = []
+        result: list[DivisionMember] = []
         url = config.VATSIM_CHECK_MEMBER_URL  # Initialize from config
 
         if not url:  # Ensure the URL is defined
