@@ -36,19 +36,21 @@ class RolesCog(commands.Cog):
         await self.bot.wait_until_ready()
 
         if config.DEBUG and not override:
-            print(
-                'check_roles skipped due to DEBUG ON. You can start manually with the command instead.',
-                flush=True,
+            logger.info(
+                'check_roles skipped due to DEBUG ON. You can start check_roles with the command.',
+                status='skipped',
             )
             return
 
-        print(
-            f'check_roles started at {datetime.datetime.now().isoformat()}', flush=True
+        logger.info(
+            'check_roles started',
+            start_time=datetime.datetime.now().isoformat(),
+            status='start',
         )
 
         guild = self.bot.get_guild(config.GUILD_ID)
         if guild is None:
-            print(f'Guild with ID {config.GUILD_ID} not found.')
+            logger.critical('Guild not found', guild_id=config.GUILD_ID)
             return
 
         roles_data = await self.roles.get_roles()
@@ -74,8 +76,10 @@ class RolesCog(commands.Cog):
                 atc_activity_data,
             )
 
-        print(
-            f'check_roles finished at {datetime.datetime.now().isoformat()}', flush=True
+        logger.info(
+            'check_roles finished',
+            end_time=datetime.datetime.now().isoformat(),
+            status='success',
         )
 
     async def process_member_roles(
@@ -152,7 +156,12 @@ class RolesCog(commands.Cog):
             await asyncio.gather(*tasks)
 
         except ValueError as e:
-            print(f'ValueError for {user.name}: {e}', flush=True)
+            logger.warning(
+                'Failed to process roles, probably because we could not get CID due ValueError: will remove any roles',
+                name=user.name,
+                nick=user.nick,
+                error=e,
+            )
             if mentor_role in user.roles:
                 await user.remove_roles(
                     mentor_role, reason=config.ROLE_REASONS['no_cid']
@@ -166,12 +175,14 @@ class RolesCog(commands.Cog):
                     visitor_role, reason=config.ROLE_REASONS['no_cid']
                 )
 
-        except Exception as e:
-            print(f'Error processing roles for {user.name}: {e}', flush=True)
+        except Exception:
+            logger.exception('Error processing roles', name=user.name, nick=user.nick)
 
         finally:
+            # TODO(thor): Replace if-check with correctly configured logger with level filtering
+            # TODO(thor): Configure structlog to output module location (e.g. cogs.roles)
             if config.DEBUG:
-                print(f'Finished processing roles for {user.name}.')
+                logger.debug('Finished processing roles', name=user.name)
 
     def get_mentor_roles(self, cid, data):
         """
@@ -310,7 +321,7 @@ class RolesCog(commands.Cog):
 
             fir_role = discord.utils.get(user.guild.roles, id=role_id)
             if not fir_role:
-                print(f'Role with ID {role_id} not found in guild for FIR {fir}.')
+                logger.warning('Role not found in FIR.', role_id=role_id, fir=fir)
                 continue
 
             if fir in fir_data and should_be_assigned:
@@ -501,6 +512,10 @@ class RolesCog(commands.Cog):
 
         We listen to member update events to catch changes made by the VATSIM Community bot.
         One alternative approach include listening to the audit log.
+
+        Todo:
+            This entire function should possibly be merged with the cogs.tasks.check_members routine.
+
         """
         if before.nick == after.nick:
             return
@@ -543,7 +558,7 @@ class RolesCog(commands.Cog):
             return
 
         # Extract cid from nickname, exit early if not found
-        cid = await self.handler.get_cid(after)
+        cid = self.handler.get_cid(after)
 
         try:
             api_data = await self.handler.get_division_members()
@@ -553,6 +568,7 @@ class RolesCog(commands.Cog):
                 and str(entry['subdivision']) == str(config.VATSIM_SUBDIVISION)
                 for entry in api_data
             )
+            logger.info('Fetched division members from API', len=len(api_data))
 
             # Manage role assignments
             tasks: list[Coroutine[Any, Any, None]] = []
@@ -560,26 +576,39 @@ class RolesCog(commands.Cog):
             if vatsim_member in after.roles:
                 # add VATSCA if required otherwise remove it
                 if should_have_vatsca and vatsca_member not in after.roles:
-                    tasks.append(after.add_roles(vatsca_member))
+                    tasks.append(
+                        after.add_roles(
+                            vatsca_member, reason='Missing role in on_member_update'
+                        )
+                    )
                 elif not should_have_vatsca and vatsca_member in after.roles:
-                    tasks.append(after.remove_roles(vatsca_member))
+                    tasks.append(
+                        after.remove_roles(
+                            vatsca_member, reason='Redundant role in on_member_update'
+                        )
+                    )
 
             elif vatsca_member in after.roles:
                 # Remove VATSCA if the user doesn't have VATSIM role
-                tasks.append(after.remove_roles(vatsca_member))
+                tasks.append(
+                    after.remove_roles(
+                        vatsca_member,
+                        reason='Redunant role because VATSIM role is missing in on_member_update',
+                    )
+                )
 
             if tasks:
                 await asyncio.gather(*tasks)
 
         # TODO(thor): Replace with either custom exceptions or find out how to move them out to the core handler
         except discord.Forbidden as e:
-            print(f'Bot lacks permission for this action: {e}', flush=True)
+            logger.exception('Bot lacks permission for action', error=e)
 
         except discord.HTTPException as e:
-            print(f'HTTP error: {e}', flush=True)
+            logger.exception('HTTP error', error=e)
 
         except Exception as e:
-            print(f'Unexpected error: {e}', flush=True)
+            logger.exception('Unexpected error', error=e)
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
