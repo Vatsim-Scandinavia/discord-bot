@@ -77,6 +77,12 @@ class CoordinationCog(commands.Cog):
 
     """
 
+    coordination = app_commands.Group(
+        name='coordination',
+        description='Manually handle coordination fixes',
+        guild_only=True,
+    )
+
     def __init__(self, bot: commands.Bot):
         self._bot = bot
         self._handler = Handler()
@@ -329,8 +335,8 @@ class CoordinationCog(commands.Cog):
         # User left voice voice channels altogether
         await self._update_member_nickname(member, force_remove=True)
 
-    @app_commands.command(
-        name='updatevoice', description='Update voice channel member nicknames'
+    @coordination.command(
+        name='update-voice', description='Update voice channel member nicknames'
     )
     @app_commands.checks.has_any_role(*config.STAFF_ROLES)
     async def update_voice(self, interaction: discord.Interaction):
@@ -349,7 +355,8 @@ class CoordinationCog(commands.Cog):
 
 
 async def setup(bot: commands.Bot):
-    await bot.add_cog(CoordinationCog(bot))
+    cog = CoordinationCog(bot)
+    await bot.add_cog(cog)
 
 
 _background_tasks: set[Task[None]] = set()

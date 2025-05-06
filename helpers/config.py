@@ -59,6 +59,8 @@ class Config:
             'Staff',
         ]
 
+        self.TECH_ROLES = ['Web', 'Tech']
+
         self.ROLE_REASONS = {
             'vatsca_add': 'Member is now part of VATSCA',
             'vatsca_remove': 'Member is no longer part of VATSCA',
