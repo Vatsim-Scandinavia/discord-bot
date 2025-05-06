@@ -80,8 +80,7 @@ class CoordinationCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self._bot = bot
         self._handler = Handler()
-        self._callsign_prefix = config.COORDINATION_CALLSIGN_PREFIX
-        self._callsign_suffix = config.COORDINATION_CALLSIGN_SUFFIX
+        self._callsign_separator = config.COORDINATION_CALLSIGN_SEPARATOR
         self._last_update: Optional[datetime.datetime] = None
         self._session = aiohttp.ClientSession(base_url=VATSIM_BASE_URL)
         self._online_controllers: OnlineControllers = {}
@@ -164,9 +163,7 @@ class CoordinationCog(commands.Cog):
         log = logger.bind(id=member.id, name=member.name, nick=member.nick)
         modified_member = self._member_cache.get(member.id)
         if not modified_member:
-            if (self._callsign_prefix and self._callsign_prefix in member.nick) or (
-                self._callsign_suffix and self._callsign_suffix in member.nick
-            ):
+            if self._callsign_separator and self._callsign_separator in member.nick:
                 # This is the case where a user for some reason has a prefix, but we've
                 # failed to store their original nickname. This should error.
                 log.error('Can not restore nickname without original nickname')
@@ -186,14 +183,16 @@ class CoordinationCog(commands.Cog):
         )
 
     def _format_name(self, prefix: str, name: Optional[str], cid: int) -> str:
+        """Format the name for the member's nickname"""
         prefix = prefix.removesuffix('_CTR')
         prefix = prefix.replace('_', ' ')
         prefix = prefix.replace('  ', ' ')
 
+        # TODO(thor): This is a bit of a hack to support non-name nicknames
         if name is None:
-            return f'{prefix}{self._callsign_suffix} |-{cid}-|'
+            return f'{prefix} {self._callsign_separator} |-{cid}-|'
 
-        return f'{self._callsign_prefix}{prefix}{self._callsign_suffix} {name} - {cid}'
+        return f'{prefix} {self._callsign_separator} {name} - {cid}'
 
     def _feature_enabled(self, cid: int, callsign: Optional[str] = None) -> bool:
         """Simple feature gate for gradual rollout"""
@@ -268,7 +267,7 @@ class CoordinationCog(commands.Cog):
         self, member: discord.Member, callsign: str, name: Optional[str], cid: int
     ) -> None:
         """Set the nickname for a member"""
-        if name and self._callsign_suffix in name:
+        if name and self._callsign_separator in name:
             raise AttemptingDuplicatePrefixException(name=name)
 
         new_name = self._format_name(callsign, name, cid)
