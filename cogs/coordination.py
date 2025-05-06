@@ -226,7 +226,7 @@ class CoordinationCog(commands.Cog):
                 await self._restore_nickname(member)
                 return
 
-            cid = await self._handler.get_cid(member)
+            cid = self._handler.get_cid(member)
             name = self._handler.get_name(member)
 
             if not cid and not name:

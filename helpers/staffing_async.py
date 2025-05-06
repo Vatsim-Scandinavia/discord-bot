@@ -121,7 +121,7 @@ class StaffingAsync:
 
     async def _book(self, ctx, staffing, position, section):
         try:
-            cid = await Handler.get_cid(self, ctx.author)
+            cid = Handler.get_cid(self, ctx.author)
 
             sections_map = {
                 (staffing.get('section_1_title') or '').lower(): '1',
