@@ -6,16 +6,22 @@ from discord.ext import commands, tasks
 
 from helpers.config import config
 from helpers.handler import Handler
+from helpers.ux import NicknameAssignment
 
 
 class TasksCog(commands.Cog):
+    maintenance = app_commands.Group(
+        name='maintenance',
+        description='Maintenance commands for the bot.',
+    )
+
     def __init__(self, bot):
         self.bot = bot
         self.handler = Handler()
         self.check_members_loop.start()
         self.sync_commands_loop.start()
 
-    def cog_unload(self):
+    async def cog_unload(self):
         self.check_members_loop.cancel()
         self.sync_commands_loop.cancel()
 
@@ -145,6 +151,18 @@ class TasksCog(commands.Cog):
         await ctx.send('Slash command sync in progress.', ephemeral=True)
         await self.sync_commands(override=True)
         await ctx.send('Slash command sync completed.', ephemeral=True)
+
+    @maintenance.command(name='nick', description='Manually override a member nickname')
+    @app_commands.describe(member='Member to update')
+    @app_commands.checks.has_any_role(*config.TECH_ROLES)
+    async def set_nick(self, interaction: discord.Interaction, member: discord.Member):
+        """Manually override a member nickname to fix problems"""
+        try:
+            await interaction.response.send_modal(NicknameAssignment(member=member))
+        except Exception:
+            await interaction.followup.send(
+                'An error occurred while setting the nick.', ephemeral=True
+            )
 
     @tasks.loop(seconds=config.STAFFING_INTERVAL)
     async def sync_commands_loop(self):
