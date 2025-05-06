@@ -2,18 +2,15 @@ import asyncio
 import signal
 
 import discord
-import emoji
 import sentry_sdk
-from discord.ext import commands
-from discord.ext.commands import BadArgument, CommandInvokeError
+from discord.ext.commands import BadArgument, Bot, CommandInvokeError
 
 from helpers.config import config
-from helpers.handler import Handler
 
 intents = discord.Intents.all()
 intents.message_content = True
 
-bot = commands.Bot(
+bot = Bot(
     command_prefix=config.PREFIX,
     description=config.DESCRIPTION,
     intents=intents,
@@ -56,65 +53,6 @@ async def on_ready() -> None:
         print(f'Failed to sync commands due to rate limiting: {e}', flush=True)
 
 
-@bot.event
-async def on_member_update(before_update, user: discord.Member):
-    """
-    Function checks member and assigns role according to the username.
-    :param before_update:
-    :param user:
-    :return:
-    """
-    # Return if the nickname hasn't changed
-    if before_update.nick == user.nick:
-        return
-
-    # Define role objects
-    vatsca_member = discord.utils.get(user.guild.roles, id=config.VATSCA_MEMBER_ROLE)
-    vatsim_member = discord.utils.get(user.guild.roles, id=config.VATSIM_MEMBER_ROLE)
-
-    # Create an instance of Handler
-    handler = Handler()
-
-    # Extract cid from nickname, exit early if not found
-    cid = handler.get_cid(user)
-
-    try:
-        api_data = await handler.get_division_members()
-
-        should_have_vatsca = any(
-            int(entry['id']) == cid
-            and str(entry['subdivision']) == str(config.VATSIM_SUBDIVISION)
-            for entry in api_data
-        )
-
-        # Manage role assignments
-        tasks = []
-
-        if vatsim_member in user.roles:
-            # add VATSCA if required otherwise remove it
-            if should_have_vatsca and vatsca_member not in user.roles:
-                tasks.append(user.add_roles(vatsca_member))
-            elif not should_have_vatsca and vatsca_member in user.roles:
-                tasks.append(user.remove_roles(vatsca_member))
-
-        elif vatsca_member in user.roles:
-            tasks.append(
-                user.remove_roles(vatsca_member)
-            )  # Remove VATSCA if the user doesnt have VATSIM role
-
-        if tasks:
-            await asyncio.gather(*tasks)
-
-    except discord.Forbidden as e:
-        print(f'Bot lacks permission for this action: {e}', flush=True)
-
-    except discord.HTTPException as e:
-        print(f'HTTP error: {e}', flush=True)
-
-    except Exception as e:
-        print(f'Unexpected error: {e}', flush=True)
-
-
 async def send_dm(user, message):
     """Attempts to send a DM to the user and handles cases where DMs are closed."""
     try:
@@ -123,72 +61,11 @@ async def send_dm(user, message):
         print(f'Could not send DM to {user.name}. They have DMs disabled.')
 
 
-@bot.event
-async def on_raw_reaction_add(payload):
-    if payload.guild_id is None or payload.user_id == bot.user.id:
-        return
-
-    guild = bot.get_guild(payload.guild_id)
-    user = guild.get_member(payload.user_id)
-
-    if not user:  # User not found
-        return
-
-    emoji_name = emoji.demojize(
-        payload.emoji.name
-    )  # Convert emoji to :emoji_name: format
-    message_id = str(payload.message_id)  # Ensure consistency with config
-
-    if (
-        message_id in config.REACTION_MESSAGE_IDS
-        and emoji_name in config.REACTION_ROLES
-    ):
-        role_id = int(config.REACTION_ROLES[emoji_name])
-        role = discord.utils.get(guild.roles, id=role_id)
-
-        if role and role not in user.roles:
-            await user.add_roles(role, reason=config.ROLE_REASONS['reaction_add'])
-            await send_dm(
-                user,
-                f'You have been given the `{role.name}` role because you reacted with {payload.emoji}',
-            )
-
-
-@bot.event
-async def on_raw_reaction_remove(payload):
-    if payload.guild_id is None or payload.user_id == bot.user.id:
-        return
-
-    guild = bot.get_guild(payload.guild_id)
-    user = guild.get_member(payload.user_id)
-
-    if not user:  # User not found
-        return
-
-    emoji_name = emoji.demojize(
-        payload.emoji.name
-    )  # Convert emoji to :emoji_name: format
-    message_id = str(payload.message_id)  # Ensure consistency with config
-
-    if (
-        message_id in config.REACTION_MESSAGE_IDS
-        and emoji_name in config.REACTION_ROLES
-    ):
-        role_id = int(config.REACTION_ROLES[emoji_name])
-        role = discord.utils.get(guild.roles, id=role_id)
-
-        if role and role in user.roles:
-            await user.remove_roles(role, reason=config.ROLE_REASONS['reaction_remove'])
-            await send_dm(
-                user,
-                f'You no longer have the `{role.name}` role because you removed your reaction.',
-            )
-
-
 @bot.tree.error
 async def on_app_command_error(
     interaction: discord.Interaction, error: discord.app_commands.AppCommandError
 ):
+    print('thing')
     """Handles errors for application commands."""
     if not interaction.response.is_done():
         await interaction.response.defer(ephemeral=True)
@@ -196,6 +73,7 @@ async def on_app_command_error(
     error_map = {
         discord.app_commands.MissingPermissions: 'You do not have the required permissions to use this command.',
         discord.app_commands.BotMissingPermissions: 'The bot is missing the required permissions to execute this command.',
+        discord.Forbidden: 'The bot is missing the required permissions to execute this command.',
         discord.app_commands.CommandNotFound: 'The command you are trying to use does not exist.',
         discord.app_commands.CheckFailure: 'You do not meet the requirements to run this command.',
         discord.app_commands.CommandOnCooldown: lambda e: f'Command is on cooldown. Try again in {e.retry_after:.2f} seconds.',

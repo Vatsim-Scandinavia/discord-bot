@@ -1,12 +1,15 @@
 from datetime import datetime
 
 import discord
+import structlog
 from discord import app_commands
 from discord.ext import commands, tasks
 
 from helpers.config import config
 from helpers.handler import Handler
 from helpers.ux import NicknameAssignment
+
+logger = structlog.stdlib.get_logger()
 
 
 class TasksCog(commands.Cog):
@@ -30,33 +33,45 @@ class TasksCog(commands.Cog):
         await self.bot.wait_until_ready()
 
         if config.DEBUG and not override:
-            print(
-                'check_members skipped due to DEBUG ON. You can start manually with the command instead.',
-                flush=True,
+            logger.info(
+                'check_members skipped due to DEBUG ON. You can start it manually with the command instead.'
             )
             return
 
-        print(f'check_members started at {datetime.now().isoformat()}', flush=True)
+        logger.info(
+            'check_members started',
+            start_time=datetime.now().isoformat(),
+            status='started',
+        )
 
         guild = self.bot.get_guild(config.GUILD_ID)
         if not guild:
-            print(f'Guild with ID {config.GUILD_ID} not found.', flush=True)
+            logger.error('Guild not found', guild_id=config.GUILD_ID)
             return
 
         vatsca_role = discord.utils.get(guild.roles, id=config.VATSCA_MEMBER_ROLE)
         vatsim_role = discord.utils.get(guild.roles, id=config.VATSIM_MEMBER_ROLE)
 
         if not vatsca_role or not vatsim_role:
-            print('Roles not configured correctly.', flush=True)
+            logger.error(
+                'Roles not configured correctly',
+                division_role=vatsca_role,
+                vatsim_role=vatsim_role,
+            )
             return
 
         division_members = await self.handler.get_division_members()
         member_map = {int(member['id']): member for member in division_members}
+        logger.info('Fetched division members in check_members', len=len(member_map))
 
         for user in guild.members:
             await self.proccess_member(user, vatsca_role, vatsim_role, member_map)
 
-        print(f'check_members finished at {datetime.now().isoformat()}', flush=True)
+        logger.info(
+            'check_members finished',
+            end_time=datetime.now().isoformat(),
+            status='success',
+        )
 
     async def proccess_member(self, user, vatsca_role, vatsim_role, member_map):
         """
@@ -67,6 +82,9 @@ class TasksCog(commands.Cog):
             vatsca_role (discord.Role): The VATSCA role.
             vatsim_role (discord.Role): The VATSIM role.
             member_map (dict): A map of division member CIDs to their corresponding API data.
+
+        Todo:
+            Replace `vatsca_role` with `subdivision_role`.
 
         """
         try:
@@ -92,6 +110,7 @@ class TasksCog(commands.Cog):
                     vatsca_role, reason=config.ROLE_REASONS['no_auth']
                 )
 
+        # TODO(thor): use a specific exception, or return null rather than throw a generic ValueError
         except ValueError:
             if vatsca_role in user.roles:
                 await user.remove_roles(
@@ -99,7 +118,7 @@ class TasksCog(commands.Cog):
                 )
 
         except Exception as e:
-            print(f'Error processing member {user}: {e}', flush=True)
+            logger.exception('Error processing member', member=user, error=str(e))
 
     async def update_role(
         self, user, role, should_have_role, add_reason, remove_reason

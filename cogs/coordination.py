@@ -103,6 +103,14 @@ class CoordinationCog(commands.Cog):
         await self._clean_up()
         logger.info('Stopped updating cache and attempted restoring existing members')
 
+    async def has_modified_nick(self, member: discord.Member) -> bool:
+        """Check if a member has a modified nickname"""
+        return (
+            member.nick is not None
+            and self._callsign_separator in member.nick
+            and self._member_cache.get(member.id) is not None
+        )
+
     async def _clean_up(self):
         ids = self._member_cache.get_member_ids()
         members = self._bot.get_all_members()
