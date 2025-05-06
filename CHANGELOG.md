@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.3.4](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.3.3...v2.3.4) (2025-05-06)
+
+
+### Bug Fixes
+
+* **coordination:** allow workaround to fix users nicknames ([e330fd6](https://github.com/Vatsim-Scandinavia/discord-bot/commit/e330fd6a49ff2a57715cab7b7529d907eef204fa))
+* **coordination:** only support separator rather than prefix and suffix ([#136](https://github.com/Vatsim-Scandinavia/discord-bot/issues/136)) ([8aef274](https://github.com/Vatsim-Scandinavia/discord-bot/commit/8aef274dd44c83ee32ccb28da01e0596f9bc3bb6))
+* **coordination:** update cache together with command ([#141](https://github.com/Vatsim-Scandinavia/discord-bot/issues/141)) ([fc726be](https://github.com/Vatsim-Scandinavia/discord-bot/commit/fc726be6ab3dbbe12cb4e9e35d7d55fcb9e67203))
+* **roles:** add additional reasons to understand flow ([52d24df](https://github.com/Vatsim-Scandinavia/discord-bot/commit/52d24df0ccee8f00b3ef0cb06aeffcec04bd0722))
+* **roles:** integrate member update and check for modified nicks ([#140](https://github.com/Vatsim-Scandinavia/discord-bot/issues/140)) ([52d24df](https://github.com/Vatsim-Scandinavia/discord-bot/commit/52d24df0ccee8f00b3ef0cb06aeffcec04bd0722))
+
 ## [2.3.3](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.3.2...v2.3.3) (2025-04-22)
 
 
