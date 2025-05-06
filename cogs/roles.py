@@ -17,7 +17,7 @@ class RolesCog(commands.Cog):
         self.handler = Handler()
         self.check_roles_loop.start()
 
-    def cog_unload(self):
+    async def cog_unload(self):
         self.check_roles_loop.cancel()
 
     async def check_roles(self, override: bool = False):
