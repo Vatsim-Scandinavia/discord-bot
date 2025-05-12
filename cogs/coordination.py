@@ -355,7 +355,6 @@ class CoordinationCog(commands.Cog):
         try:
             await interaction.response.defer(ephemeral=True)
             await self._update_controllers_cache()
-            await self._update_voice_channel_members()
             await interaction.followup.send(
                 'Voice channel nicknames updated.', ephemeral=True
             )
