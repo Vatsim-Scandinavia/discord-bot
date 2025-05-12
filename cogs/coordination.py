@@ -169,7 +169,7 @@ class CoordinationCog(commands.Cog):
             return self._online_controllers[cid].replace('__', '_')
         return None
 
-    async def _restore_nickname(self, member: discord.Member) -> None:
+    async def _restore_nickname(self, member: discord.Member, reason: str) -> None:
         """Restore the original nickname of a member"""
         if not member.nick:
             return
@@ -189,12 +189,11 @@ class CoordinationCog(commands.Cog):
         original_nick = modified_member['nick']
         # Remove the nickname first to avoid issue for those weird users who have higher permissions
         # than the bot itself. This is an additional risk, but one we're fine to make.
-        log.info('Removing and restoring nick', stored_nick=original_nick)
-        _create_task(self._member_cache.remove_nickname(member.id))
-        await member.edit(
-            nick=original_nick,
-            reason='Restoring original nickname',
+        log.info(
+            'Removing and restoring nick', stored_nick=original_nick, reason=reason
         )
+        _create_task(self._member_cache.remove_nickname(member.id))
+        await member.edit(nick=original_nick, reason=reason)
 
     def _format_name(self, prefix: str, name: Optional[str], cid: int) -> str:
         """Format the name for the member's nickname"""
@@ -230,8 +229,12 @@ class CoordinationCog(commands.Cog):
         """Update member's nickname based on their controlling station"""
         log = logger.bind(member=member.name, nick=member.nick)
         try:
-            if not member.voice or force_remove:
-                await self._restore_nickname(member)
+            if not member.voice:
+                await self._restore_nickname(member, reason='Left voice channel')
+                return
+
+            if force_remove:
+                await self._restore_nickname(member, reason='Forcibly removed')
                 return
 
             cid = self._handler.get_cid(member)
@@ -246,7 +249,9 @@ class CoordinationCog(commands.Cog):
             modified_member = self._member_cache.get(member.id)
             if modified_member and not callsign:
                 # Modified members without callsigns should be restored
-                await self._restore_nickname(member)
+                await self._restore_nickname(
+                    member, reason='No longer actively controlling'
+                )
                 return
 
             if not callsign:
@@ -304,8 +309,8 @@ class CoordinationCog(commands.Cog):
 
         logger.info(
             'Updating nickname',
-            member=member,
-            old_nick=member.nick or member.name,
+            name=member.name,
+            old_nick=member.nick,
             new_nick=new_name,
         )
         await member.edit(
@@ -352,7 +357,6 @@ class CoordinationCog(commands.Cog):
         try:
             await interaction.response.defer(ephemeral=True)
             await self._update_controllers_cache()
-            await self._update_voice_channel_members()
             await interaction.followup.send(
                 'Voice channel nicknames updated.', ephemeral=True
             )
