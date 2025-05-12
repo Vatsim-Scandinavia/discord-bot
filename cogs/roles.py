@@ -37,13 +37,15 @@ class RolesCog(commands.Cog):
 
         if config.DEBUG and not override:
             logger.info(
-                'check_roles skipped due to DEBUG ON. You can start check_roles with the command.',
+                'Job skipped due to DEBUG mode. You can start the job with the command.',
+                job='check_roles',
                 status='skipped',
             )
             return
 
         logger.info(
-            'check_roles started',
+            'Job started',
+            job='check_roles',
             start_time=datetime.datetime.now().isoformat(),
             status='start',
         )
@@ -77,7 +79,8 @@ class RolesCog(commands.Cog):
             )
 
         logger.info(
-            'check_roles finished',
+            'Job finished',
+            job='check_roles',
             end_time=datetime.datetime.now().isoformat(),
             status='success',
         )

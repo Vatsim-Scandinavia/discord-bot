@@ -146,22 +146,39 @@ class TasksCog(commands.Cog):
     async def sync_commands(self, override=False):
         """Syncs slash commands with Discord servers."""
         if config.DEBUG and not override:
-            print(
-                'sync_commands skipped due to DEBUG ON. You can start manually with the command instead.',
-                flush=True,
+            logger.info(
+                'Skipped job due to DEBUG mode. You can start the job with the command.',
+                job='sync_commands',
+                status='skipped',
             )
             return
 
         guild = self.bot.get_guild(config.GUILD_ID)
         try:
-            print(f'sync_commands started at {datetime.now().isoformat()}', flush=True)
-            await self.bot.tree.sync(
-                guild=guild
-            ) if guild else await self.bot.tree.sync()
-            print(f'sync_commands finished at {datetime.now().isoformat()}', flush=True)
+            logger.info(
+                'Job started',
+                job='sync_commands',
+                start_time=datetime.now().isoformat(),
+                status='started',
+            )
+            (
+                await self.bot.tree.sync(guild=guild)
+                if guild
+                else await self.bot.tree.sync()
+            )
+            logger.info(
+                'Job finished',
+                job='sync_commands',
+                end_time=datetime.now().isoformat(),
+                status='finished',
+            )
 
         except Exception as e:
-            print(f'Failed to sync commands: {e}', flush=True)
+            logger.exception(
+                'Failed synchronisation of commands due to unexpected exception',
+                job='sync_commands',
+                error=e,
+            )
 
     @app_commands.command(name='sync', description='Sync slash commands (Staff only).')
     @app_commands.checks.has_any_role(*config.STAFF_ROLES)
