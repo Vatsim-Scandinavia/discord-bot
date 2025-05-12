@@ -307,8 +307,8 @@ class CoordinationCog(commands.Cog):
 
         logger.info(
             'Updating nickname',
-            member=member,
-            old_nick=member.nick or member.name,
+            name=member.name,
+            old_nick=member.nick,
             new_nick=new_name,
         )
         await member.edit(
