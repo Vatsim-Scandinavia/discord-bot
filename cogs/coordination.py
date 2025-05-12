@@ -229,10 +229,12 @@ class CoordinationCog(commands.Cog):
         """Update member's nickname based on their controlling station"""
         log = logger.bind(member=member.name, nick=member.nick)
         try:
-            if not member.voice or force_remove:
-                await self._restore_nickname(
-                    member, reason='No longer in voice channel'
-                )
+            if not member.voice:
+                await self._restore_nickname(member, reason='Left voice channel')
+                return
+
+            if force_remove:
+                await self._restore_nickname(member, reason='Forcibly removed')
                 return
 
             cid = self._handler.get_cid(member)
