@@ -1,8 +1,7 @@
 from discord.ext import commands
+from helpers.faq import send_faq_embed, faq_triggers
 import re
 import time
-from helpers.faq import send_faq_embed, faq_triggers
-
 
 class FAQ(commands.Cog):
     def __init__(self, bot):
