@@ -1,5 +1,3 @@
-I believe you're asking about how to become a controller.
-
 ## How to become a controller in VATSIM Scandinavia
 
 1. Go to our training system [Control Center](https://cc.vatsim-scandinavia.org/).

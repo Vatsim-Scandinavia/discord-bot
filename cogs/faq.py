@@ -106,6 +106,15 @@ class FAQ(commands.Cog):
         now = time.time()
         one_hour = 1
 
+        # Helper function to send a nicely formatted embed
+        async def send_faq_embed(channel, user_mention, topic, description):
+            await channel.send(f"{user_mention} I believe you're asking about the {topic.lower()}:")
+            embed = discord.Embed(
+                description=description,
+                color=discord.Color(0x43c6e7)
+            )
+            await channel.send(embed=embed)
+
         # Check for ATC related keywords.
         if atc_triggers & words:
             key = (user_id, "atc", question_hash("atc"))
@@ -113,7 +122,12 @@ class FAQ(commands.Cog):
             if now - last_time < one_hour:
                 return
             self.recent_replies[key] = now
-            await message.channel.send(f"{message.author.mention} {self.atc_response}")
+            await send_faq_embed(
+                message.channel,
+                message.author.mention,
+                "ATC Application",
+                self.atc_response
+            )
             return
 
         # Check for Visiting related keywords.
@@ -123,7 +137,12 @@ class FAQ(commands.Cog):
             if now - last_time < one_hour:
                 return
             self.recent_replies[key] = now
-            await message.channel.send(f"{message.author.mention} {self.visiting_response}")
+            await send_faq_embed(
+                message.channel,
+                message.author.mention,
+                "Visiting/Transfer",
+                self.visiting_response
+            )
             return
 
         # Check for Waiting time related keywords
@@ -133,7 +152,12 @@ class FAQ(commands.Cog):
             if now - last_time < one_hour:
                 return
             self.recent_replies[key] = now
-            await message.channel.send(f"{message.author.mention} {self.waiting_response}")
+            await send_faq_embed(
+                message.channel,
+                message.author.mention,
+                "Waiting Time",
+                self.waiting_response
+            )
             return
 
 

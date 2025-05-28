@@ -1,5 +1,3 @@
-I believe you're asking about the waiting time for training.
-
 ## Waiting time in VATSIM Scandinavia
 The waiting time varies by country. Generally, it may extend up to 12 months or follow the timing specified in your confirmation email.
 
