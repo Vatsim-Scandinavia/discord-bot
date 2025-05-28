@@ -1,7 +1,4 @@
-import os
-import discord
-from discord import app_commands
-from discord.ext import commands, tasks
+from discord.ext import commands
 import re
 import time
 from helpers.faq import send_faq_embed, faq_triggers

@@ -30,13 +30,11 @@ faq_triggers = {
             'søke',
             'søker',
             'bli',
-            'flygeleder',
             'trening',
             # SE
             'ansökan',
             'ansöka',
             'ansöker',
-            'bli',
             'flygledare',
             'utbildning',
             'träning',
@@ -73,13 +71,10 @@ faq_triggers = {
             'overførsel',
             'overføring',
             # NO
-            'overføring',
             'overføre',
             'overfører',
             'besøke',
             'besøker',
-            'flytte',
-            'flytter',
             # SE
             'besöka',
             'besöker',
@@ -123,18 +118,12 @@ faq_triggers = {
             'tid',
             'træning',
             # NO
-            'ventetid',
-            'vente',
-            'venter',
-            'kø',
-            'tid',
             'trening',
             # SE
             'väntetid',
             'vänta',
             'väntar',
             'kö',
-            'tid',
             'träning',
             # FI
             'odottaa',
