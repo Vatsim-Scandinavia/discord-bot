@@ -37,6 +37,7 @@ class Config:
             'cogs.tasks',
             'cogs.update_messages',
             'cogs.staffings',
+            'cogs.faq',
         ]
 
         self.COGS_LOAD = {
