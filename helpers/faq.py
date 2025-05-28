@@ -1,4 +1,3 @@
-from helpers.config import config
 import discord
 
 
