@@ -43,35 +43,36 @@ class FAQ(commands.Cog):
         user_id = message.author.id
 
         # Define trigger keywords for each FAQ.
+        # ATC trigger words, one line per language
         atc_triggers = {
-            # EN:
+            # EN
             "application", "apply", "atc", "become", "controller", "train", "training",
             # DK
-            "ansøgning", "ansøge", "blive", "flygeleder", "træning", "uddannelse",
+            "ansøgning", "ansøge", "blive", "flygeleder", "træning",
             # NO
-            "søknad", "søke", "bli", "flygeleder", "trening", "utdanning",
+            "søknad", "søke", "søker", "bli", "flygeleder", "trening",
             # SE
-            "ansökan", "ansöka", "bli", "flygledare", "utbildning",
+            "ansökan", "ansöka", "ansöker", "bli", "flygledare", "utbildning", "träning",
             # FI
-            "hakemus", "hakea", "lennonjohtaja", "harjoittelu", "koulutus", "tulla",
+            "hakemus", "hakea", "haen", "lennonjohtaja", "harjoittelu", "koulutus", "tulla",
             # IS
-            "umsókn", "sækja", "flugumferðarstjóri", "þjálfun", "verða", "menntun"
+            "umsókn", "sækja", "sækist", "flugumferðarstjóri", "þjálfun", "verða", "menntun"
         }
 
         # Visiting/Transfer trigger words, one line per language
         visiting_triggers = {
             # EN
-            "move", "migrate", "switch", "transfer", "visiting",
+            "transfer", "visiting",
             # DK
-            "besøg", "besøge", "flytte", "overførsel", "overføring",
+            "besøg", "besøge", "besøger", "flytte", "flytter", "overførsel", "overføring",
             # NO
-            "besøke", "flytte", "overføring",
+            "overføring", "overføre", "overfører", "besøke", "besøker", "flytte", "flytter",
             # SE
-            "besöka", "flytta", "överföring",
+            "besöka", "besöker", "flytta", "flyttar", "överföring", "överföra", "överför",
             # FI
-            "vierailla", "siirtyä", "siirto",
+            "vierailla", "vierailee", "siirtyä", "siirto", "siirtää",
             # IS
-            "heimsækja", "flytja", "skipta"
+            "heimsækja", "heimsækir", "flytja", "flytur", "skipta", "skiptir", "flutningur"
         }
 
         # Waiting time trigger words, one line per language
@@ -79,15 +80,15 @@ class FAQ(commands.Cog):
             # EN
             "wait", "waiting", "estimate", "approx", "time", "queue",
             # DK
-            "ventetid", "vente", "kø", "tid",
+            "ventetid", "vente", "venter", "kø", "tid",
             # NO
-            "ventetid", "vente", "kø", "tid",
+            "ventetid", "vente", "venter", "kø", "tid",
             # SE
-            "väntetid", "vänta", "kö", "tid",
+            "väntetid", "vänta", "väntar", "kö", "tid",
             # FI
             "odottaa", "odotusaika", "aika", "jono",
             # IS
-            "bíða", "biðtími", "biðröð"
+            "bíða", "bíður", "biðtími", "biðröð", "tími"
         }
 
         # Tokenize message using regex to extract words
