@@ -6,15 +6,16 @@ import re
 import time
 from helpers.faq import send_faq_embed
 
+
 class FAQ(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
         # Load FAQ responses from markdown files
         self.faqs = {
-            "ATC Application": self._load_faq("faq_atc.md"),
-            "Visiting/Transfer": self._load_faq("faq_visiting.md"),
-            "Waiting Time": self._load_faq("faq_waiting.md"),
+            'ATC Application': self._load_faq('faq_atc.md'),
+            'Visiting/Transfer': self._load_faq('faq_visiting.md'),
+            'Waiting Time': self._load_faq('faq_waiting.md'),
         }
 
         # Define triggers and tolerances for each FAQ
@@ -28,7 +29,7 @@ class FAQ(commands.Cog):
                     "hakemus", "hakea", "haen", "lennonjohtaja", "harjoittelu", "koulutus", "tulla",
                     "umsókn", "sækja", "sækist", "flugumferðarstjóri", "þjálfun", "verða", "menntun"
                 },
-                "tolerance": 2
+                'tolerance': 2,
             },
             "Visiting/Transfer": {
                 "triggers": {
@@ -39,7 +40,7 @@ class FAQ(commands.Cog):
                     "vierailla", "vierailee", "siirtyä", "siirto", "siirtää",
                     "heimsækja", "heimsækir", "flytja", "flytur", "skipta", "skiptir", "flutningur"
                 },
-                "tolerance": 1
+                'tolerance': 1,
             },
             "Waiting Time": {
                 "triggers": {
@@ -50,8 +51,8 @@ class FAQ(commands.Cog):
                     "odottaa", "odotusaika", "aika", "jono", "harjoittelu",
                     "bíða", "bíður", "biðtími", "biðröð", "tími", "þjálfun"
                 },
-                "tolerance": 2
-            }
+                'tolerance': 2,
+            },
         }
 
         # Store (user_id, faq_type, question_hash): last_reply_time
@@ -59,14 +60,13 @@ class FAQ(commands.Cog):
 
     def _load_faq(self, filename):
         try:
-            with open(f"messages/{filename}", "r", encoding="utf8") as f:
+            with open(f'messages/{filename}', 'r', encoding='utf8') as f:
                 return f.read()
         except Exception as e:
-            return f"Error reading {filename}: {e}"
+            return f'Error reading {filename}: {e}'
 
     @commands.Cog.listener()
     async def on_message(self, message):
-
         # Ignore messages from bots
         if message.author.bot:
             return
@@ -78,7 +78,7 @@ class FAQ(commands.Cog):
         content = message.content.lower()
 
         # Only respond if there's a question mark in the message
-        if "?" not in content:
+        if '?' not in content:
             return
 
         words = set(re.findall(r'\b\w+\b', content))
@@ -87,8 +87,8 @@ class FAQ(commands.Cog):
 
         # Unified FAQ check loop
         for topic, data in self.faq_triggers.items():
-            matches = data["triggers"] & words
-            if len(matches) >= data["tolerance"]:
+            matches = data['triggers'] & words
+            if len(matches) >= data['tolerance']:
                 key = (message.channel.id, topic)
                 last_time = self.recent_replies.get(key, 0)
 
@@ -97,12 +97,10 @@ class FAQ(commands.Cog):
 
                 self.recent_replies[key] = now
                 await send_faq_embed(
-                    message.channel,
-                    message.author.mention,
-                    topic,
-                    self.faqs[topic]
+                    message.channel, message.author.mention, topic, self.faqs[topic]
                 )
                 return
+
 
 async def setup(bot):
     await bot.add_cog(FAQ(bot))
