@@ -2,7 +2,8 @@ import re
 import time
 
 from discord.ext import commands
-from helpers.faq import send_faq_embed, faq_triggers
+
+from helpers.faq import faq_triggers, send_faq_embed
 
 
 class FAQ(commands.Cog):
