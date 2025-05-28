@@ -20,36 +20,146 @@ class FAQ(commands.Cog):
 
         # Define triggers and tolerances for each FAQ
         self.faq_triggers = {
-            "ATC Application": {
-                "triggers": {
-                    "application", "apply", "atc", "become", "controller", "train", "training",
-                    "ansøgning", "ansøge", "blive", "flygeleder", "træning",
-                    "søknad", "søke", "søker", "bli", "flygeleder", "trening",
-                    "ansökan", "ansöka", "ansöker", "bli", "flygledare", "utbildning", "träning",
-                    "hakemus", "hakea", "haen", "lennonjohtaja", "harjoittelu", "koulutus", "tulla",
-                    "umsókn", "sækja", "sækist", "flugumferðarstjóri", "þjálfun", "verða", "menntun"
+            'ATC Application': {
+                'triggers': {
+                    # EN
+                    'application',
+                    'apply',
+                    'atc',
+                    'become',
+                    'controller',
+                    'train',
+                    'training',
+                    # DK
+                    'ansøgning',
+                    'ansøge',
+                    'blive',
+                    'flygeleder',
+                    'træning',
+                    # NO
+                    'søknad',
+                    'søke',
+                    'søker',
+                    'bli',
+                    'flygeleder',
+                    'trening',
+                    # SE
+                    'ansökan',
+                    'ansöka',
+                    'ansöker',
+                    'bli',
+                    'flygledare',
+                    'utbildning',
+                    'träning',
+                    # FI
+                    'hakemus',
+                    'hakea',
+                    'haen',
+                    'lennonjohtaja',
+                    'harjoittelu',
+                    'koulutus',
+                    'tulla',
+                    # IS
+                    'umsókn',
+                    'sækja',
+                    'sækist',
+                    'flugumferðarstjóri',
+                    'þjálfun',
+                    'verða',
+                    'menntun',
                 },
                 'tolerance': 2,
             },
-            "Visiting/Transfer": {
-                "triggers": {
-                    "transfer", "visiting",
-                    "besøg", "besøge", "besøger", "flytte", "flytter", "overførsel", "overføring",
-                    "overføring", "overføre", "overfører", "besøke", "besøker", "flytte", "flytter",
-                    "besöka", "besöker", "flytta", "flyttar", "överföring", "överföra", "överför",
-                    "vierailla", "vierailee", "siirtyä", "siirto", "siirtää",
-                    "heimsækja", "heimsækir", "flytja", "flytur", "skipta", "skiptir", "flutningur"
+            'Visiting/Transfer': {
+                'triggers': {
+                    # EN
+                    'transfer',
+                    'visiting',
+                    # DK
+                    'besøg',
+                    'besøge',
+                    'besøger',
+                    'flytte',
+                    'flytter',
+                    'overførsel',
+                    'overføring',
+                    # NO
+                    'overføring',
+                    'overføre',
+                    'overfører',
+                    'besøke',
+                    'besøker',
+                    'flytte',
+                    'flytter',
+                    # SE
+                    'besöka',
+                    'besöker',
+                    'flytta',
+                    'flyttar',
+                    'överföring',
+                    'överföra',
+                    'överför',
+                    # FI
+                    'vierailla',
+                    'vierailee',
+                    'siirtyä',
+                    'siirto',
+                    'siirtää',
+                    # FI
+                    'heimsækja',
+                    'heimsækir',
+                    'flytja',
+                    'flytur',
+                    'skipta',
+                    'skiptir',
+                    'flutningur',
                 },
                 'tolerance': 1,
             },
-            "Waiting Time": {
-                "triggers": {
-                    "wait", "waiting", "estimate", "approx", "time", "queue", "training",
-                    "ventetid", "vente", "venter", "kø", "tid", "træning",
-                    "ventetid", "vente", "venter", "kø", "tid", "trening",
-                    "väntetid", "vänta", "väntar", "kö", "tid", "träning",
-                    "odottaa", "odotusaika", "aika", "jono", "harjoittelu",
-                    "bíða", "bíður", "biðtími", "biðröð", "tími", "þjálfun"
+            'Waiting Time': {
+                'triggers': {
+                    # EN
+                    'wait',
+                    'waiting',
+                    'estimate',
+                    'approx',
+                    'time',
+                    'queue',
+                    'training',
+                    # DK
+                    'ventetid',
+                    'vente',
+                    'venter',
+                    'kø',
+                    'tid',
+                    'træning',
+                    # NO
+                    'ventetid',
+                    'vente',
+                    'venter',
+                    'kø',
+                    'tid',
+                    'trening',
+                    # SE
+                    'väntetid',
+                    'vänta',
+                    'väntar',
+                    'kö',
+                    'tid',
+                    'träning',
+                    # FI
+                    'odottaa',
+                    'odotusaika',
+                    'aika',
+                    'jono',
+                    'harjoittelu',
+                    # IS
+                    'bíða',
+                    'bíður',
+                    'biðtími',
+                    'biðröð',
+                    'tími',
+                    'þjálfun',
                 },
                 'tolerance': 2,
             },
