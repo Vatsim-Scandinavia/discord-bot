@@ -62,6 +62,7 @@ class FAQ(commands.Cog):
             # IS
             "umsókn", "sækja", "sækist", "flugumferðarstjóri", "þjálfun", "verða", "menntun"
         }
+        atc_tolerance = 2
 
         # Visiting/Transfer trigger words, one line per language
         visiting_triggers = {
@@ -78,22 +79,24 @@ class FAQ(commands.Cog):
             # IS
             "heimsækja", "heimsækir", "flytja", "flytur", "skipta", "skiptir", "flutningur"
         }
+        visiting_tolerance = 1
 
         # Waiting time trigger words, one line per language
         waiting_triggers = {
             # EN
-            "wait", "waiting", "estimate", "approx", "time", "queue",
+            "wait", "waiting", "estimate", "approx", "time", "queue", "training",
             # DK
-            "ventetid", "vente", "venter", "kø", "tid",
+            "ventetid", "vente", "venter", "kø", "tid", "træning",
             # NO
-            "ventetid", "vente", "venter", "kø", "tid",
+            "ventetid", "vente", "venter", "kø", "tid", "trening",
             # SE
-            "väntetid", "vänta", "väntar", "kö", "tid",
+            "väntetid", "vänta", "väntar", "kö", "tid", "träning",
             # FI
-            "odottaa", "odotusaika", "aika", "jono",
+            "odottaa", "odotusaika", "aika", "jono", "harjoittelu",
             # IS
-            "bíða", "bíður", "biðtími", "biðröð", "tími"
+            "bíða", "bíður", "biðtími", "biðröð", "tími", "þjálfun"
         }
+        waiting_tolerance = 2
 
         # Tokenize message using regex to extract words
         words = set(re.findall(r'\b\w+\b', content))
@@ -120,7 +123,8 @@ class FAQ(commands.Cog):
             await channel.send(embed=embed)
 
         # Check for ATC related keywords.
-        if atc_triggers & words:
+        atc_matches = atc_triggers & words
+        if len(atc_matches) >= atc_tolerance:
             key = (user_id, "atc", question_hash("atc"))
             last_time = self.recent_replies.get(key, 0)
             if now - last_time < one_hour:
@@ -135,7 +139,8 @@ class FAQ(commands.Cog):
             return
 
         # Check for Visiting related keywords.
-        if visiting_triggers & words:
+        visiting_matches = visiting_triggers & words
+        if len(visiting_matches) >= visiting_tolerance:
             key = (user_id, "visiting", question_hash("visiting"))
             last_time = self.recent_replies.get(key, 0)
             if now - last_time < one_hour:
@@ -150,7 +155,8 @@ class FAQ(commands.Cog):
             return
 
         # Check for Waiting time related keywords
-        if waiting_triggers & words:
+        waiting_matches = waiting_triggers & words
+        if len(waiting_matches) >= waiting_tolerance:
             key = (user_id, "waiting", question_hash("waiting"))
             last_time = self.recent_replies.get(key, 0)
             if now - last_time < one_hour:
