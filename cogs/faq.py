@@ -39,6 +39,10 @@ class FAQ(commands.Cog):
         if message.author.bot:
             return
 
+        # Skip messages over 400 characters
+        if len(message.content) > 400:
+            return
+
         content = message.content.lower()
         user_id = message.author.id
 
