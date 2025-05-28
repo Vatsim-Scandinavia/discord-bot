@@ -1,7 +1,7 @@
-from discord.ext import commands
-from helpers.faq import send_faq_embed, faq_triggers
 import re
 import time
+from discord.ext import commands
+from helpers.faq import send_faq_embed, faq_triggers
 
 class FAQ(commands.Cog):
     def __init__(self, bot):
@@ -22,7 +22,7 @@ class FAQ(commands.Cog):
 
     def _load_faq(self, filename):
         try:
-            with open(f'messages/{filename}', 'r', encoding='utf8') as f:
+            with open(f'messages/{filename}', encoding='utf8') as f:
                 return f.read()
         except Exception as e:
             return f'Error reading {filename}: {e}'
