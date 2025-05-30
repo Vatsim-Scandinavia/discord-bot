@@ -54,7 +54,7 @@ faq_triggers = {
             'verða',
             'menntun',
         },
-        'tolerance': 2,
+        'threshold': 2,
     },
     'Visiting/Transfer': {
         'triggers': {
@@ -97,7 +97,7 @@ faq_triggers = {
             'skiptir',
             'flutningur',
         },
-        'tolerance': 1,
+        'threshold': 1,
     },
     'Waiting Time': {
         'triggers': {
@@ -138,6 +138,6 @@ faq_triggers = {
             'tími',
             'þjálfun',
         },
-        'tolerance': 2,
+        'threshold': 2,
     },
 }

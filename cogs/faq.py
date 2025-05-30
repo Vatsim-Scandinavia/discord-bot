@@ -17,7 +17,7 @@ class FAQ(commands.Cog):
             'Waiting Time': self._load_faq('faq_waiting.md'),
         }
 
-        # Define triggers and tolerances for each FAQ
+        # Define triggers and threshold for each FAQ
         self.faq_triggers = faq_triggers
 
         # Store (user_id, faq_type, question_hash): last_reply_time
@@ -53,7 +53,7 @@ class FAQ(commands.Cog):
         # Unified FAQ check loop
         for topic, data in self.faq_triggers.items():
             matches = data['triggers'] & words
-            if len(matches) >= data['tolerance']:
+            if len(matches) >= data['threshold']:
                 key = (message.channel.id, topic)
                 last_time = self.recent_replies.get(key, 0)
 
