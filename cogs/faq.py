@@ -1,29 +1,31 @@
 import re
 import time
+from typing import Any
 
+import discord
 from discord.ext import commands
 
 from helpers.faq import faq_triggers, send_faq_embed
 
 
 class FAQ(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
+    def __init__(self, bot: commands.Bot):
+        self.bot: commands.Bot = bot
 
         # Load FAQ responses from markdown files
-        self.faqs = {
+        self.faqs: dict[str, str] = {
             'ATC Application': self._load_faq('faq_atc.md'),
             'Visiting/Transfer': self._load_faq('faq_visiting.md'),
             'Waiting Time': self._load_faq('faq_waiting.md'),
         }
 
         # Define triggers and threshold for each FAQ
-        self.faq_triggers = faq_triggers
+        self.faq_triggers: dict[str, dict[str, Any]] = faq_triggers
 
-        # Store (user_id, faq_type, question_hash): last_reply_time
-        self.recent_replies = {}
+        # Store (channel_id, topic): last_reply_time
+        self.recent_replies: dict[tuple[int, str], float] = {}
 
-    def _load_faq(self, filename):
+    def _load_faq(self, filename: str) -> str:
         try:
             with open(f'messages/{filename}', encoding='utf8') as f:
                 return f.read()
@@ -31,7 +33,7 @@ class FAQ(commands.Cog):
             return f'Error reading {filename}: {e}'
 
     @commands.Cog.listener()
-    async def on_message(self, message):
+    async def on_message(self, message: discord.Message) -> None:
         # Ignore messages from bots
         if message.author.bot:
             return
@@ -46,9 +48,9 @@ class FAQ(commands.Cog):
         if '?' not in content:
             return
 
-        words = set(re.findall(r'\b\w+\b', content))
-        now = time.time()
-        one_hour = 3600
+        words: set[str] = set(re.findall(r'\b\w+\b', content))
+        now: float = time.time()
+        one_hour: int = 3600
 
         # Unified FAQ check loop
         for topic, data in self.faq_triggers.items():
@@ -67,5 +69,5 @@ class FAQ(commands.Cog):
                 return
 
 
-async def setup(bot):
+async def setup(bot: commands.Bot) -> None:
     await bot.add_cog(FAQ(bot))

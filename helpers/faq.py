@@ -1,13 +1,18 @@
+from typing import Any
+
 import discord
+import discord.abc
 
 
-async def send_faq_embed(channel, user_mention, topic, description):
+async def send_faq_embed(
+    channel: discord.abc.Messageable, user_mention: str, topic: str, description: str
+) -> None:
     await channel.send(f"{user_mention} I believe you're asking about {topic}:")
     embed = discord.Embed(description=description, color=discord.Color(0x43C6E7))
     await channel.send(embed=embed)
 
 
-faq_triggers = {
+faq_triggers: dict[str, dict[str, Any]] = {
     'ATC Application': {
         'triggers': {
             # EN
