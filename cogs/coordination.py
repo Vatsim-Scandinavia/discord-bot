@@ -115,7 +115,7 @@ class CoordinationCog(commands.Cog):
         ids = self._member_cache.get_member_ids()
         members = self._bot.get_all_members()
         tasks = [
-            self._update_member_nickname(member=member, force_remove=True)
+            self._process_member(member=member, force_remove=True)
             for member in members
             if member.id in ids
         ]
@@ -223,10 +223,10 @@ class CoordinationCog(commands.Cog):
         logger.info('Skipping member outside of rollout', cid=cid, callsign=callsign)
         return False
 
-    async def _update_member_nickname(
+    async def _process_member(
         self, member: discord.Member, force_remove: bool = False
     ) -> None:
-        """Update member's nickname based on their controlling station"""
+        """Process and update member's nickname depending on control activity"""
         log = logger.bind(member=member.name, nick=member.nick)
         try:
             if not member.voice:
@@ -254,7 +254,7 @@ class CoordinationCog(commands.Cog):
                 )
                 return
 
-            if not callsign:
+            if not callsign or not member.nick:
                 # If there's no callsign, then there's nothing to do
                 return
 
@@ -267,15 +267,25 @@ class CoordinationCog(commands.Cog):
                 # We have a modified member, so we need to update their nickname
                 cid = modified_member['cid']
                 name = modified_member['name']
-                await self._set_member_nickname(member, callsign, name, cid)
             else:
-                current_nick = member.nick or member.name
-                _create_task(
-                    self._member_cache.store(
-                        member_id=member.id, nick=current_nick, name=name, cid=cid
+                # Before proceeding, we do a sanity check on the name
+                # If it already has the separator in it, then something's wrong, and we
+                # do not want to save said incorrect state nick in the member cache.
+                current_nick = member.nick
+                if self._callsign_separator in current_nick:
+                    log.error(
+                        'Unmodified user already has separator in nick',
+                        callsign=callsign,
                     )
+                    raise AttemptingDuplicatePrefixException(current_nick)
+
+                # Now that we know that there isn't a callsign separator in the nick,
+                # we should be safe to store it assuming we haven't run afoul of race conditions.
+                await self._member_cache.store(
+                    member_id=member.id, nick=current_nick, name=name, cid=cid
                 )
-                await self._set_member_nickname(member, callsign, name, cid)
+
+            await self._set_member_nickname(member, callsign, name, cid)
 
         except discord.Forbidden:
             log.warning('Bot lacks permission to change nickname')
@@ -324,7 +334,7 @@ class CoordinationCog(commands.Cog):
         for guild in self._bot.guilds:
             for channel in guild.voice_channels:
                 tasks.extend(
-                    [self._update_member_nickname(member) for member in channel.members]
+                    [self._process_member(member) for member in channel.members]
                 )
         _create_task(*tasks)
 
@@ -342,11 +352,11 @@ class CoordinationCog(commands.Cog):
 
         if after.channel:
             # The user joined a new voice channel, doesn't matter which
-            await self._update_member_nickname(member)
+            await self._process_member(member)
             return
 
         # User left voice voice channels altogether
-        await self._update_member_nickname(member, force_remove=True)
+        await self._process_member(member, force_remove=True)
 
     @coordination.command(
         name='update-voice', description='Update voice channel member nicknames'
