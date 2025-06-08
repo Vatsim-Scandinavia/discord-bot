@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.4.0](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.3.3...v2.4.0) (2025-06-08)
+
+
+### Features
+
+* FAQ messages ([#147](https://github.com/Vatsim-Scandinavia/discord-bot/issues/147)) ([87470a4](https://github.com/Vatsim-Scandinavia/discord-bot/commit/87470a45f4476ec171909eab20af5422895f1829))
+
+
+### Bug Fixes
+
+* add structured logging to sync_commands ([#145](https://github.com/Vatsim-Scandinavia/discord-bot/issues/145)) ([96b03fd](https://github.com/Vatsim-Scandinavia/discord-bot/commit/96b03fdd39486e0e026dd47152e099e33cdd4e73))
+* **coordination:** allow workaround to fix users nicknames ([e330fd6](https://github.com/Vatsim-Scandinavia/discord-bot/commit/e330fd6a49ff2a57715cab7b7529d907eef204fa))
+* **coordination:** divide nick restoration into two reasons ([#143](https://github.com/Vatsim-Scandinavia/discord-bot/issues/143)) ([d0d7de7](https://github.com/Vatsim-Scandinavia/discord-bot/commit/d0d7de7ef7ca5f869f853d1015eb93840e28b42c))
+* **coordination:** only support separator rather than prefix and suffix ([#136](https://github.com/Vatsim-Scandinavia/discord-bot/issues/136)) ([8aef274](https://github.com/Vatsim-Scandinavia/discord-bot/commit/8aef274dd44c83ee32ccb28da01e0596f9bc3bb6))
+* **coordination:** prevent and log users with invalid state ([#148](https://github.com/Vatsim-Scandinavia/discord-bot/issues/148)) ([3e53593](https://github.com/Vatsim-Scandinavia/discord-bot/commit/3e535939379f0f376860cd0364ac147cbe29a5dc))
+* **coordination:** update cache together with command ([#141](https://github.com/Vatsim-Scandinavia/discord-bot/issues/141)) ([fc726be](https://github.com/Vatsim-Scandinavia/discord-bot/commit/fc726be6ab3dbbe12cb4e9e35d7d55fcb9e67203))
+* **roles:** add additional reasons to understand flow ([52d24df](https://github.com/Vatsim-Scandinavia/discord-bot/commit/52d24df0ccee8f00b3ef0cb06aeffcec04bd0722))
+* **roles:** integrate member update and check for modified nicks ([#140](https://github.com/Vatsim-Scandinavia/discord-bot/issues/140)) ([52d24df](https://github.com/Vatsim-Scandinavia/discord-bot/commit/52d24df0ccee8f00b3ef0cb06aeffcec04bd0722))
+
 ## [2.3.3](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.3.2...v2.3.3) (2025-04-22)
 
 
