@@ -24,6 +24,7 @@ faq_triggers: dict[str, dict[str, Any]] = {
             'controller',
             'train',
             'training',
+            'trained',
             # DK
             'ansøgning',
             'ansøge',
