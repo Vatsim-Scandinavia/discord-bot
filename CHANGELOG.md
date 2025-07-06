@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.4.1](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.4.0...v2.4.1) (2025-07-06)
+
+
+### Bug Fixes
+
+* added trained word ([#152](https://github.com/Vatsim-Scandinavia/discord-bot/issues/152)) ([60be42b](https://github.com/Vatsim-Scandinavia/discord-bot/commit/60be42b0a15d566c909e262999e9ce8bd913057d))
+* **faq:** send embed together with message ([#149](https://github.com/Vatsim-Scandinavia/discord-bot/issues/149)) ([251a458](https://github.com/Vatsim-Scandinavia/discord-bot/commit/251a458e8d5df34930257fe2f6e15b2614ea279b))
+
+
+### Documentation
+
+* **rules:** Proof Reading and Typos ([#155](https://github.com/Vatsim-Scandinavia/discord-bot/issues/155)) ([ddad6d0](https://github.com/Vatsim-Scandinavia/discord-bot/commit/ddad6d05e4f029c504452243b3d97f757b6880ca))
+
 ## [2.4.0](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.3.3...v2.4.0) (2025-06-08)
 
 
