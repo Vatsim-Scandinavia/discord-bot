@@ -6,3 +6,4 @@
 :microphone2: Access to all FIR voice channels only
 :earth_africa: Access to ECFMP channel
 :airplane: Access to Pilot Training channels
+:computer: Access to the open tech channel
