@@ -3,7 +3,7 @@ import datetime
 import re
 from asyncio import Task
 from collections.abc import Coroutine
-from typing import Any, Optional
+from typing import Any
 
 import aiohttp
 import discord
@@ -87,7 +87,7 @@ class CoordinationCog(commands.Cog):
         self._bot = bot
         self._handler = Handler()
         self._callsign_separator = config.COORDINATION_CALLSIGN_SEPARATOR
-        self._last_update: Optional[datetime.datetime] = None
+        self._last_update: datetime.datetime | None = None
         self._session = aiohttp.ClientSession(base_url=VATSIM_BASE_URL)
         self._online_controllers: OnlineControllers = {}
         self._member_cache = MemberCache(folder=config.CACHE_DIR)
@@ -163,7 +163,7 @@ class CoordinationCog(commands.Cog):
                 'Failed to update controllers cache', last_update=self._last_update
             )
 
-    async def _get_controller_station(self, cid: int) -> Optional[str]:
+    async def _get_controller_station(self, cid: int) -> str | None:
         """Get the controller's prefix if they're online, None otherwise"""
         if cid in self._online_controllers:
             return self._online_controllers[cid].replace('__', '_')
@@ -195,7 +195,7 @@ class CoordinationCog(commands.Cog):
         _create_task(self._member_cache.remove_nickname(member.id))
         await member.edit(nick=original_nick, reason=reason)
 
-    def _format_name(self, prefix: str, name: Optional[str], cid: int) -> str:
+    def _format_name(self, prefix: str, name: str | None, cid: int) -> str:
         """Format the name for the member's nickname"""
         prefix = prefix.removesuffix('_CTR')
         prefix = prefix.replace('_', ' ')
@@ -207,7 +207,7 @@ class CoordinationCog(commands.Cog):
 
         return f'{prefix} {self._callsign_separator} {name} - {cid}'
 
-    def _feature_enabled(self, cid: int, callsign: Optional[str] = None) -> bool:
+    def _feature_enabled(self, cid: int, callsign: str | None = None) -> bool:
         """Simple feature gate for gradual rollout"""
         # TODO(thor): remove after validation
         if cid in self._allowed_cids:
@@ -293,7 +293,7 @@ class CoordinationCog(commands.Cog):
             log.exception('Error updating nickname')
 
     async def _set_member_nickname(
-        self, member: discord.Member, callsign: str, name: Optional[str], cid: int
+        self, member: discord.Member, callsign: str, name: str | None, cid: int
     ) -> None:
         """Set the nickname for a member"""
         if name and self._callsign_separator in name:

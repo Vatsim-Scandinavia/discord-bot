@@ -1,10 +1,10 @@
 import os
-from distutils.util import strtobool
 from pathlib import Path
 
 import discord
 import discord.ext
 from discord.ext.commands import Bot
+from distutils.util import strtobool
 from dotenv import load_dotenv
 
 load_dotenv('.env')
@@ -118,17 +118,19 @@ class Config:
         self.FIR_DATA = [
             fir.split(':') for fir in os.getenv('FIR_DATA', '').split(',') if fir
         ]
-        self.FIRS, self.FIR_ROLES = zip(*self.FIR_DATA) if self.FIR_DATA else ([], [])
-        self.FIR_MENTORS = dict(zip(self.FIRS, self.FIR_ROLES))
+        self.FIRS, self.FIR_ROLES = (
+            zip(*self.FIR_DATA, strict=False) if self.FIR_DATA else ([], [])
+        )
+        self.FIR_MENTORS = dict(zip(self.FIRS, self.FIR_ROLES, strict=False))
 
         # Examiner Data (same format as FIR data)
         self.EXAMINER_DATA = [
             fir.split(':') for fir in os.getenv('EXAMINER_DATA', '').split(',') if fir
         ]
         self.EXAM_FIRS, self.EXAM_ROLES = (
-            zip(*self.EXAMINER_DATA) if self.EXAMINER_DATA else ([], [])
+            zip(*self.EXAMINER_DATA, strict=False) if self.EXAMINER_DATA else ([], [])
         )
-        self.FIR_EXAMINERS = dict(zip(self.EXAM_FIRS, self.EXAM_ROLES))
+        self.FIR_EXAMINERS = dict(zip(self.EXAM_FIRS, self.EXAM_ROLES, strict=False))
 
         # Training Data
         self.TRAINING_DATA = os.getenv('TRAINING_DATA', '').split(',')
@@ -147,10 +149,12 @@ class Config:
             if fir
         ]
         self.CONTROLLER_FIRS, self.CONTROLLER_ROLES = (
-            zip(*self.CONTROLLER_FIR_DATA) if self.CONTROLLER_FIR_DATA else ([], [])
+            zip(*self.CONTROLLER_FIR_DATA, strict=False)
+            if self.CONTROLLER_FIR_DATA
+            else ([], [])
         )
         self.CONTROLLER_FIR_ROLES = dict(
-            zip(self.CONTROLLER_FIRS, self.CONTROLLER_ROLES)
+            zip(self.CONTROLLER_FIRS, self.CONTROLLER_ROLES, strict=False)
         )
 
         # Parse RATING_FIR_DATA from the environment variable
@@ -185,7 +189,9 @@ class Config:
                 self.REACTION_MESSAGE_IDS.append(message_id)
                 self.REACTION_ROLE_IDS.append(role_id)
 
-        self.REACTION_ROLES = dict(zip(self.REACTION_EMOJI, self.REACTION_ROLE_IDS))
+        self.REACTION_ROLES = dict(
+            zip(self.REACTION_EMOJI, self.REACTION_ROLE_IDS, strict=False)
+        )
 
         # Intervals
         self.CHECK_MEMBERS_INTERVAL = int(os.getenv('CHECK_MEMBERS_INTERVAL', 86400))
