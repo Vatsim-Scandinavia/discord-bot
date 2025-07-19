@@ -1,6 +1,6 @@
 # VATSIM Scandinavia Discord Bot
 
-VATSIM Scandinavia Bot is created by and [Markus N.](https://github.com/Marko259) (1401513) and  [Daniel L.](https://github.com/blt950) (1352906).
+VATSIM Scandinavia Bot is created by [Markus N.](https://github.com/Marko259) (1401513), [Daniel L.](https://github.com/blt950) (1352906), and [Thor H.](https://github.com/thor).
 
 Open sourced for contributions, please read the license before you copy any of the code.
 
