@@ -1,5 +1,5 @@
 import re
-from typing import Optional, TypedDict
+from typing import TypedDict
 
 import aiohttp
 import discord
@@ -117,7 +117,7 @@ class Handler:
 
         return int(cid[0])
 
-    def get_name(self, member: discord.Member) -> Optional[str]:
+    def get_name(self, member: discord.Member) -> str | None:
         """
         Get presentation name based on VATSIM Discord member.
 

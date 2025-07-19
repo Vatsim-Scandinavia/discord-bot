@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 import aiohttp
 
@@ -14,8 +14,8 @@ class APIHelper:
         }
 
     async def _fetch_data(
-        self, endpoint: str, params: Optional[dict] = None
-    ) -> Optional[list[Any]]:
+        self, endpoint: str, params: dict | None = None
+    ) -> list[Any] | None:
         """
         Generic method to fetch data from the API.
 
@@ -57,9 +57,7 @@ class APIHelper:
                 print(f'HTTP error occurred while accessing {url}: {e}')
                 return None
 
-    async def post_data(
-        self, endpoint, params: Optional[dict] = None
-    ) -> Optional[list[Any]]:
+    async def post_data(self, endpoint, params: dict | None = None) -> list[Any] | None:
         """Post data to URL with requried information."""
         url = f'{self.base_url}/{endpoint}'
         async with aiohttp.ClientSession() as session:
@@ -92,8 +90,8 @@ class APIHelper:
                 print(f'HTTP error occurred while updating staffing message: {e}')
 
     async def patch_data(
-        self, endpoint, params: Optional[dict] = None
-    ) -> Optional[list[Any]]:
+        self, endpoint, params: dict | None = None
+    ) -> list[Any] | None:
         """Patch data with specific params to a defined URL."""
         url = f'{self.base_url}/{endpoint}'
         async with aiohttp.ClientSession() as session:

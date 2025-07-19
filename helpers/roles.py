@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 import aiohttp
 
@@ -16,8 +16,8 @@ class Roles:
         }
 
     async def fetch_data(
-        self, endpoint: str, params: Optional[dict] = None
-    ) -> Optional[list[Any]]:
+        self, endpoint: str, params: dict | None = None
+    ) -> list[Any] | None:
         """
         Generic method to fetch data from the API.
 
@@ -48,7 +48,7 @@ class Roles:
                 print(f'HTTP error occurred while accessing {url}: {e}')
                 return None
 
-    async def get_roles(self) -> Optional[list[Any]]:
+    async def get_roles(self) -> list[Any] | None:
         """
         Fetch all users with their roles from the API.
 
@@ -58,7 +58,7 @@ class Roles:
         """
         return await self.fetch_data('users', params={'include[]': 'roles'})
 
-    async def get_training(self) -> Optional[list[Any]]:
+    async def get_training(self) -> list[Any] | None:
         """
         Fetch all users with their training data from the API.
 
@@ -68,7 +68,7 @@ class Roles:
         """
         return await self.fetch_data('users', params={'include[]': 'training'})
 
-    async def get_endorsement(self) -> Optional[dict]:
+    async def get_endorsement(self) -> dict | None:
         """
         Fetch all users with their endorsement data from the API.
 
@@ -78,7 +78,7 @@ class Roles:
         """
         return await self.fetch_data('users', params={'include[]': 'endorsements'})
 
-    async def get_atc_activity(self) -> Optional[dict]:
+    async def get_atc_activity(self) -> dict | None:
         """
         Fetch all users with their endorsement data from the API.
 

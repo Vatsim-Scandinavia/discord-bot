@@ -1,19 +1,17 @@
-from typing import Optional
-
 import discord
 
 from helpers.config import config
 
 
 def embed(
-    description: Optional[str] = None,
+    description: str | None = None,
     colour=None,
-    title: Optional[str] = None,
-    author: Optional[dict] = None,
-    url: Optional[str] = None,
-    image: Optional[str] = None,
-    footer: Optional[dict] = None,
-    fields: Optional[list] = None,
+    title: str | None = None,
+    author: dict | None = None,
+    url: str | None = None,
+    image: str | None = None,
+    footer: dict | None = None,
+    fields: list | None = None,
     timestamp=None,
 ) -> discord.Embed:
     """

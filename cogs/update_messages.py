@@ -1,5 +1,4 @@
 import asyncio
-from typing import Optional
 
 import discord
 from discord import app_commands
@@ -102,7 +101,7 @@ class UpdateCountryMessage(commands.Cog):
         self,
         interaction: discord.Interaction,
         option: app_commands.Choice[str],
-        message_id: Optional[str] = None,
+        message_id: str | None = None,
     ):
         await interaction.response.defer()  # Defer response while processing
 
