@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.4.3](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.4.2...v2.4.3) (2025-07-19)
+
+
+### Bug Fixes
+
+* **roles:** use laptop rather than tone-dependant technologist ([#160](https://github.com/Vatsim-Scandinavia/discord-bot/issues/160)) ([3795eba](https://github.com/Vatsim-Scandinavia/discord-bot/commit/3795ebac40bf534ad09a7af1fece9c9abdb309b9))
+
 ## [2.4.2](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.4.1...v2.4.2) (2025-07-19)
 
 
