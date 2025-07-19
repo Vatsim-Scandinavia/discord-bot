@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.4.2](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.4.1...v2.4.2) (2025-07-19)
+
+
+### Bug Fixes
+
+* **roles:** use technologist emoji ([#158](https://github.com/Vatsim-Scandinavia/discord-bot/issues/158)) ([158f795](https://github.com/Vatsim-Scandinavia/discord-bot/commit/158f795eb75ccd27afbe1d407f1daf4e7c36a5f4))
+
 ## [2.4.1](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.4.0...v2.4.1) (2025-07-17)
 
 
