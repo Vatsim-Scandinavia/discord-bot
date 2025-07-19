@@ -14,4 +14,4 @@
 
 :earth_africa: Access to ECFMP channel for flow measures, etc.
 :airplane: Access to Pilot Training channels
-:technologist: Access to tech channel to collaborate with Tech
+:computer: Access to tech channel to collaborate with Tech
