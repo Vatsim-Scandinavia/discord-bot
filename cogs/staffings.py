@@ -1,6 +1,5 @@
 import asyncio
 from datetime import datetime
-from typing import Optional
 
 import discord
 from discord import Interaction, app_commands
@@ -130,7 +129,7 @@ class StaffingCog(commands.Cog):
         self,
         interaction: discord.Integration,
         position: str,
-        section: Optional[str] = None,
+        section: str | None = None,
     ):
         ctx = await Handler.get_context(self, self.bot, interaction)
         user_id = ctx.author.id
@@ -173,8 +172,8 @@ class StaffingCog(commands.Cog):
     async def unbook(
         self,
         interaction: discord.Integration,
-        position: Optional[str] = None,
-        section: Optional[str] = None,
+        position: str | None = None,
+        section: str | None = None,
     ):
         ctx = await Handler.get_context(self, self.bot, interaction)
         try:

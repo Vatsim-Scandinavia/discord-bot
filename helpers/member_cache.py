@@ -1,7 +1,7 @@
 import asyncio
 import json
 from pathlib import Path
-from typing import Optional, TypedDict
+from typing import TypedDict
 
 import aiofiles
 import structlog
@@ -12,7 +12,7 @@ logger = structlog.stdlib.get_logger()
 class MemberNick(TypedDict):
     """Cached member information"""
 
-    name: Optional[str]
+    name: str | None
     nick: str
     cid: int
 
@@ -50,14 +50,14 @@ class MemberCache:
             self._log.exception('Failed to save nickname cache')
 
     async def store(
-        self, member_id: int, nick: str, name: Optional[str], cid: int
+        self, member_id: int, nick: str, name: str | None, cid: int
     ) -> None:
         """Store original nickname for a member"""
         async with self._lock:
             self._nicknames[str(member_id)] = MemberNick(name=name, nick=nick, cid=cid)
             await self._save_cache()
 
-    def get(self, member_id: int) -> Optional[MemberNick]:
+    def get(self, member_id: int) -> MemberNick | None:
         """Retrieve original nickname for a member"""
         return self._nicknames.get(str(member_id))
 

@@ -1,5 +1,5 @@
 import asyncio
-from typing import Annotated, Optional
+from typing import Annotated
 
 import uvicorn
 from discord.ext import commands
@@ -60,7 +60,7 @@ class FastAPICog(commands.Cog):
     async def update_staffing(
         self,
         id: Annotated[int, Form()],
-        reset: Annotated[Optional[bool], Form()] = None,
+        reset: Annotated[bool | None, Form()] = None,
     ):
         try:
             await self.staffing_async.update_staffing_message(self.bot, id, reset)
