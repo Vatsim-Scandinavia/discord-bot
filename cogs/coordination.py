@@ -20,6 +20,7 @@ logger = structlog.stdlib.get_logger()
 VATSIM_BASE_URL = 'https://data.vatsim.net'
 VATSIM_DATA = '/v3/vatsim-data.json'
 
+_POSITION_LOGON_NORMALIZER = re.compile('_+')
 
 OnlineControllers = dict[int, str]
 """A dictionary mapping VATSIM controller CIDs to their callsigns"""
@@ -198,8 +199,8 @@ class CoordinationCog(commands.Cog):
     def _format_name(self, prefix: str, name: str | None, cid: int) -> str:
         """Format the name for the member's nickname"""
         prefix = prefix.removesuffix('_CTR')
-        prefix = prefix.replace('_', ' ')
-        prefix = prefix.replace('  ', ' ')
+        prefix = _POSITION_LOGON_NORMALIZER.sub(' ', prefix)
+        prefix = prefix.replace('I TWR', 'AFIS')
 
         # TODO(thor): This is a bit of a hack to support non-name nicknames
         if name is None:
