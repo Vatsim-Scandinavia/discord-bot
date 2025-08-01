@@ -4,7 +4,7 @@ The waiting time for ATC Training varies by country. Generally, it may extend up
 It's impossible to give you a queue number or exact estimate, because the training queue is dynamic and varies with a couple of factors such as:
 - Mentor availability,
 - Which rating a mentor can train,
-- How long existing students take for their training,
+- How long existing students take to complete their training,,
 - Other training types that may have higher priority.
 
 *We recommend you to use the time while waiting to familiarize yourself with the VATSIM network, read through the training documents, and piloting skills are also very useful in your future training and understanding.*
