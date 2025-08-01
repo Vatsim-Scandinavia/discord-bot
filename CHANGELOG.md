@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.4.5](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.4.4...v2.4.5) (2025-08-01)
+
+
+### Bug Fixes
+
+* support ICAO codes that end with I ([#168](https://github.com/Vatsim-Scandinavia/discord-bot/issues/168)) ([484ab7f](https://github.com/Vatsim-Scandinavia/discord-bot/commit/484ab7f792429993cfef9801c42dc36e61a5eb54))
+
 ## [2.4.4](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.4.3...v2.4.4) (2025-08-01)
 
 
