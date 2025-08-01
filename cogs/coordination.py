@@ -200,7 +200,7 @@ class CoordinationCog(commands.Cog):
         """Format the name for the member's nickname"""
         prefix = prefix.removesuffix('_CTR')
         prefix = _POSITION_LOGON_NORMALIZER.sub(' ', prefix)
-        prefix = prefix.replace('I TWR', 'AFIS')
+        prefix = prefix.replace(' I TWR', ' AFIS')
 
         # TODO(thor): This is a bit of a hack to support non-name nicknames
         if name is None:
