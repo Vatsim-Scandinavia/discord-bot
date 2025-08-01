@@ -4,4 +4,4 @@
 2. Read the information in the "Request Training" section on your right.
 3. Follow instructions accordingly to apply for your training.
 
-*If you have recently transferred, log out and back in to refresh your associated division. Rarely this can take up till 24 hours.*
+*If you have recently transferred, log out and back in to refresh your associated division. This _can_ take upwards of 24 hours.*
