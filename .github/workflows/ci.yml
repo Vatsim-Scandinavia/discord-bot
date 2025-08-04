@@ -40,11 +40,11 @@ jobs:
             type=semver,event=tag,pattern=v{{major}}
             type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
 
-      - name: build & push container image
+      - name: build & (possibly) push container image
         uses: docker/build-push-action@v6
         with:
           context: "{{defaultContext}}:."
-          push: true
+          push: ${{ github.event_name == "push" || github.event.pull_request.head.repo.full_name == github.repository }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: ${{ env.TARGET_PLATFORMS }}
