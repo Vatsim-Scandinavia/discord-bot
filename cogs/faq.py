@@ -5,6 +5,7 @@ from typing import Any
 import discord
 from discord.ext import commands
 
+from helpers.config import config
 from helpers.faq import faq_triggers, send_faq_embed
 
 
@@ -42,10 +43,36 @@ class FAQ(commands.Cog):
         if len(message.content) > 400:
             return
 
+        # Ignore messages from TRAINING_STAFF_ROLE and MENTOR_ROLE
+        if any(
+            role.id in [config.TRAINING_STAFF_ROLE, config.MENTOR_ROLE]
+            for role in message.author.roles
+        ):
+            return
+
         content = message.content.lower()
 
-        # Only respond if there's a question mark in the message
-        if '?' not in content:
+        # Only respond if there's a question mark, or the words "how" or "where" in the message
+        trigger_words = [
+            'how',
+            'where',
+            # Danish
+            'hvordan',
+            'hvor',
+            # Finnish
+            'miten',
+            'missä',
+            # Swedish
+            'hur',
+            'var',
+            # Norwegian
+            'hvordan',
+            'hvor',
+            # Icelandic
+            'hvernig',
+            'hvar',
+        ]
+        if '?' not in content and not any(word in content for word in trigger_words):
             return
 
         words: set[str] = set(re.findall(r'\b\w+\b', content))
