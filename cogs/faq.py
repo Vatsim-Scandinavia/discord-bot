@@ -42,26 +42,35 @@ class FAQ(commands.Cog):
         # Ignore very long messages, high chance it's not relevant
         if len(message.content) > 400:
             return
-        
+
         # Ignore messages from TRAINING_STAFF_ROLE and MENTOR_ROLE
-        if any(role.id in [config.TRAINING_STAFF_ROLE, config.MENTOR_ROLE] for role in message.author.roles):
+        if any(
+            role.id in [config.TRAINING_STAFF_ROLE, config.MENTOR_ROLE]
+            for role in message.author.roles
+        ):
             return
 
         content = message.content.lower()
 
         # Only respond if there's a question mark, or the words "how" or "where" in the message
         trigger_words = [
-            'how', 'where',
+            'how',
+            'where',
             # Danish
-            'hvordan', 'hvor',
+            'hvordan',
+            'hvor',
             # Finnish
-            'miten', 'missä',
+            'miten',
+            'missä',
             # Swedish
-            'hur', 'var',
+            'hur',
+            'var',
             # Norwegian
-            'hvordan', 'hvor',
+            'hvordan',
+            'hvor',
             # Icelandic
-            'hvernig', 'hvar'
+            'hvernig',
+            'hvar',
         ]
         if '?' not in content and not any(word in content for word in trigger_words):
             return
