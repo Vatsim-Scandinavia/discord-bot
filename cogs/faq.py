@@ -44,8 +44,21 @@ class FAQ(commands.Cog):
 
         content = message.content.lower()
 
-        # Only respond if there's a question mark in the message
-        if '?' not in content:
+        # Only respond if there's a question mark, or the words "how" or "where" in the message
+        trigger_words = [
+            'how', 'where',
+            # Danish
+            'hvordan', 'hvor',
+            # Finnish
+            'miten', 'missä',
+            # Swedish
+            'hur', 'var',
+            # Norwegian
+            'hvordan', 'hvor',
+            # Icelandic
+            'hvernig', 'hvar'
+        ]
+        if '?' not in content and not any(word in content for word in trigger_words):
             return
 
         words: set[str] = set(re.findall(r'\b\w+\b', content))
