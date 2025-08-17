@@ -4,6 +4,7 @@ from typing import Any
 
 import discord
 from discord.ext import commands
+from helpers.config import config
 
 from helpers.faq import faq_triggers, send_faq_embed
 
@@ -40,6 +41,10 @@ class FAQ(commands.Cog):
 
         # Ignore very long messages, high chance it's not relevant
         if len(message.content) > 400:
+            return
+        
+        # Ignore messages from TRAINING_STAFF_ROLE and MENTOR_ROLE
+        if any(role.id in [config.TRAINING_STAFF_ROLE, config.MENTOR_ROLE] for role in message.author.roles):
             return
 
         content = message.content.lower()
