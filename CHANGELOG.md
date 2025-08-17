@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.4.7](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.4.6...v2.4.7) (2025-08-17)
+
+
+### Bug Fixes
+
+* welcome that was swallowed somewhere ([#173](https://github.com/Vatsim-Scandinavia/discord-bot/issues/173)) ([c2fa64a](https://github.com/Vatsim-Scandinavia/discord-bot/commit/c2fa64ad868deb4fe4f013bde099332808067b2e))
+
 ## [2.4.6](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.4.5...v2.4.6) (2025-08-17)
 
 
