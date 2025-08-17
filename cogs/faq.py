@@ -4,8 +4,8 @@ from typing import Any
 
 import discord
 from discord.ext import commands
-from helpers.config import config
 
+from helpers.config import config
 from helpers.faq import faq_triggers, send_faq_embed
 
 
