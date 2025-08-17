@@ -68,6 +68,7 @@ faq_triggers: dict[str, dict[str, Any]] = {
             # EN
             'transfer',
             'visiting',
+            'transfers',
             # DK
             'besøg',
             'besøge',
@@ -76,11 +77,13 @@ faq_triggers: dict[str, dict[str, Any]] = {
             'flytter',
             'overførsel',
             'overføring',
+            'overførsler',
             # NO
             'overføre',
             'overfører',
             'besøke',
             'besøker',
+            'overføringer',
             # SE
             'besöka',
             'besöker',
@@ -89,13 +92,15 @@ faq_triggers: dict[str, dict[str, Any]] = {
             'överföring',
             'överföra',
             'överför',
+            'överföringar',
             # FI
             'vierailla',
             'vierailee',
             'siirtyä',
             'siirto',
             'siirtää',
-            # FI
+            'siirrot',
+            # IS
             'heimsækja',
             'heimsækir',
             'flytja',
@@ -103,6 +108,7 @@ faq_triggers: dict[str, dict[str, Any]] = {
             'skipta',
             'skiptir',
             'flutningur',
+            'flutningar',
         },
         'threshold': 1,
     },
