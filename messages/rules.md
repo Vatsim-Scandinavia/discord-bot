@@ -1,22 +1,31 @@
 
-:bookmark: VATSIM Scandinavia provide a Discord server for its members. This server may however be freely used by any member of VATSIM Scandinavia or its parent organizations, who adheres to the following rules:
+:bookmark: The VATSIM Scandinavia Discord server is provided to support community interaction and coordination. All members of VATSIM Scandinavia and its parent organizations are welcome, provided they comply with this set of rules. Failure to follow these rules may result in moderation action.  ½
 
-:one: Treat each other with mutual respect. Don't threaten, harass or belittle other members.
+:one: Respect and Professionalism
+ •    Treat all members with courtesy and mutual respect.
+ •    Harassment, threats, discrimination, or belittling remarks will not be tolerated.
 
-:two: Sharing of illegal information, such as information about pirated software, is strictly prohibited.
+:two: Staff Authority
+ •    Follow instructions from staff members at all times.
+ •    Staff are identifiable by their visible roles and ranks.
 
-:three: Avoid unnecessary noises in voice channels, that might be to annoyance for others.
+:three: Legal and Ethical Standards
+ •    Sharing or discussing illegal content (e.g., pirated software) is strictly prohibited.
+ •    Content that violates VATSIM or Discord terms of service is not allowed.
 
-:four: Adhere to instructions from the staff. Staff members can be spotted by their visible rank.
+:four: Advertising and Promotions
+ •    Advertising, soliciting, or promoting products, services, or other communities is prohibited without prior staff approval.
 
-:five: Do not enter any of the training department rooms unless you have a scheduled training or checkout. Use the 'Waiting room' if you have a planned session. Adjacent controllers may enter for coordination.
+:five: Voice Channel Etiquette
+ •    Avoid unnecessary noise or disruptions that may disturb others.
+ •    Use Push-to-Talk (PTT) in ATC voice channels; disable voice activity detection.
+ •    Post voice-related messages in the appropriate voice text channels rather than in general channels.
+ •    Members idle for more than 30 minutes will be moved to the ‘Away’ channel.
 
-:six: Do not use any of the ATC Coordination rooms, named after the sector, unless you are controlling or coordinating with adjacent controllers.
+:six: Training and ATC Coordination Rooms
+ •    Enter training rooms only if you have a scheduled training session or checkout.
+ •    Use the ‘Waiting Room’ if you are waiting for a planned session.
+ •    ATC coordination rooms (named after sectors) are reserved solely for active controllers and adjacent controllers coordinating operations.
 
-:seven: Use PTT (Push to talk) setting in ATC voice channels, the 'voice activity' option should be turned off to avoid disturbances.
-
-:eight: Please post voice chat related messages in the respective voice text channel instead of main channels.
-
-:nine: Members being idle for more than 30 minutes will be moved to the 'Away' channel.
-
-:one::zero: Do not stream Discord audio without permission from everyone present; this includes people that join while you are streaming.
+:seven: Audio Streaming and Privacy
+ •    Do not stream Discord audio without the explicit consent of everyone in the channel, including anyone who joins after streaming begins.
