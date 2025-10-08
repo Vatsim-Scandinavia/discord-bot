@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.4.8](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.4.7...v2.4.8) (2025-10-08)
+
+
+### Bug Fixes
+
+* update current VATSCA Discord rules ([f4caa99](https://github.com/Vatsim-Scandinavia/discord-bot/commit/f4caa998d0d68f891de5b664be45d3d6a0a2f335))
+
 ## [2.4.7](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.4.6...v2.4.7) (2025-08-17)
 
 
