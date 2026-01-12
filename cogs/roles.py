@@ -27,6 +27,7 @@ class MentorBuddyInfo:
     buddy_firs: list[str]
     training_staff_should_be: bool
 
+
 # We don't instantiate these, but we need to import them for type checking
 if TYPE_CHECKING:
     from collections.abc import Coroutine
