@@ -20,6 +20,7 @@ logger = structlog.stdlib.get_logger()
 @dataclass
 class MentorBuddyInfo:
     """Data structure for mentor and buddy role information."""
+
     mentor_should_be: bool
     mentor_firs: list[str]
     buddy_should_be: bool
