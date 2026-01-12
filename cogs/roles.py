@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal
 
 import discord
@@ -14,6 +15,16 @@ from helpers.handler import Handler
 from helpers.roles import Roles
 
 logger = structlog.stdlib.get_logger()
+
+
+@dataclass
+class MentorBuddyInfo:
+    """Data structure for mentor and buddy role information."""
+    mentor_should_be: bool
+    mentor_firs: list[str]
+    buddy_should_be: bool
+    buddy_firs: list[str]
+    training_staff_should_be: bool
 
 # We don't instantiate these, but we need to import them for type checking
 if TYPE_CHECKING:
@@ -119,9 +130,7 @@ class RolesCog(commands.Cog):
             if not cid:
                 raise ValueError("No CID found in member's nickname.")
 
-            should_be_mentor, should_be_training_staff, mentor_firs, should_be_buddy, buddy_firs = (
-                self.get_mentor_roles(cid, roles_data)
-            )
+            mentor_buddy_info = self.get_mentor_roles(cid, roles_data)
             should_be_examiner, examiner_firs = self.get_examiner_roles(
                 cid, endorsement_data
             )
@@ -134,21 +143,21 @@ class RolesCog(commands.Cog):
                 self.update_role(
                     user,
                     mentor_role,
-                    should_be_mentor,
+                    mentor_buddy_info.mentor_should_be,
                     config.ROLE_REASONS['mentor_add'],
                     config.ROLE_REASONS['mentor_remove'],
                 ),
                 self.update_role(
                     user,
                     buddy_role,
-                    should_be_buddy,
+                    mentor_buddy_info.buddy_should_be,
                     config.ROLE_REASONS['buddy_add'],
                     config.ROLE_REASONS['buddy_remove'],
                 ),
                 self.update_role(
                     user,
                     training_staff_role,
-                    should_be_training_staff,
+                    mentor_buddy_info.training_staff_should_be,
                     config.ROLE_REASONS['training_staff_add'],
                     config.ROLE_REASONS['training_staff_remove'],
                 ),
@@ -159,8 +168,8 @@ class RolesCog(commands.Cog):
                     config.ROLE_REASONS['visitor_add'],
                     config.ROLE_REASONS['visitor_remove'],
                 ),
-                self.update_fir_roles(user, mentor_firs, 'mentor', should_be_mentor),
-                self.update_fir_roles(user, buddy_firs, 'buddy', should_be_buddy),
+                self.update_fir_roles(user, mentor_buddy_info.mentor_firs, 'mentor', mentor_buddy_info.mentor_should_be),
+                self.update_fir_roles(user, mentor_buddy_info.buddy_firs, 'buddy', mentor_buddy_info.buddy_should_be),
                 self.update_fir_roles(
                     user, examiner_firs, 'examiner', should_be_examiner
                 ),
@@ -212,7 +221,7 @@ class RolesCog(commands.Cog):
             data (list): The API response data for roles.
 
         Returns:
-            tuple: (should_be_mentor, should_be_training_staff, mentor_firs, should_be_buddy, buddy_firs)
+            MentorBuddyInfo: A data structure containing mentor, buddy, and training staff information.
 
         """
         should_be_mentor = False
@@ -240,7 +249,13 @@ class RolesCog(commands.Cog):
                 if 'Moderator' in roles:
                     should_be_training_staff = True
 
-        return should_be_mentor, should_be_training_staff, mentor_firs, should_be_buddy, buddy_firs
+        return MentorBuddyInfo(
+            mentor_should_be=should_be_mentor,
+            mentor_firs=mentor_firs,
+            buddy_should_be=should_be_buddy,
+            buddy_firs=buddy_firs,
+            training_staff_should_be=should_be_training_staff,
+        )
 
     def get_examiner_roles(self, cid, data):
         """
@@ -337,13 +352,12 @@ class RolesCog(commands.Cog):
             should_be_assigned (bool): Whether the role should be assigned.
 
         """
-        if role_type == 'mentor':
-            role_map = config.FIR_MENTORS
-        elif role_type == 'buddy':
-            role_map = config.FIR_BUDDIES
-        else:
-            role_map = config.FIR_EXAMINERS
-
+        ROLE_FIR_MAP = {
+            'mentor': config.FIR_MENTORS,
+            'buddy': config.FIR_BUDDIES,
+            'examiner': config.FIR_EXAMINERS,
+        }
+        role_map = ROLE_FIR_MAP[role_type]
         add_reason = config.ROLE_REASONS[f'{role_type}_add']
         remove_reason = config.ROLE_REASONS[f'{role_type}_remove']
 
