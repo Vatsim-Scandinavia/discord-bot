@@ -343,7 +343,7 @@ class RolesCog(commands.Cog):
             role_map = config.FIR_BUDDIES
         else:
             role_map = config.FIR_EXAMINERS
-        
+
         add_reason = config.ROLE_REASONS[f'{role_type}_add']
         remove_reason = config.ROLE_REASONS[f'{role_type}_remove']
 
