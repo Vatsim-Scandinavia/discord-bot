@@ -33,6 +33,23 @@ Since not all lines of the environment file, here's an explanation for a few
 - `CC_API_URL` and TOKEN is the [Control Center](https://github.com/Vatsim-Scandinavia/controlcenter) API connection if you use it.
 - `*_ROLE` are your Discord Role ID's for the respective ratings.
 
+#### Role Configuration
+The bot automatically assigns Discord roles based on data from the Control Center API:
+
+- `MENTOR_ROLE` - Discord role ID for members with Mentor status
+- `BUDDY_ROLE` - Discord role ID for members with Buddy status
+- `TRAINING_STAFF_ROLE` - Discord role ID for Training Staff/Moderators
+- `VISITOR_ROLE` - Discord role ID for Visiting Controllers
+
+#### FIR-Specific Roles
+You can configure FIR-specific roles that are assigned based on which FIR a member has a particular role in:
+
+- `FIR_DATA` - Mentor roles per FIR, format: `FIR:RoleID,FIR:RoleID` (e.g., `Denmark:1234567890,Norway:1234567891,Sweden:1234567892`)
+- `BUDDY_DATA` - Buddy roles per FIR, same format as FIR_DATA (e.g., `Denmark:1234567890,Norway:1234567891,Sweden:1234567892`)
+- `EXAMINER_DATA` - Examiner roles per FIR, same format as FIR_DATA
+
+See `.env-example` for a complete list of all available configuration options.
+
 ## Contribution and conventions
 Contributions are much appreciated to help everyone move this service forward with fixes and functionalities. We recommend you to fork this repository here on GitHub so you can easily create pull requests back to the main project.
 

@@ -61,6 +61,7 @@ class RolesCog(commands.Cog):
         atc_activity_data = await self.roles.get_atc_activity()
 
         mentor_role = discord.utils.get(guild.roles, id=config.MENTOR_ROLE)
+        buddy_role = discord.utils.get(guild.roles, id=config.BUDDY_ROLE)
         training_staff_role = discord.utils.get(
             guild.roles, id=config.TRAINING_STAFF_ROLE
         )
@@ -70,6 +71,7 @@ class RolesCog(commands.Cog):
             await self.process_member_roles(
                 user,
                 mentor_role,
+                buddy_role,
                 training_staff_role,
                 visitor_role,
                 roles_data,
@@ -89,6 +91,7 @@ class RolesCog(commands.Cog):
         self,
         user,
         mentor_role,
+        buddy_role,
         training_staff_role,
         visitor_role,
         roles_data,
@@ -102,6 +105,7 @@ class RolesCog(commands.Cog):
         Args:
             user (discord.Member): The Discord member object.
             mentor_role (discord.Role): The Mentor role object.
+            buddy_role (discord.Role): The Buddy role object.
             training_staff_role (discord.Role): The Training Staff role object.
             visitor_role (discord.Role): The Visitor role object.
             roles_data (list): The API response containing user roles.
@@ -115,7 +119,7 @@ class RolesCog(commands.Cog):
             if not cid:
                 raise ValueError("No CID found in member's nickname.")
 
-            should_be_mentor, should_be_training_staff, mentor_firs = (
+            should_be_mentor, should_be_training_staff, mentor_firs, should_be_buddy, buddy_firs = (
                 self.get_mentor_roles(cid, roles_data)
             )
             should_be_examiner, examiner_firs = self.get_examiner_roles(
@@ -136,6 +140,13 @@ class RolesCog(commands.Cog):
                 ),
                 self.update_role(
                     user,
+                    buddy_role,
+                    should_be_buddy,
+                    config.ROLE_REASONS['buddy_add'],
+                    config.ROLE_REASONS['buddy_remove'],
+                ),
+                self.update_role(
+                    user,
                     training_staff_role,
                     should_be_training_staff,
                     config.ROLE_REASONS['training_staff_add'],
@@ -149,6 +160,7 @@ class RolesCog(commands.Cog):
                     config.ROLE_REASONS['visitor_remove'],
                 ),
                 self.update_fir_roles(user, mentor_firs, 'mentor', should_be_mentor),
+                self.update_fir_roles(user, buddy_firs, 'buddy', should_be_buddy),
                 self.update_fir_roles(
                     user, examiner_firs, 'examiner', should_be_examiner
                 ),
@@ -168,6 +180,10 @@ class RolesCog(commands.Cog):
             if mentor_role in user.roles:
                 await user.remove_roles(
                     mentor_role, reason=config.ROLE_REASONS['no_cid']
+                )
+            if buddy_role in user.roles:
+                await user.remove_roles(
+                    buddy_role, reason=config.ROLE_REASONS['no_cid']
                 )
             if training_staff_role in user.roles:
                 await user.remove_roles(
@@ -189,19 +205,21 @@ class RolesCog(commands.Cog):
 
     def get_mentor_roles(self, cid, data):
         """
-        Determine if the member is a mentor and/or training staff.
+        Determine if the member is a mentor, buddy, and/or training staff.
 
         Args:
             cid (int): The member's VATSIM CID.
             data (list): The API response data for roles.
 
         Returns:
-            tuple: (should_be_mentor, should_be_training_staff, mentor_firs)
+            tuple: (should_be_mentor, should_be_training_staff, mentor_firs, should_be_buddy, buddy_firs)
 
         """
         should_be_mentor = False
         should_be_training_staff = False
+        should_be_buddy = False
         mentor_firs = []
+        buddy_firs = []
 
         for member_data in data:
             if member_data['id'] != cid:
@@ -215,10 +233,14 @@ class RolesCog(commands.Cog):
                     should_be_mentor = True
                     mentor_firs.append(fir)
 
+                if 'Buddy' in roles:
+                    should_be_buddy = True
+                    buddy_firs.append(fir)
+
                 if 'Moderator' in roles:
                     should_be_training_staff = True
 
-        return should_be_mentor, should_be_training_staff, mentor_firs
+        return should_be_mentor, should_be_training_staff, mentor_firs, should_be_buddy, buddy_firs
 
     def get_examiner_roles(self, cid, data):
         """
@@ -311,11 +333,17 @@ class RolesCog(commands.Cog):
         Args:
             user (discord.Member): The Discord member object.
             fir_data (list): A list of FIRs the user is assigned to.
-            role_type (str): The type of role to update ("mentor" or "examiner").
+            role_type (str): The type of role to update ("mentor", "buddy", or "examiner").
             should_be_assigned (bool): Whether the role should be assigned.
 
         """
-        role_map = config.FIR_MENTORS if role_type == 'mentor' else config.FIR_EXAMINERS
+        if role_type == 'mentor':
+            role_map = config.FIR_MENTORS
+        elif role_type == 'buddy':
+            role_map = config.FIR_BUDDIES
+        else:
+            role_map = config.FIR_EXAMINERS
+        
         add_reason = config.ROLE_REASONS[f'{role_type}_add']
         remove_reason = config.ROLE_REASONS[f'{role_type}_remove']
 

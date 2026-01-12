@@ -69,6 +69,8 @@ class Config:
             'no_auth': 'User did not authenticate via the Community Website',
             'mentor_add': 'Member is now a mentor',
             'mentor_remove': 'Member is no longer a mentor',
+            'buddy_add': 'Member is now a buddy',
+            'buddy_remove': 'Member is no longer a buddy',
             'examiner_add': 'Member is now an examiner',
             'examiner_remove': 'Member is no longer an examiner',
             'training_add': 'Member is now in training',
@@ -110,6 +112,7 @@ class Config:
         self.VATSIM_MEMBER_ROLE = int(os.getenv('VATSIM_MEMBER_ROLE', 0))
         self.EVENTS_ROLE = int(os.getenv('EVENTS_ROLE', 0))
         self.MENTOR_ROLE = int(os.getenv('MENTOR_ROLE', 0))
+        self.BUDDY_ROLE = int(os.getenv('BUDDY_ROLE', 0))
         self.TRAINING_STAFF_ROLE = int(os.getenv('TRAINING_STAFF_ROLE', 0))
         self.VISITOR_ROLE = int(os.getenv('VISITOR_ROLE', 0))
         self.OBS_ROLE = int(os.getenv('OBS_ROLE', 0))
@@ -122,6 +125,15 @@ class Config:
             zip(*self.FIR_DATA, strict=False) if self.FIR_DATA else ([], [])
         )
         self.FIR_MENTORS = dict(zip(self.FIRS, self.FIR_ROLES, strict=False))
+
+        # Buddy Data (same format as FIR data)
+        self.BUDDY_DATA = [
+            fir.split(':') for fir in os.getenv('BUDDY_DATA', '').split(',') if fir
+        ]
+        self.BUDDY_FIRS, self.BUDDY_ROLES = (
+            zip(*self.BUDDY_DATA, strict=False) if self.BUDDY_DATA else ([], [])
+        )
+        self.FIR_BUDDIES = dict(zip(self.BUDDY_FIRS, self.BUDDY_ROLES, strict=False))
 
         # Examiner Data (same format as FIR data)
         self.EXAMINER_DATA = [
