@@ -169,8 +169,18 @@ class RolesCog(commands.Cog):
                     config.ROLE_REASONS['visitor_add'],
                     config.ROLE_REASONS['visitor_remove'],
                 ),
-                self.update_fir_roles(user, mentor_buddy_info.mentor_firs, 'mentor', mentor_buddy_info.mentor_should_be),
-                self.update_fir_roles(user, mentor_buddy_info.buddy_firs, 'buddy', mentor_buddy_info.buddy_should_be),
+                self.update_fir_roles(
+                    user,
+                    mentor_buddy_info.mentor_firs,
+                    'mentor',
+                    mentor_buddy_info.mentor_should_be,
+                ),
+                self.update_fir_roles(
+                    user,
+                    mentor_buddy_info.buddy_firs,
+                    'buddy',
+                    mentor_buddy_info.buddy_should_be,
+                ),
                 self.update_fir_roles(
                     user, examiner_firs, 'examiner', should_be_examiner
                 ),
