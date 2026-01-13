@@ -58,31 +58,24 @@ class StaffingCog(commands.Cog):
         event = staffing.get('event', {})
         title = event.get('title', '')
 
-        use_threads = staffing.get('use_threads', False) or staffing.get('is_thread', False)
-        
-        if use_threads:
-            thread_id = staffing.get('thread_id')
-            if not thread_id:
-                await ctx.send(
-                    f'{ctx.author.mention} Error: Thread ID not found for this staffing.',
-                    delete_after=5,
-                    ephemeral=True,
-                )
-                return
-            
-            thread = self.bot.get_channel(int(thread_id))
-            if not thread:
-                await ctx.send(
-                    f'{ctx.author.mention} Error: Thread not found.',
-                    delete_after=5,
-                    ephemeral=True,
-                )
-                return
-            
-            message = await thread.fetch_message(int(staffing.get('message_id', 0)))
-        else:
-            channel = self.bot.get_channel(int(staffing.get('channel_id', 0)))
-            message = await channel.fetch_message(int(staffing.get('message_id', 0)))
+        try:
+            _, message = await self.staffing_async._resolve_staffing_channel_and_message(
+                self.bot, staffing
+            )
+        except ValueError as e:
+            await ctx.send(
+                f'{ctx.author.mention} Error: {e}',
+                delete_after=5,
+                ephemeral=True,
+            )
+            return
+        except discord.NotFound as e:
+            await ctx.send(
+                f'{ctx.author.mention} Error: Channel/thread or message not found. {e}',
+                delete_after=5,
+                ephemeral=True,
+            )
+            return
 
         await message.edit(content=staffing_msg)
         await ctx.send(
@@ -126,33 +119,28 @@ class StaffingCog(commands.Cog):
                 )
                 return
 
-            use_threads = staffing.get('use_threads', False) or staffing.get('is_thread', False)
-            
-            if use_threads:
-                thread_id = staffing.get('thread_id')
-                if not thread_id:
-                    await ctx.send(
-                        f'{ctx.author.mention} Error: Thread ID not found for this staffing.',
-                        ephemeral=True,
-                    )
-                    return
-                
-                thread = self.bot.get_channel(int(thread_id))
-                if not thread:
-                    await ctx.send(
-                        f'{ctx.author.mention} Error: Thread not found.',
-                        ephemeral=True,
-                    )
-                    return
-                
-                await thread.send('The chat is being automatic reset!')
-                await asyncio.sleep(5)
-                await thread.purge(limit=None, check=lambda msg: not msg.pinned)
-            else:
-                channel = self.bot.get_channel(int(staffing.get('channel_id', 0)))
-                await channel.send('The chat is being automatic reset!')
-                await asyncio.sleep(5)
-                await channel.purge(limit=None, check=lambda msg: not msg.pinned)
+            try:
+                channel_or_thread, _ = await self.staffing_async._resolve_staffing_channel_and_message(
+                    self.bot, staffing
+                )
+            except ValueError as e:
+                await ctx.send(
+                    f'{ctx.author.mention} Error: {e}',
+                    delete_after=5,
+                    ephemeral=True,
+                )
+                return
+            except discord.NotFound as e:
+                await ctx.send(
+                    f'{ctx.author.mention} Error: Channel/thread or message not found. {e}',
+                    delete_after=5,
+                    ephemeral=True,
+                )
+                return
+
+            await channel_or_thread.send('The chat is being automatic reset!')
+            await asyncio.sleep(5)
+            await channel_or_thread.purge(limit=None, check=lambda msg: not msg.pinned)
 
             await ctx.send(
                 f'{ctx.author.mention} Finished manual reset of `{title}` at `{datetime.now().isoformat()!s}`',
@@ -190,10 +178,10 @@ class StaffingCog(commands.Cog):
                 return
 
             staffings = await self.api_helper._fetch_data('staffings')
-            
+
             # Check if command is used in a thread
             is_thread = isinstance(ctx.channel, discord.Thread)
-            
+
             # Try to find staffing by thread_id if in a thread, otherwise by channel_id
             if is_thread:
                 staffing = next(
@@ -233,10 +221,10 @@ class StaffingCog(commands.Cog):
         ctx = await Handler.get_context(self, self.bot, interaction)
         try:
             staffings = await self.api_helper._fetch_data('staffings')
-            
+
             # Check if command is used in a thread
             is_thread = isinstance(ctx.channel, discord.Thread)
-            
+
             # Try to find staffing by thread_id if in a thread, otherwise by channel_id
             if is_thread:
                 staffing = next(
