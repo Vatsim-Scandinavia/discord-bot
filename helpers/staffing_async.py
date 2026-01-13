@@ -145,13 +145,13 @@ class StaffingAsync:
     async def _resolve_staffing_channel_and_message(self, bot, staffing):
         """
         Resolve the channel/thread and message for a staffing.
-        
+
         Returns:
-            tuple: (channel_or_thread, message) or (None, None) if not found
-        
+            tuple: (channel_or_thread, message)
+
         Raises:
-            ValueError: If required IDs are missing
-            discord.NotFound: If channel/thread or message not found
+            ValueError: If required IDs are missing or channel/thread/message not found.
+
         """
         use_threads = staffing.get('use_threads', False) or staffing.get('is_thread', False)
         message_id = staffing.get('message_id', 0)
@@ -166,33 +166,33 @@ class StaffingAsync:
 
             thread = bot.get_channel(int(thread_id))
             if not thread:
-                raise discord.NotFound(f'Thread with ID {thread_id} not found.', None)
+                msg = 'Thread with ID {} not found.'.format(thread_id)
+                raise ValueError(msg)
 
             try:
                 message = await thread.fetch_message(int(message_id))
-            except discord.NotFound:
-                raise discord.NotFound(
-                    f'Message with ID {message_id} not found in thread {thread_id}.', None
-                )
+            except discord.NotFound as err:
+                msg = 'Message with ID {} not found in thread {}.'.format(message_id, thread_id)
+                raise ValueError(msg) from err
 
             return thread, message
-        else:
-            channel_id = staffing.get('channel_id', 0)
-            if not channel_id:
-                raise ValueError('Channel ID not found for channel-based staffing.')
 
-            channel = bot.get_channel(int(channel_id))
-            if not channel:
-                raise discord.NotFound(f'Channel with ID {channel_id} not found.', None)
+        channel_id = staffing.get('channel_id', 0)
+        if not channel_id:
+            raise ValueError('Channel ID not found for channel-based staffing.')
 
-            try:
-                message = await channel.fetch_message(int(message_id))
-            except discord.NotFound:
-                raise discord.NotFound(
-                    f'Message with ID {message_id} not found in channel {channel_id}.', None
-                )
+        channel = bot.get_channel(int(channel_id))
+        if not channel:
+            msg = 'Channel with ID {} not found.'.format(channel_id)
+            raise ValueError(msg)
 
-            return channel, message
+        try:
+            message = await channel.fetch_message(int(message_id))
+        except discord.NotFound as err:
+            msg = 'Message with ID {} not found in channel {}.'.format(message_id, channel_id)
+            raise ValueError(msg) from err
+
+        return channel, message
 
     async def _book(self, ctx, staffing, position, section):
         try:

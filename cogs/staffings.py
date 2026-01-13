@@ -69,13 +69,6 @@ class StaffingCog(commands.Cog):
                 ephemeral=True,
             )
             return
-        except discord.NotFound as e:
-            await ctx.send(
-                f'{ctx.author.mention} Error: Channel/thread or message not found. {e}',
-                delete_after=5,
-                ephemeral=True,
-            )
-            return
 
         await message.edit(content=staffing_msg)
         await ctx.send(
@@ -126,13 +119,6 @@ class StaffingCog(commands.Cog):
             except ValueError as e:
                 await ctx.send(
                     f'{ctx.author.mention} Error: {e}',
-                    delete_after=5,
-                    ephemeral=True,
-                )
-                return
-            except discord.NotFound as e:
-                await ctx.send(
-                    f'{ctx.author.mention} Error: Channel/thread or message not found. {e}',
                     delete_after=5,
                     ephemeral=True,
                 )
