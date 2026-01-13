@@ -122,6 +122,10 @@ class FastAPICog(commands.Cog):
             else:
                 # Channel-based staffing
                 channel = self.bot.get_channel(int(staffing.get('channel_id', 0)))
+                if not channel:
+                     raise HTTPException(
+                        status_code=500, detail='Channel not found for staffing setup.'
+                    )
                 message = await channel.send(content=staffing_msg)
                 await message.pin()
 
