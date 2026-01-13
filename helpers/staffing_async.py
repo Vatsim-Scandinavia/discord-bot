@@ -168,15 +168,13 @@ class StaffingAsync:
 
             thread = bot.get_channel(int(thread_id))
             if not thread:
-                msg = 'Thread with ID {} not found.'.format(thread_id)
+                msg = f'Thread with ID {thread_id} not found.'
                 raise ValueError(msg)
 
             try:
                 message = await thread.fetch_message(int(message_id))
             except discord.NotFound as err:
-                msg = 'Message with ID {} not found in thread {}.'.format(
-                    message_id, thread_id
-                )
+                msg = f'Message with ID {message_id} not found in thread {thread_id}.'
                 raise ValueError(msg) from err
 
             return thread, message
@@ -187,15 +185,13 @@ class StaffingAsync:
 
         channel = bot.get_channel(int(channel_id))
         if not channel:
-            msg = 'Channel with ID {} not found.'.format(channel_id)
+            msg = f'Channel with ID {channel_id} not found.'
             raise ValueError(msg)
 
         try:
             message = await channel.fetch_message(int(message_id))
         except discord.NotFound as err:
-            msg = 'Message with ID {} not found in channel {}.'.format(
-                message_id, channel_id
-            )
+            msg = f'Message with ID {message_id} not found in channel {channel_id}.'
             raise ValueError(msg) from err
 
         return channel, message
