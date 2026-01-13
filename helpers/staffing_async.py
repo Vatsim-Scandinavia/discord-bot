@@ -153,7 +153,9 @@ class StaffingAsync:
             ValueError: If required IDs are missing or channel/thread/message not found.
 
         """
-        use_threads = staffing.get('use_threads', False) or staffing.get('is_thread', False)
+        use_threads = staffing.get('use_threads', False) or staffing.get(
+            'is_thread', False
+        )
         message_id = staffing.get('message_id', 0)
 
         if not message_id:
@@ -172,7 +174,9 @@ class StaffingAsync:
             try:
                 message = await thread.fetch_message(int(message_id))
             except discord.NotFound as err:
-                msg = 'Message with ID {} not found in thread {}.'.format(message_id, thread_id)
+                msg = 'Message with ID {} not found in thread {}.'.format(
+                    message_id, thread_id
+                )
                 raise ValueError(msg) from err
 
             return thread, message
@@ -189,7 +193,9 @@ class StaffingAsync:
         try:
             message = await channel.fetch_message(int(message_id))
         except discord.NotFound as err:
-            msg = 'Message with ID {} not found in channel {}.'.format(message_id, channel_id)
+            msg = 'Message with ID {} not found in channel {}.'.format(
+                message_id, channel_id
+            )
             raise ValueError(msg) from err
 
         return channel, message
@@ -268,9 +274,10 @@ class StaffingAsync:
             raise ValueError
 
         try:
-            channel_or_thread, message = await self._resolve_staffing_channel_and_message(
-                bot, staffing
-            )
+            (
+                channel_or_thread,
+                message,
+            ) = await self._resolve_staffing_channel_and_message(bot, staffing)
         except (ValueError, discord.NotFound) as e:
             print(f'Error resolving staffing channel/message: {e}')
             raise

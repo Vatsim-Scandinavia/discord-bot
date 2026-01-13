@@ -59,7 +59,10 @@ class StaffingCog(commands.Cog):
         title = event.get('title', '')
 
         try:
-            _, message = await self.staffing_async._resolve_staffing_channel_and_message(
+            (
+                _,
+                message,
+            ) = await self.staffing_async._resolve_staffing_channel_and_message(
                 self.bot, staffing
             )
         except ValueError as e:
@@ -113,7 +116,10 @@ class StaffingCog(commands.Cog):
                 return
 
             try:
-                channel_or_thread, _ = await self.staffing_async._resolve_staffing_channel_and_message(
+                (
+                    channel_or_thread,
+                    _,
+                ) = await self.staffing_async._resolve_staffing_channel_and_message(
                     self.bot, staffing
                 )
             except ValueError as e:
@@ -175,7 +181,8 @@ class StaffingCog(commands.Cog):
                 )
             else:
                 staffing = next(
-                    (s for s in staffings if s.get('channel_id') == ctx.channel.id), None
+                    (s for s in staffings if s.get('channel_id') == ctx.channel.id),
+                    None,
                 )
 
             if not staffing:
@@ -218,7 +225,8 @@ class StaffingCog(commands.Cog):
                 )
             else:
                 staffing = next(
-                    (s for s in staffings if s.get('channel_id') == ctx.channel.id), None
+                    (s for s in staffings if s.get('channel_id') == ctx.channel.id),
+                    None,
                 )
 
             if not staffing:

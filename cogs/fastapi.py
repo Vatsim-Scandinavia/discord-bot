@@ -88,14 +88,19 @@ class FastAPICog(commands.Cog):
             if staffing.get('message_id'):
                 raise HTTPException(status_code=500, detail='Staffing already setup')
 
-            use_threads = staffing.get('use_threads', False) or staffing.get('is_thread', False)
+            use_threads = staffing.get('use_threads', False) or staffing.get(
+                'is_thread', False
+            )
 
             if use_threads:
                 # Thread-based staffing
-                parent_channel = self.bot.get_channel(int(staffing.get('channel_id', 0)))
+                parent_channel = self.bot.get_channel(
+                    int(staffing.get('channel_id', 0))
+                )
                 if not parent_channel:
                     raise HTTPException(
-                        status_code=500, detail='Parent channel not found for thread creation.'
+                        status_code=500,
+                        detail='Parent channel not found for thread creation.',
                     )
 
                 event = staffing.get('event', {})
@@ -117,13 +122,13 @@ class FastAPICog(commands.Cog):
                 # Store both message_id (from thread) and thread_id
                 response = await self.api_helper.patch_data(
                     f'staffings/{id}/update',
-                    {'message_id': thread_message.id, 'thread_id': thread.id}
+                    {'message_id': thread_message.id, 'thread_id': thread.id},
                 )
             else:
                 # Channel-based staffing
                 channel = self.bot.get_channel(int(staffing.get('channel_id', 0)))
                 if not channel:
-                     raise HTTPException(
+                    raise HTTPException(
                         status_code=500, detail='Channel not found for staffing setup.'
                     )
                 message = await channel.send(content=staffing_msg)
