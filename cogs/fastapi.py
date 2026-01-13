@@ -1,6 +1,7 @@
 import asyncio
 from typing import Annotated
 
+import discord
 import uvicorn
 from discord.ext import commands
 from fastapi import Depends, FastAPI, Form, HTTPException
@@ -88,13 +89,44 @@ class FastAPICog(commands.Cog):
             if staffing.get('message_id'):
                 raise HTTPException(status_code=500, detail='Staffing already setup')
 
-            channel = self.bot.get_channel(int(staffing.get('channel_id', 0)))
-            message = await channel.send(content=staffing_msg)
-            await message.pin()
+            use_threads = staffing.get('use_threads', False) or staffing.get('is_thread', False)
+            
+            if use_threads:
+                # Thread-based staffing
+                parent_channel = self.bot.get_channel(int(staffing.get('channel_id', 0)))
+                if not parent_channel:
+                    raise HTTPException(
+                        status_code=500, detail='Parent channel not found for thread creation.'
+                    )
+                
+                event = staffing.get('event', {})
+                thread_name = self.staffing_async._generate_thread_name(event)
+                
+                # Send initial message and create thread from it
+                # This is more reliable than creating a thread directly
+                initial_message = await parent_channel.send(content=staffing_msg)
+                thread = await initial_message.create_thread(
+                    name=thread_name,
+                    auto_archive_duration=10080,  # 7 days (Discord's max)
+                )
+                
+                # Pin the message in the thread
+                await initial_message.pin()
+                
+                # Store both message_id and thread_id
+                response = await self.api_helper.patch_data(
+                    f'staffings/{id}/update',
+                    {'message_id': initial_message.id, 'thread_id': thread.id}
+                )
+            else:
+                # Channel-based staffing
+                channel = self.bot.get_channel(int(staffing.get('channel_id', 0)))
+                message = await channel.send(content=staffing_msg)
+                await message.pin()
 
-            response = await self.api_helper.patch_data(
-                f'staffings/{id}/update', {'message_id': message.id}
-            )
+                response = await self.api_helper.patch_data(
+                    f'staffings/{id}/update', {'message_id': message.id}
+                )
 
             if not response:
                 raise HTTPException(status_code=500, detail='Staffing setup failed.')

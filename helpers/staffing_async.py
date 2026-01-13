@@ -119,6 +119,27 @@ class StaffingAsync:
                 return value[:5]
         return ''
 
+    def _generate_thread_name(self, event):
+        """
+        Generate thread name in format: "{event_title} - {date}"
+        where date is formatted as DD/MM/YYYY.
+        """
+        event_title = event.get('title', '')
+        date = event.get('start_date')
+        
+        if not date:
+            # Fallback to just event title if no date
+            return event_title or 'Staffing'
+        
+        try:
+            formatted_date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S').strftime(  # noqa: DTZ007
+                '%d/%m/%Y'
+            )
+            return f'{event_title} - {formatted_date}'
+        except ValueError:
+            # If date parsing fails, return just title
+            return event_title or 'Staffing'
+
     async def _book(self, ctx, staffing, position, section):
         try:
             cid = Handler.get_cid(self, ctx.author)
@@ -192,20 +213,52 @@ class StaffingAsync:
             print('Failed to generate staffing message.')
             raise ValueError
 
-        channel = bot.get_channel(int(staffing.get('channel_id', 0)))
-        message = await channel.fetch_message(int(staffing.get('message_id', 0)))
-        await message.edit(content=staffing_msg)
+        use_threads = staffing.get('use_threads', False) or staffing.get('is_thread', False)
+        
+        if use_threads:
+            # Thread-based staffing
+            thread_id = staffing.get('thread_id')
+            if not thread_id:
+                print('Error: Thread ID not found for thread-based staffing.')
+                raise ValueError
+            
+            thread = bot.get_channel(int(thread_id))
+            if not thread:
+                print(f'Error: Thread with ID {thread_id} not found.')
+                raise ValueError
+            
+            message = await thread.fetch_message(int(staffing.get('message_id', 0)))
+            await message.edit(content=staffing_msg)
 
-        if reset:
-            event = staffing.get('event', {})
-            title = event.get('title', '')
-            print(f'Started autoreset of {title} at {datetime.now().isoformat()!s}')
+            if reset:
+                event = staffing.get('event', {})
+                title = event.get('title', '')
+                print(f'Started autoreset of {title} at {datetime.now().isoformat()!s}')
 
-            await channel.send('The chat is being automatic reset!')
-            await asyncio.sleep(5)
-            await channel.purge(limit=None, check=lambda msg: not msg.pinned)
+                await thread.send('The chat is being automatic reset!')
+                await asyncio.sleep(5)
+                await thread.purge(limit=None, check=lambda msg: not msg.pinned)
 
-            print(
-                f'Finished autoreset of {title} at {datetime.now().isoformat()!s}',
-                flush=True,
-            )
+                print(
+                    f'Finished autoreset of {title} at {datetime.now().isoformat()!s}',
+                    flush=True,
+                )
+        else:
+            # Channel-based staffing
+            channel = bot.get_channel(int(staffing.get('channel_id', 0)))
+            message = await channel.fetch_message(int(staffing.get('message_id', 0)))
+            await message.edit(content=staffing_msg)
+
+            if reset:
+                event = staffing.get('event', {})
+                title = event.get('title', '')
+                print(f'Started autoreset of {title} at {datetime.now().isoformat()!s}')
+
+                await channel.send('The chat is being automatic reset!')
+                await asyncio.sleep(5)
+                await channel.purge(limit=None, check=lambda msg: not msg.pinned)
+
+                print(
+                    f'Finished autoreset of {title} at {datetime.now().isoformat()!s}',
+                    flush=True,
+                )
