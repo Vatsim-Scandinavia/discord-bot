@@ -4,8 +4,10 @@ from pathlib import Path
 import discord
 import discord.ext
 import structlog
+import discord.ext
 from discord.ext.commands import Bot
 from dotenv import load_dotenv
+import structlog
 
 load_dotenv('.env')
 
@@ -37,9 +39,10 @@ class Config:
             'cogs.publisher',
             'cogs.roles',
             'cogs.tasks',
-            'cogs.update_messages',
-            'cogs.staffings',
-            'cogs.faq',
+            # 'cogs.update_messages',
+            # 'cogs.staffings',
+            # 'cogs.faq',
+            'cogs.staffer',
         ]
 
         self.COGS_LOAD = {
@@ -52,6 +55,7 @@ class Config:
             'tasks': 'cogs.tasks',
             'update_messages': 'cogs.update_messages',
             'staffings': 'cogs.staffings',
+            'staffer': 'cogs.staffer',
         }
 
         self.STAFF_ROLES = [
@@ -245,6 +249,7 @@ class Config:
     async def load_cogs(self, bot: Bot) -> None:
         for cog in self.COGS:
             try:
+                logger.info("Loading cog", cog=cog)
                 await bot.load_extension(cog)
             except Exception:
                 logger.exception('Failed to load cog', cog=cog)
