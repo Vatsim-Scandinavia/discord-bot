@@ -65,8 +65,7 @@ async def send_dm(user, message):
 async def on_app_command_error(
     interaction: discord.Interaction, error: discord.app_commands.AppCommandError
 ):
-    print('thing')
-    """Handles errors for application commands."""
+    """Handles overall error handling for all application commands."""
     if not interaction.response.is_done():
         await interaction.response.defer(ephemeral=True)
 

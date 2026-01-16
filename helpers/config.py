@@ -2,12 +2,14 @@ import os
 from pathlib import Path
 
 import discord
-import discord.ext
 from discord.ext.commands import Bot
 from distutils.util import strtobool
 from dotenv import load_dotenv
+import structlog
 
 load_dotenv('.env')
+
+logger = structlog.stdlib.get_logger()
 
 
 class Config:
@@ -29,15 +31,16 @@ class Config:
         # Cogs and admin roles
         self.COGS = [
             'cogs.admin',
-            'cogs.coordination',
-            'cogs.fastapi',
-            'cogs.member',
-            'cogs.publisher',
-            'cogs.roles',
+            # 'cogs.coordination',
+            # 'cogs.fastapi',
+            # 'cogs.member',
+            # 'cogs.publisher',
+            # 'cogs.roles',
             'cogs.tasks',
-            'cogs.update_messages',
-            'cogs.staffings',
-            'cogs.faq',
+            # 'cogs.update_messages',
+            # 'cogs.staffings',
+            # 'cogs.faq',
+            'cogs.staffer',
         ]
 
         self.COGS_LOAD = {
@@ -50,6 +53,7 @@ class Config:
             'tasks': 'cogs.tasks',
             'update_messages': 'cogs.update_messages',
             'staffings': 'cogs.staffings',
+            'staffer': 'cogs.staffer',
         }
 
         self.STAFF_ROLES = [
@@ -246,6 +250,7 @@ class Config:
     async def load_cogs(self, bot: Bot) -> None:
         for cog in self.COGS:
             try:
+                logger.info("Loading cog", cog=cog)
                 await bot.load_extension(cog)
             except Exception as e:
                 print(f'Failed to load cog - {cog}. \n Error: {e}', flush=True)

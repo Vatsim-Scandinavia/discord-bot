@@ -1,6 +1,6 @@
 [settings]
 python.uv_venv_auto = true
 
-[tasks.run]
+[tasks.dev]
 run = "uv run bot.py"
 env = { FASTAPI_PORT = 8080 }
