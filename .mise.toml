@@ -34,3 +34,7 @@ run = "uv run mypy ."
 
 [tasks.test]
 run = "uv run pytest"
+
+[tasks.dev]
+run = "uv run bot.py"
+env = { FASTAPI_PORT = 8080 }
