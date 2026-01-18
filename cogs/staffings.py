@@ -55,11 +55,23 @@ class StaffingCog(commands.Cog):
             staffing
         )
 
-        event = staffing.get('event', '')
+        event = staffing.get('event', {})
         title = event.get('title', '')
 
-        channel = self.bot.get_channel(int(staffing.get('channel_id', 0)))
-        message = await channel.fetch_message(int(staffing.get('message_id', 0)))
+        try:
+            (
+                _,
+                message,
+            ) = await self.staffing_async._resolve_staffing_channel_and_message(
+                self.bot, staffing
+            )
+        except ValueError as e:
+            await ctx.send(
+                f'{ctx.author.mention} Error: {e}',
+                delete_after=5,
+                ephemeral=True,
+            )
+            return
 
         await message.edit(content=staffing_msg)
         await ctx.send(
@@ -103,11 +115,24 @@ class StaffingCog(commands.Cog):
                 )
                 return
 
-            channel = self.bot.get_channel(int(staffing.get('channel_id', 0)))
+            try:
+                (
+                    channel_or_thread,
+                    _,
+                ) = await self.staffing_async._resolve_staffing_channel_and_message(
+                    self.bot, staffing
+                )
+            except ValueError as e:
+                await ctx.send(
+                    f'{ctx.author.mention} Error: {e}',
+                    delete_after=5,
+                    ephemeral=True,
+                )
+                return
 
-            await channel.send('The chat is being automatic reset!')
+            await channel_or_thread.send('The chat is being automatic reset!')
             await asyncio.sleep(5)
-            await channel.purge(limit=None, check=lambda msg: not msg.pinned)
+            await channel_or_thread.purge(limit=None, check=lambda msg: not msg.pinned)
 
             await ctx.send(
                 f'{ctx.author.mention} Finished manual reset of `{title}` at `{datetime.now().isoformat()!s}`',
@@ -145,13 +170,24 @@ class StaffingCog(commands.Cog):
                 return
 
             staffings = await self.api_helper._fetch_data('staffings')
-            staffing = next(
-                (s for s in staffings if s.get('channel_id') == ctx.channel.id), None
-            )
+
+            # Check if command is used in a thread
+            is_thread = isinstance(ctx.channel, discord.Thread)
+
+            # Try to find staffing by thread_id if in a thread, otherwise by channel_id
+            if is_thread:
+                staffing = next(
+                    (s for s in staffings if s.get('thread_id') == ctx.channel.id), None
+                )
+            else:
+                staffing = next(
+                    (s for s in staffings if s.get('channel_id') == ctx.channel.id),
+                    None,
+                )
 
             if not staffing:
                 await ctx.send(
-                    f'<@{user_id}> Please use the correct channel.',
+                    f'<@{user_id}> Please use the correct channel or thread.',
                     delete_after=5,
                     ephemeral=True,
                 )
@@ -178,13 +214,24 @@ class StaffingCog(commands.Cog):
         ctx = await Handler.get_context(self, self.bot, interaction)
         try:
             staffings = await self.api_helper._fetch_data('staffings')
-            staffing = next(
-                (s for s in staffings if s.get('channel_id') == ctx.channel.id), None
-            )
+
+            # Check if command is used in a thread
+            is_thread = isinstance(ctx.channel, discord.Thread)
+
+            # Try to find staffing by thread_id if in a thread, otherwise by channel_id
+            if is_thread:
+                staffing = next(
+                    (s for s in staffings if s.get('thread_id') == ctx.channel.id), None
+                )
+            else:
+                staffing = next(
+                    (s for s in staffings if s.get('channel_id') == ctx.channel.id),
+                    None,
+                )
 
             if not staffing:
                 await ctx.send(
-                    f'<@{ctx.author.id}> Please use the correct channel.',
+                    f'<@{ctx.author.id}> Please use the correct channel or thread.',
                     ephemeral=True,
                 )
                 return
