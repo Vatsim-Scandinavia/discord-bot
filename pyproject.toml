@@ -7,7 +7,7 @@ requires-python = ">=3.13, <3.14"
 dependencies = [
     "audioop-lts>=0.2.1 ; python_full_version >= '3.13'",
     "discord==1.7.3",
-    "discord-py==2.4.0",
+    "discord-py~=2.6.0",
     "emoji==2.12.1",
     "markdownify==0.13.1",
     "mysql-connector-python==9.0.0",
