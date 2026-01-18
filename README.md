@@ -36,7 +36,7 @@ Not all of the configuration settings in `.env` are documented. Here's a brief e
 - `CC_API_URL` and TOKEN is the [Control Center][control-center] API connection if you use it.
 - `*_ROLE` are your Discord Role ID's for the respective ratings.
 
-#### Role Configuration
+### Role Configuration
 The bot automatically assigns Discord roles based on data from the Control Center API:
 
 - `MENTOR_ROLE` - Discord role ID for members with Mentor status
@@ -44,7 +44,7 @@ The bot automatically assigns Discord roles based on data from the Control Cente
 - `TRAINING_STAFF_ROLE` - Discord role ID for Training Staff/Moderators
 - `VISITOR_ROLE` - Discord role ID for Visiting Controllers
 
-#### FIR-Specific Roles
+### FIR-Specific Roles
 You can configure FIR-specific roles that are assigned based on which FIR a member has a particular role in:
 
 - `FIR_DATA` - Mentor roles per FIR, format: `FIR:RoleID,FIR:RoleID` (e.g., `Denmark:1234567890,Norway:1234567891,Sweden:1234567892`)
