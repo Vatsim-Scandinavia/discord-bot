@@ -1,6 +1,7 @@
 from typing import TypeVar, Any
 
 import discord
+from discord.ui.button import Button
 import structlog
 from discord import Client, Interaction, app_commands, ui
 from discord.ext.commands import Bot, Cog
@@ -23,7 +24,7 @@ class InterestPositionsSelect(ui.Select):
         await self.callback_function(interaction)
 
 
-class InterestView(ui.View):
+class InterestView(ui.LayoutView):
     def __init__(self, positions: list[str], staffing_view: 'StaffingView'):
         super().__init__(timeout=600)
         self.staffing_view = staffing_view
@@ -112,13 +113,14 @@ class InterestView(ui.View):
         )
 
 
-class StaffingView(ui.View):
+class StaffingView(ui.LayoutView):
     def __init__(self, title: str):
         super().__init__(timeout=600)
         self.title = title
         self.positions: list[str] = []
         self.message: discord.Message | None = None
         self.user_preferences: dict[int, dict] = {}
+        self.add_item(Button(label="hi"))
 
     async def on_error(
         self, interaction: Interaction, error: Exception, item: ui.Item
