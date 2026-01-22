@@ -52,11 +52,11 @@ class StaffingAsync:
                 print('Error: Start or end date not found for event.')
                 raise ValueError
 
-            formatted_date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S').strftime(  # noqa: DTZ007
+            formatted_date = datetime.fromisoformat(date).strftime(  # noqa: DTZ007
                 '%A %d/%m/%Y'
             )
-            start_time = datetime.strptime(date, '%Y-%m-%d %H:%M:%S').strftime('%H:%M')  # noqa: DTZ007
-            end_time = datetime.strptime(end_date, '%Y-%m-%d %H:%M:%S').strftime(  # noqa: DTZ007
+            start_time = datetime.fromisoformat(date).strftime('%H:%M')  # noqa: DTZ007
+            end_time = datetime.fromisoformat(end_date).strftime(  # noqa: DTZ007
                 '%H:%M'
             )
 
