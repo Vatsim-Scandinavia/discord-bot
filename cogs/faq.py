@@ -37,10 +37,10 @@ class FAQ(commands.Cog):
             )
             return
 
+        await interaction.response.send_message('FAQ sent!', ephemeral=True)
         await send_faq_embed(
             interaction.channel, interaction.user.mention, topic, self.faqs[topic]
         )
-        await interaction.response.send_message('FAQ sent!', ephemeral=True)
 
     @faq.autocomplete('topic')
     async def faq_autocomplete(
@@ -48,7 +48,7 @@ class FAQ(commands.Cog):
     ) -> list[app_commands.Choice[str]]:
         return [
             app_commands.Choice(name=topic, value=topic)
-            for topic in self.faqs.keys()
+            for topic in self.faqs
             if current.lower() in topic.lower()
         ]
 
