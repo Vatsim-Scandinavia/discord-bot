@@ -1,5 +1,7 @@
 # Linting ignored due to staffing module getting a major refactor.
 import asyncio
+import discord
+
 from collections import defaultdict
 from datetime import datetime
 
