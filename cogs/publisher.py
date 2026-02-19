@@ -22,9 +22,9 @@ class Publisher(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         if message.channel.id == config.EVENTS_CHANNEL:
-            await self.crosspost(self, message)
+            await self.crosspost(message)
 
-    async def crosspost(self, message: discord.Message, retries=3) -> None:
+    async def crosspost(self, message: discord.Message, retries: int = 3) -> None:
         """
         Safely crossposts a message, with rate limit handling.
         :param message: The discord message to crosspost.
