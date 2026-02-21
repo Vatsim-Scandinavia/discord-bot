@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.4.9](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.4.8...v2.4.9) (2026-02-19)
+
+
+### Bug Fixes
+
+* extra argument added for function ([#186](https://github.com/Vatsim-Scandinavia/discord-bot/issues/186)) ([85a8471](https://github.com/Vatsim-Scandinavia/discord-bot/commit/85a8471506fd064f660deec5fdf2e4a2c308b08e))
+
 ## [2.4.8](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.4.7...v2.4.8) (2025-10-08)
 
 
