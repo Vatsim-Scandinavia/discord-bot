@@ -3,6 +3,7 @@ import time
 from typing import Any
 
 import discord
+from discord import app_commands
 from discord.ext import commands
 
 from helpers.config import config
@@ -25,6 +26,31 @@ class FAQ(commands.Cog):
 
         # Store (channel_id, topic): last_reply_time
         self.recent_replies: dict[tuple[int, str], float] = {}
+
+    @app_commands.command(name='faq', description='Manually call FAQ responses')
+    @app_commands.describe(topic='The FAQ topic to display')
+    async def faq(self, interaction: discord.Interaction, topic: str):
+        if topic not in self.faqs:
+            await interaction.response.send_message(
+                f'Invalid topic. Available topics: {", ".join(self.faqs.keys())}',
+                ephemeral=True,
+            )
+            return
+
+        await interaction.response.send_message('FAQ sent!', ephemeral=True)
+        await send_faq_embed(
+            interaction.channel, interaction.user.mention, topic, self.faqs[topic]
+        )
+
+    @faq.autocomplete('topic')
+    async def faq_autocomplete(
+        self, interaction: discord.Interaction, current: str
+    ) -> list[app_commands.Choice[str]]:
+        return [
+            app_commands.Choice(name=topic, value=topic)
+            for topic in self.faqs
+            if current.lower() in topic.lower()
+        ]
 
     def _load_faq(self, filename: str) -> str:
         try:
