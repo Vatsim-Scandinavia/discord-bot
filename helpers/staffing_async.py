@@ -3,6 +3,8 @@ import asyncio
 from collections import defaultdict
 from datetime import datetime
 
+import discord
+
 from helpers.api import APIHelper
 from helpers.handler import Handler
 
@@ -119,6 +121,81 @@ class StaffingAsync:
                 return value[:5]
         return ''
 
+    def _generate_thread_name(self, event):
+        """
+        Generate thread name in format: "{event_title} - {date}"
+        where date is formatted as DD/MM/YYYY.
+        """
+        event_title = event.get('title', '')
+        date = event.get('start_date')
+
+        if not date:
+            # Fallback to just event title if no date
+            return event_title or 'Staffing'
+
+        try:
+            formatted_date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S').strftime(  # noqa: DTZ007
+                '%d/%m/%Y'
+            )
+            return f'{event_title} - {formatted_date}'
+        except ValueError:
+            # If date parsing fails, return just title
+            return event_title or 'Staffing'
+
+    async def _resolve_staffing_channel_and_message(self, bot, staffing):
+        """
+        Resolve the channel/thread and message for a staffing.
+
+        Returns:
+            tuple: (channel_or_thread, message)
+
+        Raises:
+            ValueError: If required IDs are missing or channel/thread/message not found.
+
+        """
+        use_threads = staffing.get('use_threads', False) or staffing.get(
+            'is_thread', False
+        )
+        message_id = staffing.get('message_id', 0)
+
+        if not message_id:
+            raise ValueError('Message ID not found in staffing data.')
+
+        if use_threads:
+            thread_id = staffing.get('thread_id')
+            if not thread_id:
+                raise ValueError('Thread ID not found for thread-based staffing.')
+
+            thread = bot.get_channel(int(thread_id))
+            if not thread:
+                msg = f'Thread with ID {thread_id} not found.'
+                raise ValueError(msg)
+
+            try:
+                message = await thread.fetch_message(int(message_id))
+            except discord.NotFound as err:
+                msg = f'Message with ID {message_id} not found in thread {thread_id}.'
+                raise ValueError(msg) from err
+
+            return thread, message
+
+        channel_id = staffing.get('channel_id', 0)
+        if not channel_id:
+            raise ValueError('Channel ID not found for channel-based staffing.')
+
+        channel = bot.get_channel(int(channel_id))
+        if not channel:
+            msg = f'Channel with ID {channel_id} not found.'
+            raise ValueError(msg)
+
+        try:
+            message = await channel.fetch_message(int(message_id))
+        except discord.NotFound as err:
+            msg = f'Message with ID {message_id} not found in channel {channel_id}.'
+            raise ValueError(msg) from err
+
+        return channel, message
+
     async def _book(self, ctx, staffing, position, section):
         try:
             cid = Handler.get_cid(self, ctx.author)
@@ -192,8 +269,15 @@ class StaffingAsync:
             print('Failed to generate staffing message.')
             raise ValueError
 
-        channel = bot.get_channel(int(staffing.get('channel_id', 0)))
-        message = await channel.fetch_message(int(staffing.get('message_id', 0)))
+        try:
+            (
+                channel_or_thread,
+                message,
+            ) = await self._resolve_staffing_channel_and_message(bot, staffing)
+        except (ValueError, discord.NotFound) as e:
+            print(f'Error resolving staffing channel/message: {e}')
+            raise
+
         await message.edit(content=staffing_msg)
 
         if reset:
@@ -201,9 +285,9 @@ class StaffingAsync:
             title = event.get('title', '')
             print(f'Started autoreset of {title} at {datetime.now().isoformat()!s}')
 
-            await channel.send('The chat is being automatic reset!')
+            await channel_or_thread.send('The chat is being automatic reset!')
             await asyncio.sleep(5)
-            await channel.purge(limit=None, check=lambda msg: not msg.pinned)
+            await channel_or_thread.purge(limit=None, check=lambda msg: not msg.pinned)
 
             print(
                 f'Finished autoreset of {title} at {datetime.now().isoformat()!s}',
