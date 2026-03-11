@@ -53,6 +53,27 @@ You can configure FIR-specific roles that are assigned based on which FIR a memb
 
 See `.env.example` for a complete list of all available configuration options.
 
+### Reaction Role Configuration
+
+`REACTION_ROLE_DATA` follows the format `:emoji_name:|message_id|role_id` with multiple entries separated by commas:
+```
+REACTION_ROLE_DATA=:calendar:|1234567890|0987654321,:airplane:|1234567890|1234509876
+```
+
+**Important: Emoji names must exactly match what the `emoji` library produces at runtime.** The name you see in Discord or online may differ from what the bot uses internally, which will cause reactions to be silently ignored.
+
+To find the correct name for an emoji, run the following in your terminal:
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install emoji==2.12.1
+python3 -c "import emoji; print(emoji.demojize('🌍'))"
+```
+
+Replace `🌍` with your desired emoji. Use the output (e.g. `:globe_showing_Europe-Africa:`) as the emoji name in `REACTION_ROLE_DATA`.
+
+**The message IDs must match the actual Discord messages the bot has posted.** After the bot creates the reaction role messages, right-click each message in Discord → *Copy Message ID* and update `REACTION_ROLE_DATA` accordingly, then restart the bot.
+
 ## Contribution and conventions
 
 Contributions are much appreciated to help everyone move this service forward with fixes and functionalities. We recommend you to fork this repository here on GitHub so you can easily create pull requests back to the main project.
