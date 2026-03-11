@@ -1,5 +1,7 @@
 # Linting ignored due to staffing module getting a major refactor.
 import asyncio
+import discord
+
 from collections import defaultdict
 from datetime import datetime
 
@@ -194,7 +196,10 @@ class StaffingAsync:
 
         channel = bot.get_channel(int(staffing.get('channel_id', 0)))
         message = await channel.fetch_message(int(staffing.get('message_id', 0)))
-        await message.edit(content=staffing_msg)
+        await message.edit(
+            content=staffing_msg,
+            allowed_mentions=discord.AllowedMentions(users=True)
+        )
 
         if reset:
             event = staffing.get('event', {})
