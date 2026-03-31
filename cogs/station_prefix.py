@@ -218,7 +218,7 @@ class StationPrefixCog(commands.Cog):
         log.info(
             'Removing and restoring nick', stored_nick=original_nick, reason=reason
         )
-        _create_task(self._member_cache.remove_nickname(member.id))
+        await self._member_cache.remove_nickname(member.id)
         await member.edit(nick=original_nick, reason=reason)
 
     def _format_name(self, prefix: str, name: str | None, cid: int) -> str:
