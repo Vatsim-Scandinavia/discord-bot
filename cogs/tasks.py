@@ -49,9 +49,7 @@ class TasksCog(commands.Cog):
 
         guild = self.bot.get_guild(config.GUILD_ID)
         if not guild:
-            if 'check_members_guild' not in ALREADY_PRINTED_DEBUG_MESSAGE:
-                ALREADY_PRINTED_DEBUG_MESSAGE.add('check_members_guild')
-                logger.error('Guild not found', guild_id=config.GUILD_ID)
+            logger.error('Guild not found', guild_id=config.GUILD_ID)
             return
 
         vatsca_role = discord.utils.get(guild.roles, id=config.VATSCA_MEMBER_ROLE)
