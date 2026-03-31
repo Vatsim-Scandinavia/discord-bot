@@ -15,6 +15,7 @@ from helpers.handler import Handler
 from helpers.roles import Roles
 
 logger = structlog.stdlib.get_logger()
+ALREADY_PRINTED_DEBUG_MESSAGE = set()
 
 
 @dataclass
@@ -32,7 +33,7 @@ class MentorBuddyInfo:
 if TYPE_CHECKING:
     from collections.abc import Coroutine
 
-    from cogs.coordination import CoordinationCog
+    from cogs.station_prefix import StationPrefixCog
 
 
 class RolesCog(commands.Cog):
@@ -49,11 +50,13 @@ class RolesCog(commands.Cog):
         await self.bot.wait_until_ready()
 
         if config.DEBUG and not override:
-            logger.info(
-                'Job skipped due to DEBUG mode. You can start the job with the command.',
-                job='check_roles',
-                status='skipped',
-            )
+            if 'check_roles' not in ALREADY_PRINTED_DEBUG_MESSAGE:
+                ALREADY_PRINTED_DEBUG_MESSAGE.add('check_roles')
+                logger.info(
+                    'Job skipped due to DEBUG mode. You can start the job with the command.',
+                    job='check_roles',
+                    status='skipped',
+                )
             return
 
         logger.info(
@@ -577,10 +580,10 @@ class RolesCog(commands.Cog):
         if before.nick == after.nick:
             return
 
-        coordination: CoordinationCog | None = self.bot.get_cog('CoordinationCog')  # pyright: ignore[reportAssignmentType]
-        if not coordination:
+        station_prefix: StationPrefixCog | None = self.bot.get_cog('StationPrefixCog')  # pyright: ignore[reportAssignmentType]
+        if not station_prefix:
             logger.warning(
-                'Could not get the coordination cog; cannot check for modified nicknames.',
+                'Could not get the station_prefix cog; cannot check for modified nicknames.',
                 user=after.name,
                 nick=after.nick,
             )
@@ -589,7 +592,7 @@ class RolesCog(commands.Cog):
         # a modified (i.e. position-prefixed station) nickname, it doesn't prevent any
         # race condition from occuring *during* the user's state change (i.e. when moving
         # between or leaving voice channels).
-        if coordination and await coordination.has_modified_nick(after):
+        if station_prefix and await station_prefix.has_modified_nick(after):
             logger.info(
                 'User has modified nick: skipping role assignment.',
                 user=after.name,

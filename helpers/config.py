@@ -29,7 +29,7 @@ class Config:
         # Cogs and admin roles
         self.COGS = [
             'cogs.admin',
-            'cogs.coordination',
+            'cogs.station_prefix',
             'cogs.fastapi',
             'cogs.member',
             'cogs.publisher',
@@ -42,7 +42,7 @@ class Config:
 
         self.COGS_LOAD = {
             'admin': 'cogs.admin',
-            'coordination': 'cogs.coordination',
+            'station_prefix': 'cogs.station_prefix',
             'fastapi': 'cogs.fastapi',
             'member': 'cogs.member',
             'publisher': 'cogs.publisher',
@@ -222,18 +222,22 @@ class Config:
         self.BOT_DB_PASSWORD = str(os.getenv('BOT_DB_PASSWORD', ''))
         self.BOT_DB_NAME = str(os.getenv('BOT_DB_NAME', ''))
 
-        # Coordination
-        self.COORDINATION_CALLSIGN_SEPARATOR = os.getenv(
-            'COORDINATION_CALLSIGN_SEPARATOR', '|'
+        # Station_Prefix
+        self.STATION_PREFIX_CALLSIGN_SEPARATOR = os.getenv(
+            'STATION_PREFIX_CALLSIGN_SEPARATOR', '|'
         )
-        self.COORDINATION_ALLOWED_CIDS = set(
+        self.STATION_PREFIX_ALLOWED_CIDS = set(
             map(
-                int, filter(None, os.getenv('COORDINATION_ALLOWED_CIDS', '').split(','))
+                int,
+                filter(None, os.getenv('STATION_PREFIX_ALLOWED_CIDS', '').split(',')),
             )
         )
-        self.COORDINATION_ALLOWED_CALLSIGNS = os.getenv(
-            'COORDINATION_ALLOWED_CALLSIGNS', '(?!.*)'
+        self.STATION_PREFIX_ALLOWED_CALLSIGNS = os.getenv(
+            'STATION_PREFIX_ALLOWED_CALLSIGNS', '(?!.*)'
         )
+        self.STATION_PREFIX_SHOW_PILOTS = os.getenv(
+            'STATION_PREFIX_SHOW_PILOTS', 'True'
+        ).lower() in ('true', '1', 'yes')
 
     def activity(self) -> discord.Activity:
         return discord.Activity(
