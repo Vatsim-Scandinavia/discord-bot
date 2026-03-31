@@ -1,9 +1,11 @@
 import asyncio
+import contextlib
 import datetime
 import enum
 import re
 from asyncio import Task
 from collections.abc import Coroutine
+from dataclasses import dataclass, field
 from typing import Any
 
 import aiohttp
@@ -26,6 +28,16 @@ _POSITION_LOGON_NORMALIZER = re.compile('_+')
 StationType = enum.Enum('OnlineStation', ['CONTROLLER', 'PILOT'])
 OnlineStations = dict[int, tuple[str, StationType]]
 """A dictionary mapping VATSIM controller CIDs to their callsigns"""
+
+
+@dataclass
+class MemberLock:
+    """Member locking mechanism to prevent us from processing prefix changes prior to previous changes completing"""
+
+    lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+    """Actual lock for operations on the member"""
+    reference_count: int = 0
+    """Track references to remove the lock"""
 
 
 class VATSIMDataFetchException(Exception):
@@ -94,6 +106,7 @@ class StationPrefixCog(commands.Cog):
         self._session = aiohttp.ClientSession(base_url=VATSIM_BASE_URL)
         self._online_stations: OnlineStations = {}
         self._member_cache = MemberCache(folder=config.CACHE_DIR)
+        self._member_locks: dict[int, MemberLock] = {}
         self._update_stations_cache.start()
         logger.info('Initialized and started updating controllers cache')
 
@@ -220,7 +233,28 @@ class StationPrefixCog(commands.Cog):
 
         return f'{prefix} {self._callsign_separator} {name} - {cid}'
 
+    @contextlib.asynccontextmanager
+    async def _member_lock(self, member_id: int):
+        if member_id not in self._member_locks:
+            self._member_locks[member_id] = MemberLock()
+
+        member_lock = self._member_locks[member_id]
+        member_lock.reference_count += 1
+        try:
+            async with member_lock.lock:
+                yield
+        finally:
+            member_lock.reference_count -= 1
+            if member_lock.reference_count == 0:
+                self._member_locks.pop(member_id, None)
+
     async def _process_member(
+        self, member: discord.Member, force_remove: bool = False
+    ) -> None:
+        async with self._member_lock(member.id):
+            await self._do_process_member(member, force_remove)
+
+    async def _do_process_member(
         self, member: discord.Member, force_remove: bool = False
     ) -> None:
         """Process and update member's nickname depending on activity"""
