@@ -226,15 +226,6 @@ class Config:
         self.STATION_PREFIX_CALLSIGN_SEPARATOR = os.getenv(
             'STATION_PREFIX_CALLSIGN_SEPARATOR', '|'
         )
-        self.STATION_PREFIX_ALLOWED_CIDS = set(
-            map(
-                int,
-                filter(None, os.getenv('STATION_PREFIX_ALLOWED_CIDS', '').split(',')),
-            )
-        )
-        self.STATION_PREFIX_ALLOWED_CALLSIGNS = os.getenv(
-            'STATION_PREFIX_ALLOWED_CALLSIGNS', '(?!.*)'
-        )
         self.STATION_PREFIX_SHOW_PILOTS = os.getenv(
             'STATION_PREFIX_SHOW_PILOTS', 'True'
         ).lower() in ('true', '1', 'yes')
