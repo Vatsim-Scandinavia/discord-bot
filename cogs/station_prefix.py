@@ -72,11 +72,11 @@ class StationPrefixCog(commands.Cog):
         on_voice_state_update: Handles nickname updates when members join/leave voice channels
 
     Tasks:
-        update_stations_cache: Periodic task to refresh online controller data
+        update_stations_cache: Periodic task to refresh online stations data
 
     Note:
         Requires appropriate Discord permissions to modify member nicknames
-        Relies on VATSIM Datafeed API for controller status data
+        Relies on VATSIM Datafeed API for online stations status data
 
     """
 
