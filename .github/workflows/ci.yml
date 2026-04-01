@@ -54,7 +54,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        task: [lint:format, lint:code]
+        task: [lint:format, lint:code, test]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

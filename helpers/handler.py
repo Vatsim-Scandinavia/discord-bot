@@ -7,6 +7,8 @@ from discord.ext import commands
 
 from helpers.config import config
 
+MIN_VATSIM_CID = 800000
+
 
 class DivisionMember(TypedDict):
     """Division member data."""
@@ -110,12 +112,31 @@ class Handler:
             member: The Discord guild member.
 
         """
-        cid = re.findall(r'\d+', str(member.nick))
+        if member.nick is None:
+            raise ValueError
+
+        cid = re.search(r'\|-(\d+)-\|', member.nick)
+        if cid:
+            candidate = int(cid.group(1))
+            if candidate >= MIN_VATSIM_CID:
+                return candidate
+
+        cid = re.search(r' - (\d+)\s*$', member.nick)
+        if cid:
+            candidate = int(cid.group(1))
+            if candidate >= MIN_VATSIM_CID:
+                return candidate
+
+        cid = [
+            int(candidate)
+            for candidate in re.findall(r'\d+', member.nick)
+            if int(candidate) >= MIN_VATSIM_CID
+        ]
 
         if len(cid) < 1:
             raise ValueError
 
-        return int(cid[0])
+        return cid[-1]
 
     def get_name(self, member: discord.Member) -> str | None:
         """
