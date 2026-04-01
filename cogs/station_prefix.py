@@ -27,7 +27,7 @@ _POSITION_LOGON_NORMALIZER = re.compile('_+')
 
 StationType = enum.Enum('OnlineStation', ['CONTROLLER', 'PILOT'])
 OnlineStations = dict[int, tuple[str, StationType]]
-"""A dictionary mapping VATSIM controller CIDs to their callsigns"""
+"""A dictionary mapping VATSIM stations CIDs to their callsign"""
 
 
 @dataclass
@@ -73,8 +73,8 @@ class AttemptingDuplicatePrefixException(Exception):
 class StationPrefixCog(commands.Cog):
     """
     A cog for exposing VATSIM station name for online members in Discord voice channels.
-    This cog handles the synchronization between VATSIM controller status and Discord voice channel
-    member nicknames. It periodically fetches online controller data from VATSIM and updates
+    This cog handles the synchronization between VATSIM activity and Discord voice channel
+    member nicknames. It periodically fetches online stations data from VATSIM and updates
     Discord member nicknames to reflect their station when they join/leave voice channels.
 
     Commands:
@@ -108,7 +108,7 @@ class StationPrefixCog(commands.Cog):
         self._member_cache = MemberCache(folder=config.CACHE_DIR)
         self._member_locks: dict[int, MemberLock] = {}
         self._update_stations_cache.start()
-        logger.info('Initialized and started updating controllers cache')
+        logger.info('Initialized and started updating stations cache')
 
     async def cog_unload(self):
         self._update_stations_cache.cancel()
@@ -155,7 +155,7 @@ class StationPrefixCog(commands.Cog):
         except VATSIMDataFetchException:
             raise
         except Exception:
-            logger.exception('Failed to fetch online controllers')
+            logger.exception('Failed to fetch online stations')
             return {}
 
     @tasks.loop(minutes=1, reconnect=True)
@@ -172,17 +172,15 @@ class StationPrefixCog(commands.Cog):
 
         """
         try:
-            logger.debug('Updating online controllers cache...')
+            logger.debug('Updating online stations cache...')
             self._online_stations = await self._fetch_online_stations()
             self._last_update = datetime.datetime.now()
             await self._update_voice_channel_members()
         except Exception:
-            logger.exception(
-                'Failed to update controllers cache', last_update=self._last_update
-            )
+            logger.exception('Failed to update cache', last_update=self._last_update)
 
-    async def _get_controller_station(self, cid: int) -> str | None:
-        """Get the controller's prefix if they're online, None otherwise"""
+    async def _get_callsign_by_cid(self, cid: int) -> str | None:
+        """Get the stations callsign if they're online, None otherwise"""
         entry = self._online_stations.get(cid)
         if entry is not None:
             callsign, station_type = entry
@@ -278,13 +276,11 @@ class StationPrefixCog(commands.Cog):
                 log.warning("Couldn't extract CID or name from member's nickname")
                 return
 
-            callsign = await self._get_controller_station(cid)
+            callsign = await self._get_callsign_by_cid(cid)
             modified_member = self._member_cache.get(member.id)
             if modified_member and not callsign:
                 # Modified members without callsigns should be restored
-                await self._restore_nickname(
-                    member, reason='No longer actively controlling'
-                )
+                await self._restore_nickname(member, reason='Station not online')
                 return
 
             if not callsign or not member.nick:
