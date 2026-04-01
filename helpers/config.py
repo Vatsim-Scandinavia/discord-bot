@@ -4,7 +4,6 @@ from pathlib import Path
 import discord
 import discord.ext
 from discord.ext.commands import Bot
-from distutils.util import strtobool
 from dotenv import load_dotenv
 
 load_dotenv('.env')
@@ -16,7 +15,7 @@ class Config:
         # Essential variables
         self.BOT_TOKEN = os.getenv('BOT_TOKEN', '')
         self.GUILD_ID = int(os.getenv('GUILD_ID', 0))
-        self.DEBUG = bool(strtobool(os.getenv('DEBUG', 'False')))
+        self.DEBUG = bool(os.getenv('DEBUG', 'False').lower() in ('true', '1', 'yes'))
         self.CACHE_DIR = Path(os.getenv('CACHE_DIR', '/var/cache/discord-bot'))
         """The cache directory is used to store cached data for the bot"""
 
