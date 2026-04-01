@@ -10,6 +10,7 @@ from helpers.handler import Handler
 from helpers.ux import NicknameAssignment
 
 logger = structlog.stdlib.get_logger()
+ALREADY_PRINTED_DEBUG_MESSAGE = set()
 
 
 class TasksCog(commands.Cog):
@@ -33,9 +34,11 @@ class TasksCog(commands.Cog):
         await self.bot.wait_until_ready()
 
         if config.DEBUG and not override:
-            logger.info(
-                'check_members skipped due to DEBUG ON. You can start it manually with the command instead.'
-            )
+            if 'check_members' not in ALREADY_PRINTED_DEBUG_MESSAGE:
+                ALREADY_PRINTED_DEBUG_MESSAGE.add('check_members')
+                logger.debug(
+                    'check_members skipped due to DEBUG ON. You can start it manually with the command instead.'
+                )
             return
 
         logger.info(
@@ -146,11 +149,13 @@ class TasksCog(commands.Cog):
     async def sync_commands(self, override=False):
         """Syncs slash commands with Discord servers."""
         if config.DEBUG and not override:
-            logger.info(
-                'Skipped job due to DEBUG mode. You can start the job with the command.',
-                job='sync_commands',
-                status='skipped',
-            )
+            if 'sync_commands' not in ALREADY_PRINTED_DEBUG_MESSAGE:
+                ALREADY_PRINTED_DEBUG_MESSAGE.add('sync_commands')
+                logger.info(
+                    'Skipped job due to DEBUG mode. You can start the job with the command.',
+                    job='sync_commands',
+                    status='skipped',
+                )
             return
 
         guild = self.bot.get_guild(config.GUILD_ID)

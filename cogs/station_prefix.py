@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import enum
 import re
 from asyncio import Task
 from collections.abc import Coroutine
@@ -22,7 +23,8 @@ VATSIM_DATA = '/v3/vatsim-data.json'
 
 _POSITION_LOGON_NORMALIZER = re.compile('_+')
 
-OnlineControllers = dict[int, str]
+StationType = enum.Enum('OnlineStation', ['CONTROLLER', 'PILOT'])
+OnlineStations = dict[int, tuple[str, StationType]]
 """A dictionary mapping VATSIM controller CIDs to their callsigns"""
 
 
@@ -56,12 +58,12 @@ class AttemptingDuplicatePrefixException(Exception):
         )
 
 
-class CoordinationCog(commands.Cog):
+class StationPrefixCog(commands.Cog):
     """
-    A cog for exposing VATSIM controller status in Discord voice channels.
+    A cog for exposing VATSIM station name for online members in Discord voice channels.
     This cog handles the synchronization between VATSIM controller status and Discord voice channel
     member nicknames. It periodically fetches online controller data from VATSIM and updates
-    Discord member nicknames to reflect their controlling status when they join/leave voice channels.
+    Discord member nicknames to reflect their station when they join/leave voice channels.
 
     Commands:
         updatevoice: Manually trigger nickname updates for all voice channel members
@@ -70,36 +72,33 @@ class CoordinationCog(commands.Cog):
         on_voice_state_update: Handles nickname updates when members join/leave voice channels
 
     Tasks:
-        update_controllers_cache: Periodic task to refresh online controller data
+        update_stations_cache: Periodic task to refresh online stations data
 
     Note:
         Requires appropriate Discord permissions to modify member nicknames
-        Relies on VATSIM Datafeed API for controller status data
+        Relies on VATSIM Datafeed API for online stations status data
 
     """
 
-    coordination = app_commands.Group(
-        name='coordination',
-        description='Manually handle coordination fixes',
+    station_prefix = app_commands.Group(
+        name='station_prefix',
+        description='Manually handle station_prefix fixes',
         guild_only=True,
     )
 
     def __init__(self, bot: commands.Bot):
         self._bot = bot
         self._handler = Handler()
-        self._callsign_separator = config.COORDINATION_CALLSIGN_SEPARATOR
+        self._callsign_separator = config.STATION_PREFIX_CALLSIGN_SEPARATOR
         self._last_update: datetime.datetime | None = None
         self._session = aiohttp.ClientSession(base_url=VATSIM_BASE_URL)
-        self._online_controllers: OnlineControllers = {}
+        self._online_stations: OnlineStations = {}
         self._member_cache = MemberCache(folder=config.CACHE_DIR)
-        self._update_controllers_cache.start()
-        # TODO(thor): remove this allow list after validation #122
-        self._allowed_cids = config.COORDINATION_ALLOWED_CIDS
-        self._allowed_callsigns_pattern = config.COORDINATION_ALLOWED_CALLSIGNS
+        self._update_stations_cache.start()
         logger.info('Initialized and started updating controllers cache')
 
     async def cog_unload(self):
-        self._update_controllers_cache.cancel()
+        self._update_stations_cache.cancel()
         await self._session.close()
         await self._clean_up()
         logger.info('Stopped updating cache and attempted restoring existing members')
@@ -122,19 +121,24 @@ class CoordinationCog(commands.Cog):
         ]
         _create_task(*tasks)
 
-    async def _fetch_online_controllers(self) -> OnlineControllers:
-        """Fetch online controllers from VATSIM Datafeed API"""
+    async def _fetch_online_stations(self) -> OnlineStations:
+        """Fetch online stations from VATSIM Datafeed API"""
         try:
             async with self._session.get(VATSIM_DATA) as response:
                 if response.status != 200:
                     raise VATSIMDataFetchException(response)
                 data = await response.json()
-            controllers: dict[int, str] = {}
+            stations: OnlineStations = {}
             for controller in data.get('controllers', []):
                 if controller.get('facility') != 0:
                     cid = int(controller.get('cid'))
-                    controllers[cid] = controller.get('callsign')
-            return controllers
+                    callsign = controller.get('callsign')
+                    stations[cid] = (callsign, StationType.CONTROLLER)
+            for pilot in data.get('pilots', []):
+                cid = int(pilot.get('cid'))
+                callsign = pilot.get('callsign')
+                stations[cid] = (callsign, StationType.PILOT)
+            return stations
         except VATSIMDataFetchException:
             raise
         except Exception:
@@ -142,12 +146,12 @@ class CoordinationCog(commands.Cog):
             return {}
 
     @tasks.loop(minutes=1, reconnect=True)
-    async def _update_controllers_cache(self):
+    async def _update_stations_cache(self):
         """
-        Update the cache of online controllers periodically
+        Update the cache of online stations periodically
 
         Note:
-            Once the online controllers map has been populated, this will also initate
+            Once the online stations map has been populated, this will also initate
             an update of all current voice channel members in the gulid.
 
         Todo:
@@ -156,7 +160,7 @@ class CoordinationCog(commands.Cog):
         """
         try:
             logger.debug('Updating online controllers cache...')
-            self._online_controllers = await self._fetch_online_controllers()
+            self._online_stations = await self._fetch_online_stations()
             self._last_update = datetime.datetime.now()
             await self._update_voice_channel_members()
         except Exception:
@@ -166,8 +170,14 @@ class CoordinationCog(commands.Cog):
 
     async def _get_controller_station(self, cid: int) -> str | None:
         """Get the controller's prefix if they're online, None otherwise"""
-        if cid in self._online_controllers:
-            return self._online_controllers[cid].replace('__', '_')
+        entry = self._online_stations.get(cid)
+        if entry is not None:
+            callsign, station_type = entry
+            if (
+                station_type == StationType.CONTROLLER
+                or config.STATION_PREFIX_SHOW_PILOTS
+            ):
+                return callsign
         return None
 
     async def _restore_nickname(self, member: discord.Member, reason: str) -> None:
@@ -175,7 +185,9 @@ class CoordinationCog(commands.Cog):
         if not member.nick:
             return
 
-        log = logger.bind(id=member.id, name=member.name, nick=member.nick)
+        log = logger.bind(
+            id=member.id, name=member.name, nick=member.nick, reason=reason
+        )
         modified_member = self._member_cache.get(member.id)
         if not modified_member:
             if self._callsign_separator and self._callsign_separator in member.nick:
@@ -208,27 +220,13 @@ class CoordinationCog(commands.Cog):
 
         return f'{prefix} {self._callsign_separator} {name} - {cid}'
 
-    def _feature_enabled(self, cid: int, callsign: str | None = None) -> bool:
-        """Simple feature gate for gradual rollout"""
-        # TODO(thor): remove after validation
-        if cid in self._allowed_cids:
-            return True
-
-        if (
-            callsign
-            and self._allowed_callsigns_pattern
-            and re.match(self._allowed_callsigns_pattern, callsign)
-        ):
-            return True
-
-        logger.info('Skipping member outside of rollout', cid=cid, callsign=callsign)
-        return False
-
     async def _process_member(
         self, member: discord.Member, force_remove: bool = False
     ) -> None:
-        """Process and update member's nickname depending on control activity"""
-        log = logger.bind(member=member.name, nick=member.nick)
+        """Process and update member's nickname depending on activity"""
+        log = logger.bind(
+            member=member.name, nick=member.nick, cid=self._handler.get_cid(member)
+        )
         try:
             if not member.voice:
                 await self._restore_nickname(member, reason='Left voice channel')
@@ -257,10 +255,7 @@ class CoordinationCog(commands.Cog):
 
             if not callsign or not member.nick:
                 # If there's no callsign, then there's nothing to do
-                return
-
-            # TODO(thor): remove after validation #122
-            if not self._feature_enabled(cid, callsign):
+                log.debug('No callsign found for member, skipping nickname update')
                 return
 
             # Add the prefix to the user and and store original nickname before modification
@@ -359,7 +354,7 @@ class CoordinationCog(commands.Cog):
         # User left voice voice channels altogether
         await self._process_member(member, force_remove=True)
 
-    @coordination.command(
+    @station_prefix.command(
         name='update-voice', description='Update voice channel member nicknames'
     )
     @app_commands.checks.has_any_role(*config.STAFF_ROLES)
@@ -367,7 +362,7 @@ class CoordinationCog(commands.Cog):
         """Manually update all voice channel member nicknames"""
         try:
             await interaction.response.defer(ephemeral=True)
-            await self._update_controllers_cache()
+            await self._update_stations_cache()
             await interaction.followup.send(
                 'Voice channel nicknames updated.', ephemeral=True
             )
@@ -379,7 +374,7 @@ class CoordinationCog(commands.Cog):
 
 
 async def setup(bot: commands.Bot):
-    cog = CoordinationCog(bot)
+    cog = StationPrefixCog(bot)
     await bot.add_cog(cog)
 
 
