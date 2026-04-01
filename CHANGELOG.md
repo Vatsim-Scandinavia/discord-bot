@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.5.0](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.4.9...v2.5.0) (2026-04-01)
+
+
+### Features
+
+* show pilot callsigns on nicknames ([#190](https://github.com/Vatsim-Scandinavia/discord-bot/issues/190)) ([c41a1f6](https://github.com/Vatsim-Scandinavia/discord-bot/commit/c41a1f6095e31d0066faad4f71a63b037b612c8b))
+
+
+### Bug Fixes
+
+* **station prefix:** add lock to member processing ([#191](https://github.com/Vatsim-Scandinavia/discord-bot/issues/191)) ([532fe6a](https://github.com/Vatsim-Scandinavia/discord-bot/commit/532fe6a484606f1cfaf8d27681d63279b7f00e6e))
+
 ## [2.4.9](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.4.8...v2.4.9) (2026-02-19)
 
 
