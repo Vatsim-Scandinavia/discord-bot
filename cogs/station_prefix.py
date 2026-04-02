@@ -256,9 +256,7 @@ class StationPrefixCog(commands.Cog):
         self, member: discord.Member, force_remove: bool = False
     ) -> None:
         """Process and update member's nickname depending on activity"""
-        log = logger.bind(
-            member=member.name, nick=member.nick, cid=self._handler.get_cid(member)
-        )
+        log = logger.bind(member=member.name, nick=member.nick)
         try:
             if not member.voice:
                 await self._restore_nickname(member, reason='Left voice channel')
@@ -268,8 +266,15 @@ class StationPrefixCog(commands.Cog):
                 await self._restore_nickname(member, reason='Forcibly removed')
                 return
 
-            cid = self._handler.get_cid(member)
-            name = self._handler.get_name(member)
+            modified_member = self._member_cache.get(member.id)
+            if modified_member:
+                cid = modified_member['cid']
+                name = modified_member['name']
+            else:
+                cid = self._handler.get_cid(member)
+                name = self._handler.get_name(member)
+
+            log = log.bind(cid=cid)
 
             if not cid and not name:
                 # We weren't able to extract either of the name and CID, so we can't proceed
@@ -277,7 +282,6 @@ class StationPrefixCog(commands.Cog):
                 return
 
             callsign = await self._get_callsign_by_cid(cid)
-            modified_member = self._member_cache.get(member.id)
             if modified_member and not callsign:
                 # Modified members without callsigns should be restored
                 await self._restore_nickname(member, reason='Station not online')

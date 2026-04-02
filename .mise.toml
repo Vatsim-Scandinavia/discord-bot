@@ -31,3 +31,6 @@ run = "uv run ruff check ."
 
 [tasks."lint:types"]
 run = "uv run mypy ."
+
+[tasks.test]
+run = "uv run pytest"
