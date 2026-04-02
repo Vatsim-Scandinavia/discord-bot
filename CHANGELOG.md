@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.2](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.5.1...v2.5.2) (2026-04-02)
+
+
+### Bug Fixes
+
+* re-add missing python-multipart for fastapi ([d5ef839](https://github.com/Vatsim-Scandinavia/discord-bot/commit/d5ef8396eef8ef6c15dfe029e3142af68068ae07))
+
 ## [2.5.1](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.5.0...v2.5.1) (2026-04-02)
 
 
