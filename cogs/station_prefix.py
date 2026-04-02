@@ -281,7 +281,7 @@ class StationPrefixCog(commands.Cog):
                 log.warning("Couldn't extract CID or name from member's nickname")
                 return
 
-            callsign = await self._get_controller_station(cid)
+            callsign = await self._get_callsign_by_cid(cid)
             if modified_member and not callsign:
                 # Modified members without callsigns should be restored
                 await self._restore_nickname(member, reason='Station not online')
