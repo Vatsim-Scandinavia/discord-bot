@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.5.1](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.5.0...v2.5.1) (2026-04-02)
+
+
+### Bug Fixes
+
+* **station prefix:** extract CIDs to prevent nick flapping ([#195](https://github.com/Vatsim-Scandinavia/discord-bot/issues/195)) ([156a5ef](https://github.com/Vatsim-Scandinavia/discord-bot/commit/156a5ef98cf6d8778f0f5316d91c3968468416c7))
+* **station prefix:** fixing incorrect strings ([#194](https://github.com/Vatsim-Scandinavia/discord-bot/issues/194)) ([692f8c1](https://github.com/Vatsim-Scandinavia/discord-bot/commit/692f8c1d8f140a339f8d865b51ff1b2d00775f1c))
+
 ## [2.5.0](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.4.9...v2.5.0) (2026-04-01)
 
 
