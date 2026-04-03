@@ -50,8 +50,8 @@ class Handler:
             )
         return True
 
-    @classmethod
-    async def get_division_members(cls) -> list[DivisionMember]:
+    @staticmethod
+    async def get_division_members() -> list[DivisionMember]:
         """
         Fetch all division members from the API with pagination.
         :return:
@@ -66,7 +66,7 @@ class Handler:
             while url:
                 # We'd like to capture any non-valid responses sooner rather than earlier
                 try:
-                    data, url = await cls._fetch_page(session, url)
+                    data, url = await Handler._fetch_page(session, url)
                 except Exception as e:
                     raise VATSIMDivisionMemberFetchException from e
 
@@ -114,13 +114,17 @@ class Handler:
             member: The Discord guild member.
 
         Returns:
-            None if the member does not have the VATSIM member role, otherwise the CID.
+            None if the member has a roles collection and does not have the VATSIM
+            member role, otherwise the CID.
 
         Raises:
             ValueError: If the member has the VATSIM member role but a valid CID cannot be extracted from their nickname.
 
         """
-        if config.VATSIM_MEMBER_ROLE not in [role.id for role in member.roles]:
+        roles = getattr(member, 'roles', None)
+        if roles is not None and not any(
+            getattr(role, 'id', role) == config.VATSIM_MEMBER_ROLE for role in roles
+        ):
             return None
 
         if member.nick is None:
