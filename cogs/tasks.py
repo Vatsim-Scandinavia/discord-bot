@@ -92,6 +92,10 @@ class TasksCog(commands.Cog):
         """
         try:
             cid = self.handler.get_cid(user)
+            if cid is None:
+                raise ValueError(
+                    'Unreachable: A user should not have access to a channel without vatsim member role.'
+                )
             if not cid:
                 raise ValueError("No CID found in member's nickname.")
 
