@@ -126,7 +126,7 @@ class AdminCog(commands.Cog):
     )
     @app_commands.checks.has_any_role(*config.STAFF_ROLES)
     async def delete(self, interaction: discord.Interaction, amount: int):
-        ctx = await Handler.get_context(self, self.bot, interaction)
+        ctx = await Handler.get_context(self.bot, interaction)
 
         if config.DEBUG:
             try:
