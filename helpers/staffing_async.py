@@ -6,6 +6,8 @@ from datetime import datetime
 from helpers.api import APIHelper
 from helpers.handler import Handler
 
+logger = Handler.get_logger('StaffingAsync')
+
 
 class StaffingAsync:
     def __init__(self) -> None:
@@ -122,6 +124,12 @@ class StaffingAsync:
     async def _book(self, ctx, staffing, position, section):
         try:
             cid = Handler.get_cid(ctx.author)
+
+            if cid is None:
+                logger.warning(
+                    'User attempted to book without a CID.', user=ctx.author.id
+                )
+                return
 
             sections_map = {
                 (staffing.get('section_1_title') or '').lower(): '1',
