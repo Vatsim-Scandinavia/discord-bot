@@ -134,14 +134,6 @@ class RolesCog(commands.Cog):
             # Check if the user has the VATSIM member role, if not clear all managed roles and skip.
             cid = self.handler.get_cid(user)
             if cid is None:
-                await self.cleanup_membership_roles(
-                    user,
-                    config.ROLE_REASONS['no_vatsim_role'],
-                    include_vatsca=True,
-                )
-                return
-
-            if not cid:
                 raise ValueError("No CID found in member's nickname.")
 
             mentor_buddy_info = self.get_mentor_roles(cid, roles_data)
