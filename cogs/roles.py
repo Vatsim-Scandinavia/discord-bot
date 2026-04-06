@@ -197,7 +197,7 @@ class RolesCog(commands.Cog):
 
         except ValueError as e:
             logger.warning(
-                'Failed to process roles, probably because we could not get CID due ValueError: will remove any roles',
+                'Failed to process memeber role due to being unable to extract CID; cleaning managed roles.',
                 name=user.name,
                 nick=user.nick,
                 error=e,
