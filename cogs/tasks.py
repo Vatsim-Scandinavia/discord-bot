@@ -96,8 +96,6 @@ class TasksCog(commands.Cog):
                 raise ValueError(
                     'Unreachable: A user should not have access to a channel without vatsim member role.'
                 )
-            if not cid:
-                raise ValueError("No CID found in member's nickname.")
 
             is_vatsca_member = (
                 cid in member_map
