@@ -65,6 +65,7 @@ class Config:
             'vatsca_add': 'Member is now part of VATSCA',
             'vatsca_remove': 'Member is no longer part of VATSCA',
             'no_cid': 'User does not have a VATSIM ID in his/her nickname.',
+            'no_vatsim_role': 'User does not have the VATSIM member role.',
             'no_auth': 'User did not authenticate via the Community Website',
             'mentor_add': 'Member is now a mentor',
             'mentor_remove': 'Member is no longer a mentor',

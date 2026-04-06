@@ -49,7 +49,7 @@ class StaffingCog(commands.Cog):
     @app_commands.autocomplete(staffing=avail_title_autocomplete)
     @app_commands.checks.has_any_role(*config.STAFF_ROLES)
     async def refreshevent(self, interaction: discord.Interaction, staffing: int):
-        ctx = await Handler.get_context(self, self.bot, interaction)
+        ctx = await Handler.get_context(self.bot, interaction)
 
         staffing, staffing_msg = await self.staffing_async._generate_staffing_message(
             staffing
@@ -75,7 +75,7 @@ class StaffingCog(commands.Cog):
     @app_commands.autocomplete(staffing=avail_title_autocomplete)
     @app_commands.checks.has_any_role(*config.STAFF_ROLES)
     async def manreset(self, interaction: discord.Integration, staffing: int):
-        ctx = await Handler.get_context(self, self.bot, interaction)
+        ctx = await Handler.get_context(self.bot, interaction)
 
         try:
             staffing = await self.api_helper._fetch_data(f'staffings/{staffing}')
@@ -131,7 +131,7 @@ class StaffingCog(commands.Cog):
         position: str,
         section: str | None = None,
     ):
-        ctx = await Handler.get_context(self, self.bot, interaction)
+        ctx = await Handler.get_context(self.bot, interaction)
         user_id = ctx.author.id
 
         try:
@@ -175,7 +175,7 @@ class StaffingCog(commands.Cog):
         position: str | None = None,
         section: str | None = None,
     ):
-        ctx = await Handler.get_context(self, self.bot, interaction)
+        ctx = await Handler.get_context(self.bot, interaction)
         try:
             staffings = await self.api_helper._fetch_data('staffings')
             staffing = next(

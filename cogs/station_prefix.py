@@ -274,6 +274,10 @@ class StationPrefixCog(commands.Cog):
                 cid = self._handler.get_cid(member)
                 name = self._handler.get_name(member)
 
+            if cid is None:
+                # No CID found in nickname, and no modification record: nothing we can do
+                return
+
             log = log.bind(cid=cid)
 
             if not cid and not name:
