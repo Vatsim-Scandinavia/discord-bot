@@ -93,9 +93,10 @@ class TasksCog(commands.Cog):
         try:
             cid = self.handler.get_cid(user)
             if cid is None:
-                raise ValueError(
-                    'Unreachable: A user should not have access to a channel without vatsim member role.'
+                await user.remove_roles(
+                    vatsca_role, reason=config.ROLE_REASONS['no_cid']
                 )
+                return
 
             is_vatsca_member = (
                 cid in member_map
@@ -119,7 +120,7 @@ class TasksCog(commands.Cog):
         except ValueError:
             if vatsca_role in user.roles:
                 await user.remove_roles(
-                    vatsca_role, reason=config.ROLE_REASONS['no_cid']
+                    vatsca_role, reason=config.ROLE_REASONS['unknown_cid']
                 )
 
         except Exception as e:

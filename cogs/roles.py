@@ -134,7 +134,10 @@ class RolesCog(commands.Cog):
             # Check if the user has the VATSIM member role, if not clear all managed roles and skip.
             cid = self.handler.get_cid(user)
             if cid is None:
-                raise ValueError("No CID found in member's nickname.")
+                await self.cleanup_membership_roles(
+                    user, config.ROLE_REASONS['no_cid'], include_vatsca=True
+                )
+                return
 
             mentor_buddy_info = self.get_mentor_roles(cid, roles_data)
             should_be_examiner, examiner_firs = self.get_examiner_roles(
@@ -197,13 +200,13 @@ class RolesCog(commands.Cog):
 
         except ValueError as e:
             logger.warning(
-                'Failed to process memeber role due to being unable to extract CID; cleaning managed roles.',
+                'Stopped to process memeber role due to being unable to extract CID; cleaning managed roles.',
                 name=user.name,
                 nick=user.nick,
                 error=e,
             )
             await self.cleanup_membership_roles(
-                user, config.ROLE_REASONS['no_cid'], include_vatsca=True
+                user, config.ROLE_REASONS['unknown_cid'], include_vatsca=True
             )
 
         except Exception:
