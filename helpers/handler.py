@@ -26,9 +26,8 @@ class Handler:
     def __init__(self) -> None:
         pass
 
-    async def get_context(
-        self, bot, interaction: discord.Interaction
-    ) -> commands.Context:
+    @staticmethod
+    async def get_context(bot, interaction: discord.Interaction) -> commands.Context:
         """
         Helper function to get context from interaction
         :return:
@@ -51,7 +50,8 @@ class Handler:
             )
         return True
 
-    async def get_division_members(self) -> list[DivisionMember]:
+    @staticmethod
+    async def get_division_members() -> list[DivisionMember]:
         """
         Fetch all division members from the API with pagination.
         :return:
@@ -66,7 +66,7 @@ class Handler:
             while url:
                 # We'd like to capture any non-valid responses sooner rather than earlier
                 try:
-                    data, url = await self._fetch_page(session, url)
+                    data, url = await Handler._fetch_page(session, url)
                 except Exception as e:
                     raise VATSIMDivisionMemberFetchException from e
 
@@ -78,7 +78,8 @@ class Handler:
 
         return result
 
-    async def _fetch_page(self, session: aiohttp.ClientSession, url):
+    @staticmethod
+    async def _fetch_page(session: aiohttp.ClientSession, url):
         """
         Fetch data from a single page and return the next URL if available.
 
@@ -104,14 +105,28 @@ class Handler:
 
             return data, next_url
 
-    def get_cid(self, member: discord.Member):
+    @staticmethod
+    def get_cid(member: discord.Member) -> int | None:
         """
         Get CID based on VATSIM Discord member.
 
         Args:
             member: The Discord guild member.
 
+        Returns:
+            None if the member has a roles collection and does not have the VATSIM
+            member role, otherwise the CID.
+
+        Raises:
+            ValueError: If the member has the VATSIM member role but a valid CID cannot be extracted from their nickname.
+
         """
+        roles = getattr(member, 'roles', None)
+        if roles is not None and not any(
+            getattr(role, 'id', role) == config.VATSIM_MEMBER_ROLE for role in roles
+        ):
+            return None
+
         if member.nick is None:
             raise ValueError
 
@@ -138,7 +153,8 @@ class Handler:
 
         return cid[-1]
 
-    def get_name(self, member: discord.Member) -> str | None:
+    @staticmethod
+    def get_name(member: discord.Member) -> str | None:
         """
         Get presentation name based on VATSIM Discord member.
 

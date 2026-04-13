@@ -131,9 +131,13 @@ class RolesCog(commands.Cog):
 
         """
         try:
+            # Check if the user has the VATSIM member role, if not clear all managed roles and skip.
             cid = self.handler.get_cid(user)
-            if not cid:
-                raise ValueError("No CID found in member's nickname.")
+            if cid is None:
+                await self.cleanup_membership_roles(
+                    user, config.ROLE_REASONS['no_cid'], include_vatsca=True
+                )
+                return
 
             mentor_buddy_info = self.get_mentor_roles(cid, roles_data)
             should_be_examiner, examiner_firs = self.get_examiner_roles(
@@ -196,27 +200,14 @@ class RolesCog(commands.Cog):
 
         except ValueError as e:
             logger.warning(
-                'Failed to process roles, probably because we could not get CID due ValueError: will remove any roles',
+                'Stopped to process memeber role due to being unable to extract CID; cleaning managed roles.',
                 name=user.name,
                 nick=user.nick,
                 error=e,
             )
-            if mentor_role in user.roles:
-                await user.remove_roles(
-                    mentor_role, reason=config.ROLE_REASONS['no_cid']
-                )
-            if buddy_role in user.roles:
-                await user.remove_roles(
-                    buddy_role, reason=config.ROLE_REASONS['no_cid']
-                )
-            if training_staff_role in user.roles:
-                await user.remove_roles(
-                    training_staff_role, reason=config.ROLE_REASONS['no_cid']
-                )
-            if visitor_role in user.roles:
-                await user.remove_roles(
-                    visitor_role, reason=config.ROLE_REASONS['no_cid']
-                )
+            await self.cleanup_membership_roles(
+                user, config.ROLE_REASONS['unknown_cid'], include_vatsca=True
+            )
 
         except Exception:
             logger.exception('Error processing roles', name=user.name, nick=user.nick)
@@ -413,6 +404,45 @@ class RolesCog(commands.Cog):
                     config.ROLE_REASONS['training_add'],
                     config.ROLE_REASONS['training_remove'],
                 )
+
+    def _membership_role_ids(self, include_vatsca: bool = False) -> set[int]:
+        role_ids = {
+            config.MENTOR_ROLE,
+            config.BUDDY_ROLE,
+            config.TRAINING_STAFF_ROLE,
+            config.VISITOR_ROLE,
+        }
+
+        if include_vatsca:
+            role_ids.add(config.VATSCA_MEMBER_ROLE)
+
+        role_ids.update(int(role_id) for role_id in config.FIR_MENTORS.values())
+        role_ids.update(int(role_id) for role_id in config.FIR_BUDDIES.values())
+        role_ids.update(int(role_id) for role_id in config.FIR_EXAMINERS.values())
+        role_ids.update(
+            int(role_id)
+            for ratings in config.TRAINING_ROLES.values()
+            for role_id in ratings.values()
+        )
+        role_ids.update(
+            int(role_id) for role_id in config.CONTROLLER_FIR_ROLES.values()
+        )
+        role_ids.update(
+            int(role_id)
+            for ratings in config.RATING_FIR_DATA.values()
+            for role_id in ratings.values()
+        )
+
+        return {role_id for role_id in role_ids if role_id}
+
+    async def cleanup_membership_roles(
+        self, user: discord.Member, reason: str, include_vatsca: bool = False
+    ) -> None:
+        role_ids = self._membership_role_ids(include_vatsca=include_vatsca)
+        roles_to_remove = [role for role in user.roles if role.id in role_ids]
+
+        if roles_to_remove:
+            await user.remove_roles(*roles_to_remove, reason=reason)
 
     async def update_fir_atc_roles(self, user, cid, atc_activity_data):
         """Update FIR-specific ATC roles based on activity and rating."""
@@ -617,10 +647,17 @@ class RolesCog(commands.Cog):
             )
             return
 
-        # Extract cid from nickname, exit early if not found
-        cid = self.handler.get_cid(after)
-
         try:
+            # Extract CID from nickname, clearing managed roles if the member is no longer eligible.
+            cid = self.handler.get_cid(after)
+            if cid is None:
+                await self.cleanup_membership_roles(
+                    after,
+                    config.ROLE_REASONS['no_vatsim_role'],
+                    include_vatsca=True,
+                )
+                return
+
             api_data = await self.handler.get_division_members()
 
             should_have_vatsca = any(
@@ -659,6 +696,17 @@ class RolesCog(commands.Cog):
 
             if tasks:
                 await asyncio.gather(*tasks)
+
+        except ValueError as e:
+            logger.warning(
+                'Failed to process member update due to invalid or missing CID; cleaning managed roles.',
+                name=after.name,
+                nick=after.nick,
+                error=e,
+            )
+            await self.cleanup_membership_roles(
+                after, config.ROLE_REASONS['no_cid'], include_vatsca=True
+            )
 
         # TODO(thor): Replace with either custom exceptions or find out how to move them out to the core handler
         except discord.Forbidden as e:

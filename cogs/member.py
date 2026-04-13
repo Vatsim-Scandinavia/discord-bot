@@ -15,7 +15,7 @@ class MemberCog(commands.Cog):
     @app_commands.command(name='test', description='Function sends example embed.')
     @app_commands.checks.has_any_role(*config.STAFF_ROLES)
     async def test(self, interaction: discord.Interaction):
-        ctx = await Handler.get_context(self, self.bot, interaction)
+        ctx = await Handler.get_context(self.bot, interaction)
 
         if config.DEBUG:
             message = embed(title='test', description='test')
@@ -28,7 +28,7 @@ class MemberCog(commands.Cog):
     @app_commands.command(name='metar', description='Get METAR for an airport')
     async def metar(self, interaction: discord.Interaction, airport: str) -> None:
         """Function send METAR of specified airport."""
-        ctx = await Handler.get_context(self, self.bot, interaction)
+        ctx = await Handler.get_context(self.bot, interaction)
 
         async with aiohttp.ClientSession() as session:
             async with session.get(f'http://metar.vatsim.net/{airport}') as resp:

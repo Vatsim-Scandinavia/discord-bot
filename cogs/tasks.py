@@ -92,8 +92,11 @@ class TasksCog(commands.Cog):
         """
         try:
             cid = self.handler.get_cid(user)
-            if not cid:
-                raise ValueError("No CID found in member's nickname.")
+            if cid is None:
+                await user.remove_roles(
+                    vatsca_role, reason=config.ROLE_REASONS['no_cid']
+                )
+                return
 
             is_vatsca_member = (
                 cid in member_map
@@ -117,7 +120,7 @@ class TasksCog(commands.Cog):
         except ValueError:
             if vatsca_role in user.roles:
                 await user.remove_roles(
-                    vatsca_role, reason=config.ROLE_REASONS['no_cid']
+                    vatsca_role, reason=config.ROLE_REASONS['unknown_cid']
                 )
 
         except Exception as e:
