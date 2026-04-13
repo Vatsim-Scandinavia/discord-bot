@@ -127,7 +127,7 @@ class StaffingAsync:
 
             if cid is None:
                 logger.warning(
-                    'User attempted to book without a CID.', user=ctx.author.id
+                    'User attempted to book without a CID', user=ctx.author.id
                 )
                 return
 
