@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.3](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.5.2...v2.5.3) (2026-04-13)
+
+
+### Bug Fixes
+
+* members without roles get excessive logging ([#198](https://github.com/Vatsim-Scandinavia/discord-bot/issues/198)) ([92841d5](https://github.com/Vatsim-Scandinavia/discord-bot/commit/92841d54e3e06f6ae97747dff84d8a4cdff33da3))
+
 ## [2.5.2](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.5.1...v2.5.2) (2026-04-02)
 
 
