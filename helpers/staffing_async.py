@@ -3,10 +3,12 @@ import asyncio
 from collections import defaultdict
 from datetime import datetime
 
+import structlog
+
 from helpers.api import APIHelper
 from helpers.handler import Handler
 
-logger = Handler.get_logger('StaffingAsync')
+logger = structlog.stdlib.get_logger()
 
 
 class StaffingAsync:
