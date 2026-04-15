@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.5.4](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.5.3...v2.5.4) (2026-04-15)
+
+
+### Bug Fixes
+
+* add missing ROLE_REASON ([#202](https://github.com/Vatsim-Scandinavia/discord-bot/issues/202)) ([17f1db3](https://github.com/Vatsim-Scandinavia/discord-bot/commit/17f1db3725cb3e579518ac8a11bf5753425de08f))
+
+
+### Documentation
+
+* update welcome link ([#201](https://github.com/Vatsim-Scandinavia/discord-bot/issues/201)) ([c27d9a4](https://github.com/Vatsim-Scandinavia/discord-bot/commit/c27d9a47f5bd2673a9586c59106bfb2ac519430e))
+
 ## [2.5.3](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.5.2...v2.5.3) (2026-04-13)
 
 
