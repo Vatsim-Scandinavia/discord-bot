@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.5](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.5.4...v2.5.5) (2026-04-15)
+
+
+### Bug Fixes
+
+* error in getting logger through non-existent method ([#204](https://github.com/Vatsim-Scandinavia/discord-bot/issues/204)) ([c6d47a7](https://github.com/Vatsim-Scandinavia/discord-bot/commit/c6d47a7307de06bf6cb577cb4008f2aa99864289))
+
 ## [2.5.4](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.5.3...v2.5.4) (2026-04-15)
 
 
