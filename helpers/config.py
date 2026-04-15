@@ -81,7 +81,7 @@ class Config:
             'visitor_remove': 'Member is no longer Visiting Controller',
             'reaction_add': 'Member reacted to a message',
             'reaction_remove': 'Member removed a reaction from a message',
-            'unknown_cid': 'User has a VATSIM ID in his/her nickname, but it is not known.',
+            'unknown_cid': 'User has a VATSIM ID in his/her nickname, but it is not known',
         }
 
         # VATSIM API
