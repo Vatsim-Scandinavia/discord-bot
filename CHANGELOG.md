@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.6](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.5.5...v2.5.6) (2026-05-15)
+
+
+### Bug Fixes
+
+* **messages:** correct grammar for channel reset ([#207](https://github.com/Vatsim-Scandinavia/discord-bot/issues/207)) ([46c0a03](https://github.com/Vatsim-Scandinavia/discord-bot/commit/46c0a03db2b68a3dbf83fcf7893d1118ac76ff4c))
+
 ## [2.5.5](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.5.4...v2.5.5) (2026-04-15)
 
 
