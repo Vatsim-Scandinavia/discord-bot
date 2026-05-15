@@ -211,7 +211,7 @@ class StaffingAsync:
             title = event.get('title', '')
             print(f'Started autoreset of {title} at {datetime.now().isoformat()!s}')
 
-            await channel.send('The chat is being automatic reset!')
+            await channel.send('The chat is being automatically reset!')
             await asyncio.sleep(5)
             await channel.purge(limit=None, check=lambda msg: not msg.pinned)
 
