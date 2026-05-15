@@ -105,7 +105,7 @@ class StaffingCog(commands.Cog):
 
             channel = self.bot.get_channel(int(staffing.get('channel_id', 0)))
 
-            await channel.send('The chat is being automatic reset!')
+            await channel.send('The chat is being automatically reset!')
             await asyncio.sleep(5)
             await channel.purge(limit=None, check=lambda msg: not msg.pinned)
 
