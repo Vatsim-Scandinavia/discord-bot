@@ -211,13 +211,11 @@ class StationPrefixCog(commands.Cog):
             return
 
         original_nick = modified_member['nick']
-        # Remove the nickname first to avoid issue for those weird users who have higher permissions
-        # than the bot itself. This is an additional risk, but one we're fine to make.
         log.info(
             'Removing and restoring nick', stored_nick=original_nick, reason=reason
         )
-        await self._member_cache.remove_nickname(member.id)
         await member.edit(nick=original_nick, reason=reason)
+        await self._member_cache.remove_nickname(member.id)
 
     def _format_name(self, prefix: str, name: str | None, cid: int) -> str:
         """Format the name for the member's nickname"""
