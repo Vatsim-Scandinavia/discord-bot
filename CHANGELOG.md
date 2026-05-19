@@ -5,7 +5,7 @@
 
 ### Bug Fixes
 
-* discord errors while resetting nic, should no longer leave the station nick forever ([#210](https://github.com/Vatsim-Scandinavia/discord-bot/issues/210)) ([305e157](https://github.com/Vatsim-Scandinavia/discord-bot/commit/305e15744a9a8c42d0aa52487dd61e07ceb67700))
+* Discord errors while resetting nick should no longer leave the station nick stuck forever ([#210](https://github.com/Vatsim-Scandinavia/discord-bot/issues/210)) ([305e157](https://github.com/Vatsim-Scandinavia/discord-bot/commit/305e15744a9a8c42d0aa52487dd61e07ceb67700))
 
 ## [2.5.6](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.5.5...v2.5.6) (2026-05-15)
 
