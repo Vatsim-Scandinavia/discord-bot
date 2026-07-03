@@ -244,15 +244,19 @@ class RolesCog(commands.Cog):
                 if roles is None:
                     continue
 
-                if 'Mentor' in roles:
+                # Control Center returns lowercase role identifiers (e.g. 'mentor');
+                # normalise so matching is resilient to casing changes on the API side.
+                normalised_roles = {role.lower() for role in roles}
+
+                if 'mentor' in normalised_roles:
                     should_be_mentor = True
                     mentor_firs.append(fir)
 
-                if 'Buddy' in roles:
+                if 'buddy' in normalised_roles:
                     should_be_buddy = True
                     buddy_firs.append(fir)
 
-                if 'Moderator' in roles:
+                if 'moderator' in normalised_roles:
                     should_be_training_staff = True
 
         return MentorBuddyInfo(
