@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.8](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.5.7...v2.5.8) (2026-07-03)
+
+
+### Bug Fixes
+
+* **roles:** use lower-case matching for the role names ([96a51e4](https://github.com/Vatsim-Scandinavia/discord-bot/commit/96a51e4e87ed3e9fcf0c88f158be4a3a87c32535))
+
 ## [2.5.7](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.5.6...v2.5.7) (2026-05-19)
 
 
