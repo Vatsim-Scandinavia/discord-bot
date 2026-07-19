@@ -90,6 +90,7 @@ class Roles:
             'include[]': [
                 'allUsers',
                 'activeAreas',
+                'endorsements',
             ],
             'onlyAtcActive': 1,
         }
