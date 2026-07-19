@@ -4,7 +4,7 @@ import signal
 import discord
 import sentry_sdk
 import structlog
-from discord.ext.commands import BadArgument, Bot, CommandInvokeError
+from discord.ext.commands import Bot
 
 from core.logging import configure_logging
 from helpers.config import config
@@ -51,14 +51,11 @@ async def on_ready() -> None:
             bot.tree.sync()
         )  # Sync global commands (might take up to 1 hour to reflect globally)
 
-    except CommandInvokeError:
-        logger.exception('Error in command invocation')
-
-    except BadArgument:
-        logger.exception('Error changing presence')
-
     except discord.HTTPException:
         logger.exception('Failed to sync commands due to rate limiting')
+
+    except Exception:
+        logger.exception('Unexpected error during on_ready startup')
 
 
 async def send_dm(user, message):
