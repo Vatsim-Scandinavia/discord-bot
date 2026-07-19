@@ -2,6 +2,14 @@
     "$schema": "https://raw.githubusercontent.com/googleapis/release-please/refs/heads/main/schemas/config.json",
     "release-type": "python",
     "packages": {
-        ".": {}
+        ".": {
+            "extra-files": [
+                {
+                    "path": "uv.lock",
+                    "type": "toml",
+                    "jsonpath": "$.package[?(@.name.value=='discord-bot')].version"
+                }
+            ]
+        }
     }
 }
