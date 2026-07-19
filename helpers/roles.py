@@ -1,8 +1,11 @@
 from typing import Any
 
 import aiohttp
+import structlog
 
 from helpers.config import config
+
+logger = structlog.stdlib.get_logger()
 
 
 class Roles:
@@ -39,13 +42,11 @@ class Roles:
                     if response.status == 200:
                         data = await response.json()
                         return data.get('data', [])
-                    print(
-                        f'Error fetching data from {url}. Status code: {response.status}'
-                    )
+                    logger.error('Error fetching data', url=url, status=response.status)
                     return None
 
-            except aiohttp.ClientError as e:
-                print(f'HTTP error occurred while accessing {url}: {e}')
+            except aiohttp.ClientError:
+                logger.exception('HTTP error occurred while accessing API', url=url)
                 return None
 
     async def get_roles(self) -> list[Any] | None:

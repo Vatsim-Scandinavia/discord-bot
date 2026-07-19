@@ -3,9 +3,17 @@ import signal
 
 import discord
 import sentry_sdk
+import structlog
 from discord.ext.commands import BadArgument, Bot, CommandInvokeError
 
+from core.logging import configure_logging
 from helpers.config import config
+
+# Configure logging before anything is logged so structlog and every stdlib
+# logger (discord.py, uvicorn, aiohttp, …) share one consistent output format.
+configure_logging(debug=config.DEBUG)
+
+logger = structlog.stdlib.get_logger()
 
 intents = discord.Intents.all()
 intents.message_content = True
@@ -35,7 +43,7 @@ async def on_ready() -> None:
     global guild
     guild = bot.get_guild(config.GUILD_ID)
 
-    print(f'Bot started. \nUsername: {bot.user.name}. \nID: {bot.user.id}', flush=True)
+    logger.info('Bot started', username=bot.user.name, user_id=bot.user.id)
 
     try:
         await bot.change_presence(activity=config.activity(), status=config.status())
@@ -43,14 +51,14 @@ async def on_ready() -> None:
             bot.tree.sync()
         )  # Sync global commands (might take up to 1 hour to reflect globally)
 
-    except CommandInvokeError as e:
-        print(f'Error in command invocation: {e}', flush=True)
+    except CommandInvokeError:
+        logger.exception('Error in command invocation')
 
-    except BadArgument as e:
-        print(f'Error changing presence. Exception - {e}', flush=True)
+    except BadArgument:
+        logger.exception('Error changing presence')
 
-    except discord.HTTPException as e:
-        print(f'Failed to sync commands due to rate limiting: {e}', flush=True)
+    except discord.HTTPException:
+        logger.exception('Failed to sync commands due to rate limiting')
 
 
 async def send_dm(user, message):
@@ -58,7 +66,7 @@ async def send_dm(user, message):
     try:
         await user.send(message)
     except discord.Forbidden:
-        print(f'Could not send DM to {user.name}. They have DMs disabled.')
+        logger.warning('Could not send DM; user has DMs disabled', user=user.name)
 
 
 @bot.tree.error
@@ -89,15 +97,17 @@ async def on_app_command_error(
     try:
         await interaction.followup.send(error_message, ephemeral=True)
 
-    except discord.HTTPException as e:
-        print(f'Error sending error message: {e}')
+    except discord.HTTPException:
+        logger.exception('Error sending error message')
 
-    print(f'Command Error: {error}')
+    logger.error('Command error', error=str(error))
 
 
 @bot.event
 async def on_error(event, *args, **kwargs):
-    print(f'Error in {event}: {args} {kwargs}', flush=True)
+    logger.exception(
+        'Unhandled error in event', event_name=event, args=args, kwargs=kwargs
+    )
 
 
 @bot.event
@@ -114,7 +124,7 @@ async def on_connect():
 
 # Signal handling for graceful shutdown
 def handle_exit_signal(signal_number, _):
-    print(f'Received shutdown signal ({signal_number}). Closing bot...', flush=True)
+    logger.info('Received shutdown signal; closing bot', signal=signal_number)
     asyncio.create_task(bot.close())
 
 
@@ -125,7 +135,6 @@ signal.signal(signal.SIGTERM, handle_exit_signal)  # For termination signal
 # Start the bot
 if __name__ == '__main__':
     try:
-        discord.utils.setup_logging()
-        bot.run(config.BOT_TOKEN)
-    except Exception as e:
-        print(f'Error starting the bot. Exception - {e}', flush=True)
+        bot.run(config.BOT_TOKEN, log_handler=None)
+    except Exception:
+        logger.exception('Error starting the bot')

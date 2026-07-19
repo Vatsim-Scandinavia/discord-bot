@@ -1,11 +1,14 @@
 import asyncio
 
 import discord
+import structlog
 from discord import app_commands
 from discord.ext import commands
 
 from helpers.config import config
 from helpers.message import embed
+
+logger = structlog.stdlib.get_logger()
 
 
 class UpdateCountryMessage(commands.Cog):
@@ -68,8 +71,8 @@ class UpdateCountryMessage(commands.Cog):
             await asyncio.sleep(5)
             await followup_message.delete()
 
-        except Exception as e:
-            print(f'Error updating message: {e}', flush=True)
+        except Exception:
+            logger.exception('Error updating message', channel_id=channel_id)
             followup_message = await interaction.followup.send(
                 'An error occurred while updating the message.'
             )
@@ -82,7 +85,7 @@ class UpdateCountryMessage(commands.Cog):
             with open(filepath) as file:
                 return file.read()
         except FileNotFoundError:
-            print(f"File '{filepath}' not found.")
+            logger.exception('File not found', filepath=filepath)
             return ''
 
     @app_commands.command(

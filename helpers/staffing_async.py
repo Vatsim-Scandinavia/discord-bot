@@ -44,7 +44,7 @@ class StaffingAsync:
             staffing = await self.api_helper._fetch_data(f'staffings/{id}')
 
             if not staffing:
-                print('Error: Staffing not found.')
+                logger.error('Staffing not found', staffing_id=id)
                 raise ValueError
 
             event = staffing.get('event', {})
@@ -53,7 +53,7 @@ class StaffingAsync:
             end_date = event.get('end_date')
 
             if not date or not end_date:
-                print('Error: Start or end date not found for event.')
+                logger.error('Start or end date not found for event', staffing_id=id)
                 raise ValueError
 
             formatted_date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S').strftime(  # noqa: DTZ007
@@ -67,7 +67,7 @@ class StaffingAsync:
             positions = staffing.get('positions', [])
 
             if not positions:
-                print('Error: No positions found for the event.')
+                logger.error('No positions found for the event', staffing_id=id)
                 raise ValueError
 
             section_positions = defaultdict(list)
@@ -108,8 +108,8 @@ class StaffingAsync:
 
             return staffing, format_staffing_message
 
-        except Exception as e:
-            print(f'Unable to update message - {e}', flush=True)
+        except Exception:
+            logger.exception('Unable to generate staffing message', staffing_id=id)
             raise
 
     def format_time(self, value):
@@ -199,7 +199,7 @@ class StaffingAsync:
         staffing, staffing_msg = await self._generate_staffing_message(id)
 
         if not staffing or not staffing_msg:
-            print('Failed to generate staffing message.')
+            logger.error('Failed to generate staffing message', staffing_id=id)
             raise ValueError
 
         channel = bot.get_channel(int(staffing.get('channel_id', 0)))
@@ -209,13 +209,10 @@ class StaffingAsync:
         if reset:
             event = staffing.get('event', {})
             title = event.get('title', '')
-            print(f'Started autoreset of {title} at {datetime.now().isoformat()!s}')
+            logger.info('Started autoreset', title=title)
 
             await channel.send('The chat is being automatically reset!')
             await asyncio.sleep(5)
             await channel.purge(limit=None, check=lambda msg: not msg.pinned)
 
-            print(
-                f'Finished autoreset of {title} at {datetime.now().isoformat()!s}',
-                flush=True,
-            )
+            logger.info('Finished autoreset', title=title)

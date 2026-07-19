@@ -1,6 +1,7 @@
 import asyncio
 from typing import Annotated
 
+import structlog
 import uvicorn
 from discord.ext import commands
 from fastapi import Depends, FastAPI, Form, HTTPException
@@ -9,6 +10,8 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from helpers.api import APIHelper
 from helpers.config import config
 from helpers.staffing_async import StaffingAsync
+
+logger = structlog.stdlib.get_logger()
 
 # Instantiate and re-use the authorization credentials
 security = HTTPBearer()
@@ -68,7 +71,7 @@ class FastAPICog(commands.Cog):
             return {'message': 'Staffing updated successfully'}
 
         except Exception as e:
-            print(f'Error updating staffing: {e}')
+            logger.exception('Error updating staffing', staffing_id=id)
             raise HTTPException(  # noqa: B904
                 status_code=500, detail=f'Staffing update failed. Error: {e}'
             )
@@ -102,7 +105,7 @@ class FastAPICog(commands.Cog):
             return {'message': 'Staffing setup successfully'}
 
         except Exception as e:
-            print(f'Error setting up staffing: {e}')
+            logger.exception('Error setting up staffing', staffing_id=id)
             raise HTTPException(  # noqa: B904
                 status_code=500, detail=f'Staffing setup failed. Error: {e}'
             )
