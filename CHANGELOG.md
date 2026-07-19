@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.5.9](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.5.8...v2.5.9) (2026-07-19)
+
+
+### Bug Fixes
+
+* add signal number to shutdown logs ([bb5c7b7](https://github.com/Vatsim-Scandinavia/discord-bot/commit/bb5c7b7eb4cf17f38d1bf1f90499499bb55971ac))
+* missing endorsement for visiting ([#213](https://github.com/Vatsim-Scandinavia/discord-bot/issues/213)) ([1f0c47e](https://github.com/Vatsim-Scandinavia/discord-bot/commit/1f0c47ef74e5cfcfb5dcd07ba93d030b605791dc))
+
 ## [2.5.8](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.5.7...v2.5.8) (2026-07-03)
 
 
