@@ -95,6 +95,7 @@ class APIHelper:
                         )
             except aiohttp.ClientError:
                 logger.exception('HTTP error occurred while posting data', url=url)
+                raise
 
     async def patch_data(
         self, endpoint, params: dict | None = None
