@@ -212,7 +212,7 @@ wheels = [
 
 [[package]]
 name = "discord-bot"
-version = "2.5.9"
+version = "2.5.10"
 source = { virtual = "." }
 dependencies = [
     { name = "aiofiles" },

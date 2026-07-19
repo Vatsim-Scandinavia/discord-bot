@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.5.10](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.5.9...v2.5.10) (2026-07-19)
+
+
+### Bug Fixes
+
+* **api:** re-raise ClientError in post_data instead of swallowing it ([#219](https://github.com/Vatsim-Scandinavia/discord-bot/issues/219)) ([0a2cfaa](https://github.com/Vatsim-Scandinavia/discord-bot/commit/0a2cfaa1b55566d142258836c0fe7518a623029f))
+* **bot:** catch unexpected on_ready failures with a broad handler ([#218](https://github.com/Vatsim-Scandinavia/discord-bot/issues/218)) ([282ff96](https://github.com/Vatsim-Scandinavia/discord-bot/commit/282ff96319291765bedf8fef0a347ec23804e3b1))
+
 ## [2.5.9](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.5.8...v2.5.9) (2026-07-19)
 
 
