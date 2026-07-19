@@ -213,10 +213,7 @@ class RolesCog(commands.Cog):
             logger.exception('Error processing roles', name=user.name, nick=user.nick)
 
         finally:
-            # TODO(thor): Replace if-check with correctly configured logger with level filtering
-            # TODO(thor): Configure structlog to output module location (e.g. cogs.roles)
-            if config.DEBUG:
-                logger.debug('Finished processing roles', name=user.name)
+            logger.debug('Finished processing roles', name=user.name)
 
     def get_mentor_roles(self, cid, data):
         """

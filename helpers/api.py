@@ -1,8 +1,11 @@
 from typing import Any
 
 import aiohttp
+import structlog
 
 from helpers.config import config
+
+logger = structlog.stdlib.get_logger()
 
 
 class APIHelper:
@@ -49,12 +52,15 @@ class APIHelper:
                         or resp.get('message')
                         or 'Unknown error'
                     )
-                    print(
-                        f'Error fetching data from {url}. Status code: {response.status} with error message: {error_message}'
+                    logger.error(
+                        'Error fetching data',
+                        url=url,
+                        status=response.status,
+                        error=error_message,
                     )
                     return None
-            except aiohttp.ClientError as e:
-                print(f'HTTP error occurred while accessing {url}: {e}')
+            except aiohttp.ClientError:
+                logger.exception('HTTP error occurred while accessing API', url=url)
                 return None
 
     async def post_data(self, endpoint, params: dict | None = None) -> list[Any] | None:
@@ -79,15 +85,16 @@ class APIHelper:
                             or resp.get('message')
                             or 'Unknown error'
                         )
-                        print(
-                            f'Error posting data. Status code: {response.status} with error message: {error_message}',
-                            flush=True,
+                        logger.error(
+                            'Error posting data',
+                            status=response.status,
+                            error=error_message,
                         )
                         raise Exception(
                             f'API responded with status code {response.status}. Error msg: {error_message}'  # noqa: EM102
                         )
-            except aiohttp.ClientError as e:
-                print(f'HTTP error occurred while updating staffing message: {e}')
+            except aiohttp.ClientError:
+                logger.exception('HTTP error occurred while posting data', url=url)
 
     async def patch_data(
         self, endpoint, params: dict | None = None
@@ -113,14 +120,16 @@ class APIHelper:
                             or resp.get('message')
                             or 'Unknown error'
                         )
-                        print(
-                            f'Error patching data. Status code: {response.status} with error message: {error_message}'
+                        logger.error(
+                            'Error patching data',
+                            status=response.status,
+                            error=error_message,
                         )
                         raise Exception(
                             f'API responded with status code {response.status}. Error msg: {error_message}'  # noqa: EM102
                         )
             except aiohttp.ClientError as e:
-                print(f'HTTP error occurred while updating staffing message: {e}')
+                logger.exception('HTTP error occurred while patching data', url=url)
                 raise Exception(  # noqa: B904
                     f'HTTP error occurred while updating staffing message: {e}'  # noqa: EM102
                 )

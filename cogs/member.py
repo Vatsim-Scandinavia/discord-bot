@@ -1,11 +1,14 @@
 import aiohttp
 import discord
+import structlog
 from discord import app_commands
 from discord.ext import commands
 
 from helpers.config import config
 from helpers.handler import Handler
 from helpers.message import embed
+
+logger = structlog.stdlib.get_logger()
 
 
 class MemberCog(commands.Cog):
@@ -39,8 +42,8 @@ class MemberCog(commands.Cog):
                     return
 
                 if resp.status != 200:
-                    print(
-                        f'An error occurred fetching METAR from `{airport}`\nResponse: {resp.status}'
+                    logger.error(
+                        'Error fetching METAR', airport=airport, status=resp.status
                     )
                     await ctx.send(
                         f'Failed to fetch METAR. Error: {resp.status}', ephemeral=True

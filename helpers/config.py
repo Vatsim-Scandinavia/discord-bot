@@ -3,10 +3,13 @@ from pathlib import Path
 
 import discord
 import discord.ext
+import structlog
 from discord.ext.commands import Bot
 from dotenv import load_dotenv
 
 load_dotenv('.env')
+
+logger = structlog.stdlib.get_logger()
 
 
 class Config:
@@ -243,8 +246,8 @@ class Config:
         for cog in self.COGS:
             try:
                 await bot.load_extension(cog)
-            except Exception as e:
-                print(f'Failed to load cog - {cog}. \n Error: {e}', flush=True)
+            except Exception:
+                logger.exception('Failed to load cog', cog=cog)
 
 
 config = Config()

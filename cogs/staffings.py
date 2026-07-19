@@ -2,6 +2,7 @@ import asyncio
 from datetime import datetime
 
 import discord
+import structlog
 from discord import Interaction, app_commands
 from discord.ext import commands
 
@@ -9,6 +10,8 @@ from helpers.api import APIHelper
 from helpers.config import config
 from helpers.handler import Handler
 from helpers.staffing_async import StaffingAsync
+
+logger = structlog.stdlib.get_logger()
 
 
 class StaffingCog(commands.Cog):
@@ -161,7 +164,7 @@ class StaffingCog(commands.Cog):
 
             await self.staffing_async._book(ctx, staffing, position, section)
         except Exception as e:
-            print(f'Error booking position {position} - {e}')
+            logger.exception('Error booking position', position=position)
 
             await ctx.send(f'Error booking position {position} - {e}')
             raise
@@ -192,8 +195,9 @@ class StaffingCog(commands.Cog):
             event = staffing.get('event', {})
 
             if not event:
-                print(
-                    f'Unbooking failed for user {ctx.author.id}: Event not found for this staffing.'
+                logger.warning(
+                    'Unbooking failed: event not found for staffing',
+                    user=ctx.author.id,
                 )
 
                 await ctx.send(
@@ -248,8 +252,10 @@ class StaffingCog(commands.Cog):
                 return
 
         except Exception as e:
-            print(
-                f'Error unbooking position user: {ctx.author.id} for event {event.get("title", "")} - {e}'
+            logger.exception(
+                'Error unbooking position',
+                user=ctx.author.id,
+                event_title=event.get('title', ''),
             )
 
             await ctx.send(

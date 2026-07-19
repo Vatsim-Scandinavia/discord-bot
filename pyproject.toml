@@ -90,6 +90,9 @@ unfixable = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = ["S101"]
+# Intentionally named `logging`; absolute imports mean `import logging` inside
+# it still resolves to the stdlib module, so shadowing is harmless here.
+"core/logging.py" = ["A005"]
 
 [tool.ruff.format]
 quote-style = "single"

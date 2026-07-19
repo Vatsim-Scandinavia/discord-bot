@@ -1,10 +1,13 @@
 import discord
+import structlog
 from discord import app_commands
 from discord.ext import commands
 
 from helpers.config import config
 from helpers.handler import Handler
 from helpers.message import embed
+
+logger = structlog.stdlib.get_logger()
 
 
 class AdminCog(commands.Cog):
@@ -59,7 +62,7 @@ class AdminCog(commands.Cog):
     @app_commands.checks.has_any_role(*config.STAFF_ROLES)
     @app_commands.autocomplete(cog=autocomplete_loaded_cogs)
     async def unload(self, interaction: discord.Interaction, cog: str):
-        print(cog, flush=True)
+        logger.debug('Unloading cog', cog=cog)
         try:
             await self.bot.unload_extension(config.COGS_LOAD[cog])
 

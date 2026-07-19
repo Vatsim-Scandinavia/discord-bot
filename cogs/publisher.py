@@ -1,11 +1,14 @@
 import asyncio
 
 import discord
+import structlog
 from discord.errors import HTTPException
 from discord.ext import commands
 from discord.ext.commands import Bot
 
 from helpers.config import config
+
+logger = structlog.stdlib.get_logger()
 
 
 class PublishMessageException(Exception):
@@ -40,9 +43,8 @@ class Publisher(commands.Cog):
                     retry_after = (
                         e.retry_after if hasattr(e, 'retry_after') else 500
                     )  # Default to 500 seconds if not provided
-                    print(
-                        f'Rate limit hit! Retrying in {retry_after:.2f} seconds...',
-                        flush=True,
+                    logger.warning(
+                        'Rate limit hit; retrying', retry_after=round(retry_after, 2)
                     )
                     await asyncio.sleep(retry_after)
 
@@ -52,7 +54,7 @@ class Publisher(commands.Cog):
             except Exception as e:
                 raise PublishMessageException from e
 
-        print(f'Failed to publish message after {retries} attempts', flush=True)
+        logger.error('Failed to publish message', attempts=retries)
 
 
 async def setup(bot: Bot) -> None:
