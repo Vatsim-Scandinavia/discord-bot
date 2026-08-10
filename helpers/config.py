@@ -97,6 +97,14 @@ class Config:
         self.CC_API_URL = str(os.getenv('CC_API_URL', ''))
         self.CC_API_TOKEN = str(os.getenv('CC_API_TOKEN', ''))
 
+        # CC role identifiers that map to Discord roles. Comma-separated; a
+        # single Discord role can be driven by several CC identifiers. Matching
+        # is case-insensitive (identifiers are lowercased here to pair with the
+        # lowercasing of the CC payload in RolesCog.get_mentor_roles).
+        self.CC_MENTOR_ROLES = self._parse_cc_roles('CC_MENTOR_ROLES', 'mentor')
+        self.CC_BUDDY_ROLES = self._parse_cc_roles('CC_BUDDY_ROLES', 'buddy')
+        self.CC_TRAINING_ROLES = self._parse_cc_roles('CC_TRAINING_ROLES', 'moderator')
+
         # Event Calendar API
         self.EVENT_CALENDAR_URL = str(os.getenv('EVENT_CALENDAR_URL', ''))
         self.EVENT_API_TOKEN = str(os.getenv('EVENT_API_TOKEN', ''))
@@ -233,6 +241,22 @@ class Config:
         self.STATION_PREFIX_SHOW_PILOTS = os.getenv(
             'STATION_PREFIX_SHOW_PILOTS', 'True'
         ).lower() in ('true', '1', 'yes')
+
+    @staticmethod
+    def _parse_cc_roles(env_name: str, default: str) -> frozenset[str]:
+        """
+        Parse a comma-separated CC role list into a lowercased frozenset.
+
+        Falls back to ``default`` when the environment variable is unset or
+        contains no usable identifiers (e.g. blank or whitespace-only). A
+        frozenset is returned so the configured constants cannot be mutated at
+        runtime.
+        """
+
+        def parse(raw: str) -> set[str]:
+            return {part.strip().lower() for part in raw.split(',') if part.strip()}
+
+        return frozenset(parse(os.getenv(env_name, '')) or parse(default))
 
     def activity(self) -> discord.Activity:
         return discord.Activity(

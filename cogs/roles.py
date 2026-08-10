@@ -245,15 +245,18 @@ class RolesCog(commands.Cog):
                 # normalise so matching is resilient to casing changes on the API side.
                 normalised_roles = {role.lower() for role in roles}
 
-                if 'mentor' in normalised_roles:
+                # The CC identifiers that map to each Discord role are configurable
+                # and may list several values, so a non-empty intersection means at
+                # least one configured identifier matched for this FIR.
+                if normalised_roles & config.CC_MENTOR_ROLES:
                     should_be_mentor = True
                     mentor_firs.append(fir)
 
-                if 'buddy' in normalised_roles:
+                if normalised_roles & config.CC_BUDDY_ROLES:
                     should_be_buddy = True
                     buddy_firs.append(fir)
 
-                if 'moderator' in normalised_roles:
+                if normalised_roles & config.CC_TRAINING_ROLES:
                     should_be_training_staff = True
 
         return MentorBuddyInfo(
