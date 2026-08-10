@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.0](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.5.10...v2.6.0) (2026-08-10)
+
+
+### Features
+
+* **roles:** make CC to Discord role mappings configurable ([#221](https://github.com/Vatsim-Scandinavia/discord-bot/issues/221)) ([73fec93](https://github.com/Vatsim-Scandinavia/discord-bot/commit/73fec93c831c79ae5d7f0cacc4619d846feddcd5))
+
 ## [2.5.10](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.5.9...v2.5.10) (2026-07-19)
 
 
