@@ -2,15 +2,19 @@ import asyncio
 
 import pytest
 
-from cogs.roles import RolesCog
+from cogs.cc_roles import CCRolesCog
 from helpers.config import config
+from tests.conftest import FakeMember, FakeRole
+
+DENMARK = FakeRole(1, 'Denmark')
+NORWAY = FakeRole(2, 'Norway')
 
 
 @pytest.fixture
-def cog() -> RolesCog:
+def cog() -> CCRolesCog:
     # Bypass __init__ so we don't start the background task loop; get_mentor_roles
     # is a pure function of its arguments and needs no bot/loop state.
-    return RolesCog.__new__(RolesCog)
+    return CCRolesCog.__new__(CCRolesCog)
 
 
 CID = 1234567
@@ -37,7 +41,7 @@ CID = 1234567
     ],
 )
 def test_get_mentor_roles_detects_case_insensitive_roles(
-    cog: RolesCog,
+    cog: CCRolesCog,
     roles_payload: dict,
     expect_mentor: bool,
     expect_buddy: bool,
@@ -54,7 +58,7 @@ def test_get_mentor_roles_detects_case_insensitive_roles(
     assert info.mentor_firs == expect_firs
 
 
-def test_get_mentor_roles_ignores_other_users(cog: RolesCog) -> None:
+def test_get_mentor_roles_ignores_other_users(cog: CCRolesCog) -> None:
     data = [{'id': 7654321, 'roles': {'Norway': ['mentor']}}]
 
     info = cog.get_mentor_roles(CID, data)
@@ -63,7 +67,7 @@ def test_get_mentor_roles_ignores_other_users(cog: RolesCog) -> None:
 
 
 def test_get_mentor_roles_uses_configured_cc_roles(
-    cog: RolesCog, monkeypatch: pytest.MonkeyPatch
+    cog: CCRolesCog, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     # Operators can rename the CC identifiers that map to each Discord role.
     monkeypatch.setattr(config, 'CC_MENTOR_ROLES', {'coach'})
@@ -91,7 +95,7 @@ def test_get_mentor_roles_uses_configured_cc_roles(
 
 
 def test_get_mentor_roles_supports_multiple_cc_roles_per_discord_role(
-    cog: RolesCog, monkeypatch: pytest.MonkeyPatch
+    cog: CCRolesCog, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     # A single Discord role can be driven by several CC identifiers, and the
     # per-FIR lists must aggregate matches from every configured identifier.
@@ -143,37 +147,8 @@ def test_parse_cc_roles_returns_immutable_lowercased_set(
     assert isinstance(result, frozenset)
 
 
-class FakeRole:
-    def __init__(self, role_id: int) -> None:
-        self.id = role_id
-
-
-class FakeGuild:
-    def __init__(self, roles: list[FakeRole]) -> None:
-        self.roles = roles
-
-
-class FakeMember:
-    """Minimal stand-in for discord.Member that records role changes."""
-
-    def __init__(self, guild_roles: list[FakeRole], roles: list[FakeRole]) -> None:
-        self.guild = FakeGuild(guild_roles)
-        self.roles = list(roles)
-        self.name = 'tester'
-
-    async def add_roles(self, *roles: FakeRole, reason: str = '') -> None:
-        self.roles.extend(role for role in roles if role not in self.roles)
-
-    async def remove_roles(self, *roles: FakeRole, reason: str = '') -> None:
-        self.roles = [role for role in self.roles if role not in roles]
-
-
-DENMARK = FakeRole(1)
-NORWAY = FakeRole(2)
-
-
 def test_update_fir_roles_removes_fir_the_member_no_longer_holds(
-    cog: RolesCog, monkeypatch: pytest.MonkeyPatch
+    cog: CCRolesCog, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     # A mentor who moves from Denmark to Norway must lose the Denmark role.
     monkeypatch.setattr(config, 'FIR_MENTORS', {'Denmark': '1', 'Norway': '2'})
@@ -185,7 +160,7 @@ def test_update_fir_roles_removes_fir_the_member_no_longer_holds(
 
 
 def test_update_fir_roles_removes_all_firs_when_role_revoked(
-    cog: RolesCog, monkeypatch: pytest.MonkeyPatch
+    cog: CCRolesCog, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(config, 'FIR_MENTORS', {'Denmark': '1', 'Norway': '2'})
     user = FakeMember(guild_roles=[DENMARK, NORWAY], roles=[DENMARK, NORWAY])
@@ -195,7 +170,7 @@ def test_update_fir_roles_removes_all_firs_when_role_revoked(
     assert user.roles == []
 
 
-def test_missing_cc_datasets_names_empty_and_failed_fetches(cog: RolesCog) -> None:
+def test_missing_cc_datasets_names_empty_and_failed_fetches(cog: CCRolesCog) -> None:
     # None is a failed fetch, [] is a successful but empty one. Acting on either
     # would strip managed roles from every member.
     missing = cog.missing_cc_datasets(
@@ -211,7 +186,7 @@ def test_missing_cc_datasets_names_empty_and_failed_fetches(cog: RolesCog) -> No
 
 
 def test_missing_cc_datasets_is_empty_when_all_datasets_have_data(
-    cog: RolesCog,
+    cog: CCRolesCog,
 ) -> None:
     missing = cog.missing_cc_datasets(
         {
