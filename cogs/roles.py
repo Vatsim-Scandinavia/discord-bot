@@ -76,6 +76,26 @@ class RolesCog(commands.Cog):
         endorsement_data = await self.roles.get_endorsement()
         atc_activity_data = await self.roles.get_atc_activity()
 
+        # Every check below reads "not in the Control Center data" as "should not
+        # have the role". If a fetch failed or came back empty we would therefore
+        # strip the managed roles from the whole guild, so stop instead.
+        missing = self.missing_cc_datasets(
+            {
+                'roles': roles_data,
+                'training': trainings_data,
+                'endorsements': endorsement_data,
+                'atc_activity': atc_activity_data,
+            }
+        )
+        if missing:
+            logger.error(
+                'Job aborted, Control Center returned no data',
+                job='check_roles',
+                status='aborted',
+                missing=missing,
+            )
+            return
+
         mentor_role = discord.utils.get(guild.roles, id=config.MENTOR_ROLE)
         buddy_role = discord.utils.get(guild.roles, id=config.BUDDY_ROLE)
         training_staff_role = discord.utils.get(
@@ -102,6 +122,23 @@ class RolesCog(commands.Cog):
             end_time=datetime.datetime.now().isoformat(),
             status='success',
         )
+
+    @staticmethod
+    def missing_cc_datasets(datasets: dict[str, list | None]) -> list[str]:
+        """
+        Name the Control Center datasets that came back unusable.
+
+        A ``None`` value is a failed fetch and an empty list is a successful but
+        empty response. Both are unsafe to act on, so both are reported.
+
+        Args:
+            datasets (dict): Dataset name mapped to the fetched API data.
+
+        Returns:
+            list[str]: The names of the datasets holding no data.
+
+        """
+        return [name for name, data in datasets.items() if not data]
 
     async def process_member_roles(
         self,
@@ -379,11 +416,11 @@ class RolesCog(commands.Cog):
                 logger.warning('Role not found in FIR.', role_id=role_id, fir=fir)
                 continue
 
-            if fir in fir_data and should_be_assigned:
-                await self.update_role(user, fir_role, True, add_reason, remove_reason)
-
-            elif fir not in fir_data and not should_be_assigned:
-                await self.update_role(user, fir_role, False, add_reason, remove_reason)
+            # The member keeps the role only while they hold the parent role and
+            # are still listed for this FIR. Anything else means remove it, so a
+            # member who moves between FIRs does not keep the old one.
+            condition = should_be_assigned and fir in fir_data
+            await self.update_role(user, fir_role, condition, add_reason, remove_reason)
 
     async def update_training_roles(self, user, student_data, should_be_student):
         """

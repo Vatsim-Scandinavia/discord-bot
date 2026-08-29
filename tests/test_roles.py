@@ -1,3 +1,5 @@
+import asyncio
+
 import pytest
 
 from cogs.roles import RolesCog
@@ -139,3 +141,85 @@ def test_parse_cc_roles_returns_immutable_lowercased_set(
 
     assert result == frozenset({'mentor', 'coach'})
     assert isinstance(result, frozenset)
+
+
+class FakeRole:
+    def __init__(self, role_id: int) -> None:
+        self.id = role_id
+
+
+class FakeGuild:
+    def __init__(self, roles: list[FakeRole]) -> None:
+        self.roles = roles
+
+
+class FakeMember:
+    """Minimal stand-in for discord.Member that records role changes."""
+
+    def __init__(self, guild_roles: list[FakeRole], roles: list[FakeRole]) -> None:
+        self.guild = FakeGuild(guild_roles)
+        self.roles = list(roles)
+        self.name = 'tester'
+
+    async def add_roles(self, *roles: FakeRole, reason: str = '') -> None:
+        self.roles.extend(role for role in roles if role not in self.roles)
+
+    async def remove_roles(self, *roles: FakeRole, reason: str = '') -> None:
+        self.roles = [role for role in self.roles if role not in roles]
+
+
+DENMARK = FakeRole(1)
+NORWAY = FakeRole(2)
+
+
+def test_update_fir_roles_removes_fir_the_member_no_longer_holds(
+    cog: RolesCog, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # A mentor who moves from Denmark to Norway must lose the Denmark role.
+    monkeypatch.setattr(config, 'FIR_MENTORS', {'Denmark': '1', 'Norway': '2'})
+    user = FakeMember(guild_roles=[DENMARK, NORWAY], roles=[DENMARK])
+
+    asyncio.run(cog.update_fir_roles(user, ['Norway'], 'mentor', True))
+
+    assert user.roles == [NORWAY]
+
+
+def test_update_fir_roles_removes_all_firs_when_role_revoked(
+    cog: RolesCog, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(config, 'FIR_MENTORS', {'Denmark': '1', 'Norway': '2'})
+    user = FakeMember(guild_roles=[DENMARK, NORWAY], roles=[DENMARK, NORWAY])
+
+    asyncio.run(cog.update_fir_roles(user, [], 'mentor', False))
+
+    assert user.roles == []
+
+
+def test_missing_cc_datasets_names_empty_and_failed_fetches(cog: RolesCog) -> None:
+    # None is a failed fetch, [] is a successful but empty one. Acting on either
+    # would strip managed roles from every member.
+    missing = cog.missing_cc_datasets(
+        {
+            'roles': [{'id': CID}],
+            'training': [],
+            'endorsements': None,
+            'atc_activity': [{'id': CID}],
+        }
+    )
+
+    assert missing == ['training', 'endorsements']
+
+
+def test_missing_cc_datasets_is_empty_when_all_datasets_have_data(
+    cog: RolesCog,
+) -> None:
+    missing = cog.missing_cc_datasets(
+        {
+            'roles': [{'id': CID}],
+            'training': [{'id': CID}],
+            'endorsements': [{'id': CID}],
+            'atc_activity': [{'id': CID}],
+        }
+    )
+
+    assert missing == []
