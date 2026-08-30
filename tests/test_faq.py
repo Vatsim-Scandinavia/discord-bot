@@ -2,8 +2,8 @@ import asyncio
 
 import pytest
 
-from cogs.faq import FAQ
-from tests.conftest import FakeChannel, FakeMessage
+from cogs.faq import FAQ, FAQTopicSelect
+from tests.conftest import FakeChannel, FakeInteraction, FakeMessage
 
 TRIGGERS = {
     'ATC Application': {'triggers': {'apply', 'atc', 'training'}, 'threshold': 2},
@@ -107,3 +107,88 @@ def test_the_cooldown_is_per_channel(cog: FAQ) -> None:
 
     assert len(first.sent) == 1
     assert len(second.sent) == 1
+
+
+def test_the_picker_offers_the_best_guess_first(cog: FAQ) -> None:
+    cog = build(cog)
+    ranked = cog.rank_topics('how long is the wait time?')
+
+    assert ranked[0] == 'Waiting Time'
+
+
+def test_picking_a_topic_replies_to_the_message_that_asked(cog: FAQ) -> None:
+    cog = build(cog)
+    channel = FakeChannel()
+    asked = FakeMessage('any idea about this?', channel)
+    interaction = FakeInteraction()
+
+    select = FAQTopicSelect(cog, asked, list(TRIGGERS))
+    select._values = ['Waiting Time']
+    asyncio.run(select.callback(interaction))
+
+    content, _ = channel.sent[0]
+    assert channel.replied_to == [asked]
+    assert '@tester' in content
+    assert "I believe you're asking about" not in content
+    assert interaction.response.edits == ['Replied with **Waiting Time**.']
+
+
+def test_a_manual_answer_puts_the_topic_on_cooldown(cog: FAQ) -> None:
+    cog = build(cog)
+    channel = FakeChannel()
+    asked = FakeMessage('any idea about this?', channel)
+
+    select = FAQTopicSelect(cog, asked, list(TRIGGERS))
+    select._values = ['Waiting Time']
+    asyncio.run(select.callback(FakeInteraction()))
+
+    # The bot should not follow that up with the same answer of its own.
+    asyncio.run(cog.on_message(FakeMessage('how long is the wait time?', channel)))
+
+    assert len(channel.sent) == 1
+
+
+def test_a_second_pick_does_not_answer_twice(cog: FAQ) -> None:
+    cog = build(cog)
+    channel = FakeChannel()
+    asked = FakeMessage('any idea about this?', channel)
+
+    select = FAQTopicSelect(cog, asked, list(TRIGGERS))
+    select._values = ['Waiting Time']
+    asyncio.run(select.callback(FakeInteraction()))
+    asyncio.run(select.callback(FakeInteraction()))
+
+    assert len(channel.sent) == 1
+
+
+def test_a_reply_the_channel_refuses_leaves_no_cooldown(cog: FAQ) -> None:
+    cog = build(cog)
+    channel = FakeChannel()
+    channel.refuse_send = True
+    asked = FakeMessage('any idea about this?', channel)
+    interaction = FakeInteraction()
+
+    select = FAQTopicSelect(cog, asked, list(TRIGGERS))
+    select._values = ['Waiting Time']
+    asyncio.run(select.callback(interaction))
+
+    # Nothing was posted, so the topic must be free to answer on its own.
+    assert cog.recent_replies == {}
+    assert interaction.response.messages
+    assert not interaction.response.edits
+
+
+def test_a_refused_reply_can_be_tried_again(cog: FAQ) -> None:
+    cog = build(cog)
+    channel = FakeChannel()
+    channel.refuse_send = True
+    asked = FakeMessage('any idea about this?', channel)
+
+    select = FAQTopicSelect(cog, asked, list(TRIGGERS))
+    select._values = ['Waiting Time']
+    asyncio.run(select.callback(FakeInteraction()))
+
+    channel.refuse_send = False
+    asyncio.run(select.callback(FakeInteraction()))
+
+    assert len(channel.sent) == 1
