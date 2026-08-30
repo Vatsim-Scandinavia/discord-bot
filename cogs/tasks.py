@@ -5,6 +5,7 @@ import structlog
 from discord import app_commands
 from discord.ext import commands, tasks
 
+from core.roles import update_role
 from helpers.config import config
 from helpers.handler import Handler
 from helpers.ux import NicknameAssignment
@@ -104,7 +105,7 @@ class TasksCog(commands.Cog):
             )
 
             if vatsim_role in user.roles:
-                await self.update_role(
+                await update_role(
                     user,
                     vatsca_role,
                     is_vatsca_member,
@@ -125,15 +126,6 @@ class TasksCog(commands.Cog):
 
         except Exception as e:
             logger.exception('Error processing member', member=user, error=str(e))
-
-    async def update_role(
-        self, user, role, should_have_role, add_reason, remove_reason
-    ):
-        """Adds or removes a role based on conditions."""
-        if should_have_role and role not in user.roles:
-            await user.add_roles(role, reason=add_reason)
-        elif not should_have_role and role in user.roles:
-            await user.remove_roles(role, reason=remove_reason)
 
     @tasks.loop(seconds=config.CHECK_MEMBERS_INTERVAL)
     async def check_members_loop(self):

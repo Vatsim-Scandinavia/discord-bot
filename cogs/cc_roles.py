@@ -267,7 +267,8 @@ class CCRolesCog(commands.Cog):
             if member_data['id'] != cid:
                 continue
 
-            for fir, roles in member_data['roles'].items():
+            # A member with no roles at all comes back as a null 'roles' key.
+            for fir, roles in (member_data.get('roles') or {}).items():
                 if roles is None:
                     continue
 
@@ -316,13 +317,13 @@ class CCRolesCog(commands.Cog):
             if member_data['id'] != cid:
                 continue
 
-            endorsements = member_data.get('endorsements', {})
-            examiner_endorsements = endorsements.get('examiner', [])
+            endorsements = member_data.get('endorsements') or {}
+            examiner_endorsements = endorsements.get('examiner') or []
 
             if examiner_endorsements:
                 should_be_examiner = True
                 for endorsement in examiner_endorsements:
-                    examiner_firs.extend(endorsement.get('areas', []))
+                    examiner_firs.extend(endorsement.get('areas') or [])
 
         return should_be_examiner, examiner_firs
 
@@ -344,8 +345,8 @@ class CCRolesCog(commands.Cog):
             if member_data['id'] != cid:
                 continue
 
-            endorsements = member_data.get('endorsements', {})
-            visitor_endorsements = endorsements.get('visiting', [])
+            endorsements = member_data.get('endorsements') or {}
+            visitor_endorsements = endorsements.get('visiting') or []
 
             if visitor_endorsements:
                 should_be_visitor = True
@@ -365,7 +366,9 @@ class CCRolesCog(commands.Cog):
             if member_data['id'] != cid:
                 continue
 
-            training = member_data.get('training', {})
+            # Control Center sends a null rather than an empty list for a member
+            # with no training records.
+            training = member_data.get('training') or []
 
             for item in training:
                 if int(item['status']) >= 2:
@@ -442,76 +445,52 @@ class CCRolesCog(commands.Cog):
             (entry for entry in atc_activity_data if entry['id'] == cid), None
         )
 
-        if not user_entry:
-            # No ATC data available for the user → Remove any existing FIR roles
-            for fir, role_id in config.CONTROLLER_FIR_ROLES.items():
-                fir_role = discord.utils.get(guild.roles, id=int(role_id))
-                if fir_role:
-                    role_tasks.append(
-                        update_role(
-                            user, fir_role, False, '', f'Not active in {fir} (no data)'
-                        )
-                    )
+        # onlyAtcActive means absence carries no information: an inactive member is
+        # missing from the payload, and an active one is only listed for the FIRs
+        # they currently control. Iterate the configured roles rather than the
+        # payload, so every managed role is confirmed or removed on each run.
+        fir_activity = (user_entry.get('atc_active_areas') or {}) if user_entry else {}
+        rating = (user_entry.get('rating') or '') if user_entry else ''
 
-            for fir, roles in config.RATING_FIR_DATA.items():
-                for role_id in roles.values():
-                    fir_role = discord.utils.get(guild.roles, id=int(role_id))
-                    if fir_role:
-                        role_tasks.append(
-                            update_role(
-                                user,
-                                fir_role,
-                                False,
-                                '',
-                                f'Not active in {fir} (no data)',
-                            )
-                        )
+        active_firs = {
+            fir.capitalize() for fir, is_active in fir_activity.items() if is_active
+        }
+        effective_rating = 'C1' if rating in config.c1_equivalent_ratings else rating
 
-            await asyncio.gather(*role_tasks)
-            return
+        # General controller role per FIR
+        for fir, role_id in config.CONTROLLER_FIR_ROLES.items():
+            controller_role = discord.utils.get(guild.roles, id=int(role_id))
+            if not controller_role:
+                continue
 
-        fir_activity = user_entry.get('atc_active_areas', {})
-        rating = user_entry.get('rating', '')
-
-        for fir, is_active in fir_activity.items():
-            fir_cap = fir.capitalize()
-
-            # Handle ATC rating-based roles
-            fir_roles = config.RATING_FIR_DATA.get(fir_cap, {})
-            role_id = (
-                fir_roles.get('C1')
-                if rating in config.c1_equivalent_ratings
-                else fir_roles.get(rating)
-            )
-            if role_id:
-                fir_role = discord.utils.get(guild.roles, id=int(role_id))
-                if fir_role:
-                    role_tasks.append(
-                        update_role(
-                            user,
-                            fir_role,
-                            is_active,
-                            f'ATC active in {fir} as {rating}',
-                            f'Not ATC active in {fir}',
-                        )
-                    )
-
-            # Handle general controller role
-            controller_role_id = config.CONTROLLER_FIR_ROLES.get(fir_cap)
-            if controller_role_id:
-                controller_role = discord.utils.get(
-                    guild.roles, id=int(controller_role_id)
+            role_tasks.append(
+                update_role(
+                    user,
+                    controller_role,
+                    fir in active_firs,
+                    f'Active controller in {fir}',
+                    f'Not active controller in {fir}',
                 )
-                if controller_role:
-                    role_tasks.append(
-                        update_role(
-                            user,
-                            controller_role,
-                            is_active,
-                            f'Active controller in {fir}',
-                            f'Not active controller in {fir}',
-                        )
+            )
+
+        # Rating-specific role per FIR
+        for fir, fir_roles in config.RATING_FIR_DATA.items():
+            is_active = fir in active_firs
+
+            for role_rating, role_id in fir_roles.items():
+                fir_role = discord.utils.get(guild.roles, id=int(role_id))
+                if not fir_role:
+                    continue
+
+                role_tasks.append(
+                    update_role(
+                        user,
+                        fir_role,
+                        is_active and role_rating == effective_rating,
+                        f'ATC active in {fir} as {rating}',
+                        f'Not ATC active in {fir} as {role_rating}',
                     )
+                )
 
         await asyncio.gather(*role_tasks)
 

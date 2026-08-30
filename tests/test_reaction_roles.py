@@ -21,6 +21,7 @@ def fir_role() -> FakeRole:
 def reaction_config(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(config, 'REACTION_MESSAGE_IDS', [str(MESSAGE_ID)])
     monkeypatch.setattr(config, 'REACTION_ROLES', {':star:': '1'})
+    monkeypatch.setattr(config, 'REACTION_ROLE_MAP', {(str(MESSAGE_ID), ':star:'): '1'})
 
 
 def build(member: FakeMember) -> ReactionRolesCog:
@@ -64,6 +65,22 @@ def test_reaction_on_unconfigured_message_is_ignored(fir_role: FakeRole) -> None
 
 def test_reaction_with_unconfigured_emoji_is_ignored(fir_role: FakeRole) -> None:
     member = FakeMember(guild_roles=[fir_role], roles=[], member_id=USER_ID)
+
+    asyncio.run(build(member).handle_role_reaction(payload(emoji_name='🔨'), 'add'))
+
+    assert member.roles == []
+    assert member.dms == []
+
+
+def test_reaction_role_map_keeps_emoji_bound_to_its_message(
+    fir_role: FakeRole, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # The same emoji drives a different role on a different message, so a
+    # reaction on the wrong message must not grant the other message's role.
+    other_role = FakeRole(2, 'Norway')
+    monkeypatch.setattr(config, 'REACTION_MESSAGE_IDS', [str(MESSAGE_ID), '777'])
+    monkeypatch.setattr(config, 'REACTION_ROLE_MAP', {('777', ':hammer:'): '2'})
+    member = FakeMember(guild_roles=[fir_role, other_role], roles=[], member_id=USER_ID)
 
     asyncio.run(build(member).handle_role_reaction(payload(emoji_name='🔨'), 'add'))
 

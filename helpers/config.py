@@ -162,16 +162,25 @@ class Config:
         )
         self.FIR_EXAMINERS = dict(zip(self.EXAM_FIRS, self.EXAM_ROLES, strict=False))
 
-        # Training Data
+        # Training Data. Entries are comma separated, so a country with several
+        # ratings appears once per rating ("Norway|S1:1,Norway|S2:2"); merge per
+        # country. A rating missing from this map is neither granted by
+        # update_training_roles nor cleaned up by membership_role_ids.
         self.TRAINING_DATA = os.getenv('TRAINING_DATA', '').split(',')
-        self.TRAINING_ROLES = {
-            country: {
-                role.split(':')[0]: role.split(':')[1] for role in roles_str.split(',')
-            }
-            for country, roles_str in (
-                entry.split('|') for entry in self.TRAINING_DATA if '|' in entry
-            )
-        }
+        self.TRAINING_ROLES: dict[str, dict[str, str]] = {}
+        for entry in self.TRAINING_DATA:
+            if '|' not in entry:
+                continue
+
+            country, _, roles_str = entry.partition('|')
+            ratings = self.TRAINING_ROLES.setdefault(country.strip(), {})
+
+            # A single entry may also list several ratings pipe-separated, the
+            # same way RATING_FIR_DATA does.
+            for role in roles_str.split('|'):
+                rating, _, role_id = role.partition(':')
+                if rating.strip() and role_id.strip():
+                    ratings[rating.strip()] = role_id.strip()
 
         self.CONTROLLER_FIR_DATA = [
             fir.split(':')
@@ -221,6 +230,16 @@ class Config:
 
         self.REACTION_ROLES = dict(
             zip(self.REACTION_EMOJI, self.REACTION_ROLE_IDS, strict=False)
+        )
+
+        # REACTION_ROLES is keyed by emoji alone and cannot tell two messages
+        # sharing an emoji apart, so handlers match on the (message, emoji) pair.
+        self.REACTION_ROLE_MAP: dict[tuple[str, str], str] = dict(
+            zip(
+                zip(self.REACTION_MESSAGE_IDS, self.REACTION_EMOJI, strict=False),
+                self.REACTION_ROLE_IDS,
+                strict=False,
+            )
         )
 
         # Intervals

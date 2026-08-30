@@ -3,7 +3,7 @@ import asyncio
 import pytest
 
 from cogs.cc_roles import CCRolesCog
-from helpers.config import config
+from helpers.config import Config, config
 from tests.conftest import FakeMember, FakeRole
 
 DENMARK = FakeRole(1, 'Denmark')
@@ -147,6 +147,21 @@ def test_parse_cc_roles_returns_immutable_lowercased_set(
     assert isinstance(result, frozenset)
 
 
+def test_training_roles_merges_repeated_countries(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # TRAINING_DATA is comma separated, so a country with several ratings is
+    # listed once per rating. Every rating must survive the parse.
+    monkeypatch.setenv('TRAINING_DATA', 'Denmark|S2:1,Norway|S1:2,Norway|S2:3')
+
+    parsed = Config()
+
+    assert parsed.TRAINING_ROLES == {
+        'Denmark': {'S2': '1'},
+        'Norway': {'S1': '2', 'S2': '3'},
+    }
+
+
 def test_update_fir_roles_removes_fir_the_member_no_longer_holds(
     cog: CCRolesCog, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -198,3 +213,60 @@ def test_missing_cc_datasets_is_empty_when_all_datasets_have_data(
     )
 
     assert missing == []
+
+
+DENMARK_S3 = FakeRole(11, 'Denmark S3')
+DENMARK_C1 = FakeRole(12, 'Denmark C1')
+DENMARK_CTR = FakeRole(13, 'Denmark Controller')
+NORWAY_CTR = FakeRole(14, 'Norway Controller')
+
+ATC_GUILD_ROLES = [DENMARK_S3, DENMARK_C1, DENMARK_CTR, NORWAY_CTR]
+
+
+@pytest.fixture
+def atc_config(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        config, 'RATING_FIR_DATA', {'Denmark': {'S3': '11', 'C1': '12'}}
+    )
+    monkeypatch.setattr(
+        config, 'CONTROLLER_FIR_ROLES', {'Denmark': '13', 'Norway': '14'}
+    )
+
+
+def test_update_fir_atc_roles_swaps_the_role_when_the_rating_changes(
+    cog: CCRolesCog, atc_config: None
+) -> None:
+    # A controller promoted from S3 to C1 must lose the S3 role for that FIR.
+    user = FakeMember(guild_roles=ATC_GUILD_ROLES, roles=[DENMARK_S3, DENMARK_CTR])
+    data = [{'id': CID, 'atc_active_areas': {'denmark': True}, 'rating': 'C1'}]
+
+    asyncio.run(cog.update_fir_atc_roles(user, CID, data))
+
+    assert sorted(role.id for role in user.roles) == [12, 13]
+
+
+def test_update_fir_atc_roles_removes_firs_absent_from_the_payload(
+    cog: CCRolesCog, atc_config: None
+) -> None:
+    # onlyAtcActive means an area the member is no longer active in simply drops
+    # out of the payload; the role must still be removed.
+    user = FakeMember(
+        guild_roles=ATC_GUILD_ROLES, roles=[DENMARK_S3, DENMARK_CTR, NORWAY_CTR]
+    )
+    data = [{'id': CID, 'atc_active_areas': {'denmark': True}, 'rating': 'S3'}]
+
+    asyncio.run(cog.update_fir_atc_roles(user, CID, data))
+
+    assert sorted(role.id for role in user.roles) == [11, 13]
+
+
+def test_update_fir_atc_roles_clears_everything_without_an_entry(
+    cog: CCRolesCog, atc_config: None
+) -> None:
+    user = FakeMember(
+        guild_roles=ATC_GUILD_ROLES, roles=[DENMARK_S3, DENMARK_CTR, NORWAY_CTR]
+    )
+
+    asyncio.run(cog.update_fir_atc_roles(user, CID, []))
+
+    assert user.roles == []

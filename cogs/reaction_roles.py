@@ -36,13 +36,13 @@ class ReactionRolesCog(commands.Cog):
         emoji_name = emoji.demojize(payload.emoji.name)
         message_id = str(payload.message_id)
 
-        if (
-            message_id not in config.REACTION_MESSAGE_IDS
-            or emoji_name not in config.REACTION_ROLES
-        ):
+        # Keyed by the pair: the same emoji may drive a different role on another
+        # message, and grants nothing on a message it is not configured for.
+        configured_role_id = config.REACTION_ROLE_MAP.get((message_id, emoji_name))
+        if configured_role_id is None:
             return
 
-        role_id = int(config.REACTION_ROLES[emoji_name])
+        role_id = int(configured_role_id)
         role = discord.utils.get(guild.roles, id=role_id)
         if not role:
             logger.warning('Reaction role not found in guild', role_id=role_id)
