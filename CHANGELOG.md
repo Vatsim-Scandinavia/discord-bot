@@ -3,11 +3,6 @@
 ## [2.6.1](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.6.0...v2.6.1) (2026-08-30)
 
 
-### Features
-
-* introduce ad-hoc staffer that uses uhhh staffer ([5c04098](https://github.com/Vatsim-Scandinavia/discord-bot/commit/5c0409899219505cddc2c646701bc744a1f36dc1))
-
-
 ### Bug Fixes
 
 * **roles:** add guard for accidentally missing CC data ([bfe00d9](https://github.com/Vatsim-Scandinavia/discord-bot/commit/bfe00d9fbde185ef32ff07adea7ef56cd62c76b3))
