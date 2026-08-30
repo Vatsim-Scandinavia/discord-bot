@@ -39,10 +39,9 @@ class Config:
             'cogs.vatsim_roles',
             'cogs.reaction_roles',
             'cogs.tasks',
-            # 'cogs.update_messages',
-            # 'cogs.staffings',
-            # 'cogs.faq',
-            'cogs.staffer',
+            'cogs.update_messages',
+            'cogs.staffings',
+            'cogs.faq',
         ]
 
         self.COGS_LOAD = {
@@ -57,7 +56,6 @@ class Config:
             'tasks': 'cogs.tasks',
             'update_messages': 'cogs.update_messages',
             'staffings': 'cogs.staffings',
-            'staffer': 'cogs.staffer',
         }
 
         self.STAFF_ROLES = [
