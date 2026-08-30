@@ -73,11 +73,17 @@ class FakeEmoji:
 
 class FakeReactionPayload:
     def __init__(
-        self, guild_id: int, user_id: int, message_id: int, emoji_name: str
+        self,
+        guild_id: int,
+        user_id: int,
+        message_id: int,
+        emoji_name: str,
+        channel_id: int = 1,
     ) -> None:
         self.guild_id = guild_id
         self.user_id = user_id
         self.message_id = message_id
+        self.channel_id = channel_id
         self.emoji = FakeEmoji(emoji_name)
 
 
@@ -89,6 +95,10 @@ class FakeChannel:
         self.sent: list[tuple[str, object]] = []
         self.replied_to: list[object] = []
         self.refuse_send = False
+        self.posted: list[FakeMessage] = []
+        self.refuse_reactions = False
+        self.refused_reactions: list[str] = []
+        """Emoji this channel turns down, when only some of them fail."""
 
     async def send(
         self,
@@ -96,12 +106,15 @@ class FakeChannel:
         embed: object = None,
         reference: object = None,
         mention_author: bool = True,
-    ) -> None:
+    ) -> 'FakeMessage':
         if self.refuse_send:
             raise discord.HTTPException(FakeResponse(), 'missing permissions')
 
         self.sent.append((content, embed))
         self.replied_to.append(reference)
+        self.posted.append(FakeMessage('', self, message_id=len(self.sent)))
+
+        return self.posted[-1]
 
 
 class FakeAuthor:
@@ -117,10 +130,21 @@ class FakeMessage:
         content: str,
         channel: FakeChannel | None = None,
         author: FakeAuthor | None = None,
+        message_id: int = 1,
     ) -> None:
+        self.id = message_id
         self.content = content
         self.channel = channel or FakeChannel()
         self.author = author or FakeAuthor()
+        self.reactions: list[str] = []
+
+    async def add_reaction(self, emoji: str) -> None:
+        refused = getattr(self.channel, 'refused_reactions', [])
+
+        if getattr(self.channel, 'refuse_reactions', False) or emoji in refused:
+            raise discord.HTTPException(FakeResponse(), 'missing permissions')
+
+        self.reactions.append(emoji)
 
 
 class FakeInteractionResponse:

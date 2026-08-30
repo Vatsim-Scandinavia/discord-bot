@@ -1,4 +1,6 @@
 import time
+from collections import OrderedDict
+from collections.abc import Callable
 
 import discord
 import structlog
@@ -7,11 +9,15 @@ from discord.ext import commands
 
 from core.faq import FaqMatcher, load_topics
 from helpers.config import config
-from helpers.faq import send_faq_embed
+from helpers.faq import HELPFUL, UNHELPFUL, send_faq_embed
 
 logger = structlog.stdlib.get_logger()
 
 ANSWER_MENU_NAME = 'Answer with FAQ'
+
+# How many answers we keep track of for feedback. Votes on anything older, or
+# on anything posted before a restart, are ignored.
+FEEDBACK_MEMORY = 500
 
 
 class FAQ(commands.Cog):
@@ -25,6 +31,9 @@ class FAQ(commands.Cog):
 
         # Store (channel_id, topic): last_reply_time
         self.recent_replies: dict[tuple[int, str], float] = {}
+
+        # Store answer message_id: topic, so a vote knows what it is about
+        self.answered: OrderedDict[int, str] = OrderedDict()
 
         # Context menus cannot be declared with a decorator inside a cog, so
         # build it here and hand the tree the bound method.
@@ -55,6 +64,49 @@ class FAQ(commands.Cog):
             view=FAQTopicView(self, message, topics),
             ephemeral=True,
         )
+
+    def remember_answer(self, message_id: int, topic: str) -> None:
+        """Note what an answer was about, forgetting the oldest to stay bounded."""
+        self.answered[message_id] = topic
+
+        while len(self.answered) > FEEDBACK_MEMORY:
+            self.answered.popitem(last=False)
+
+    def remembering(self, topic: str) -> Callable[[discord.Message], None]:
+        """Hand out the note-taker for one topic, for an answer about to be posted."""
+        return lambda posted: self.remember_answer(posted.id, topic)
+
+    def record_feedback(self, payload: discord.RawReactionActionEvent) -> bool:
+        """
+        Log a vote on one of our answers.
+
+        Only logged, never acted on. It is there to be counted later, so we can
+        see which topics are landing and which triggers need retuning.
+        """
+        topic = self.answered.get(payload.message_id)
+        emoji = str(payload.emoji)
+
+        if topic is None or emoji not in (HELPFUL, UNHELPFUL):
+            return False
+
+        if self.bot.user and payload.user_id == self.bot.user.id:
+            return False
+
+        logger.info(
+            'FAQ feedback',
+            topic=topic,
+            helpful=emoji == HELPFUL,
+            user_id=payload.user_id,
+            channel_id=payload.channel_id,
+        )
+
+        return True
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(
+        self, payload: discord.RawReactionActionEvent
+    ) -> None:
+        self.record_feedback(payload)
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message) -> None:
@@ -113,7 +165,11 @@ class FAQ(commands.Cog):
 
             self.recent_replies[key] = now
             await send_faq_embed(
-                message.channel, message.author.mention, title, topic.answer
+                message.channel,
+                message.author.mention,
+                title,
+                topic.answer,
+                remember=self.remembering(title),
             )
             return
 
@@ -162,6 +218,7 @@ class FAQTopicSelect(ui.Select):
                 self.target.author.mention,
                 topic,
                 self.cog.topics[topic].answer,
+                remember=self.cog.remembering(topic),
                 reference=self.target,
                 intro=f'{self.target.author.mention} this should answer it:',
             )

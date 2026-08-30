@@ -1,9 +1,10 @@
 import asyncio
+from collections import OrderedDict
 from pathlib import Path
 
 import pytest
 
-from cogs.faq import FAQ, FAQTopicSelect
+from cogs.faq import FAQ, FEEDBACK_MEMORY, FAQTopicSelect
 from core.faq import (
     FAQ_DIR,
     FaqDefinitionError,
@@ -11,7 +12,14 @@ from core.faq import (
     load_topics,
     parse_topic,
 )
-from tests.conftest import FakeChannel, FakeInteraction, FakeMessage
+from helpers.faq import FEEDBACK_NOTE, HELPFUL, UNHELPFUL, send_faq_embed
+from tests.conftest import (
+    FakeBot,
+    FakeChannel,
+    FakeInteraction,
+    FakeMessage,
+    FakeReactionPayload,
+)
 
 WAITING = """\
 +++
@@ -149,6 +157,7 @@ def build(topics: Path) -> FAQ:
     cog.topics = load_topics(topics)
     cog.matcher = FaqMatcher(cog.topics)
     cog.recent_replies = {}
+    cog.answered = OrderedDict()
     return cog
 
 
@@ -269,3 +278,80 @@ def test_a_refused_reply_can_be_tried_again(topics: Path) -> None:
     asyncio.run(select.callback(FakeInteraction()))
 
     assert len(channel.sent) == 1
+
+
+def test_an_answer_offers_the_feedback_reactions(topics: Path) -> None:
+    channel = FakeChannel()
+
+    asyncio.run(build(topics).on_message(FakeMessage('how long is the wait?', channel)))
+
+    _, embed = channel.sent[0]
+    assert embed.footer.text == FEEDBACK_NOTE
+    assert channel.posted[0].reactions == [HELPFUL, UNHELPFUL]
+
+
+def test_an_answer_still_posts_when_the_reactions_are_refused(topics: Path) -> None:
+    channel = FakeChannel()
+    channel.refuse_reactions = True
+
+    asyncio.run(build(topics).on_message(FakeMessage('how long is the wait?', channel)))
+
+    assert len(channel.sent) == 1
+
+
+def test_an_answer_is_remembered_before_the_reactions_go_on(topics: Path) -> None:
+    channel = FakeChannel()
+    reactions_when_remembered: list[list[str]] = []
+
+    asyncio.run(
+        send_faq_embed(
+            channel,
+            '@tester',
+            'Waiting Time',
+            'It varies by country.',
+            remember=lambda posted: reactions_when_remembered.append(
+                list(posted.reactions)
+            ),
+        )
+    )
+
+    # A vote can land the moment our own first reaction does, so nothing may be
+    # on the answer yet by the time it is remembered.
+    assert reactions_when_remembered == [[]]
+    assert channel.posted[0].reactions == [HELPFUL, UNHELPFUL]
+
+
+def test_a_refused_thumbs_up_still_offers_the_thumbs_down(topics: Path) -> None:
+    channel = FakeChannel()
+    channel.refused_reactions = [HELPFUL]
+
+    asyncio.run(build(topics).on_message(FakeMessage('how long is the wait?', channel)))
+
+    assert channel.posted[0].reactions == [UNHELPFUL]
+
+
+def test_a_vote_on_an_answer_is_recorded(topics: Path) -> None:
+    cog = build(topics)
+    cog.bot = FakeBot(None)
+    cog.remember_answer(77, 'Waiting Time')
+
+    assert cog.record_feedback(FakeReactionPayload(1, 42, 77, HELPFUL))
+
+
+def test_a_vote_on_anything_else_is_ignored(topics: Path) -> None:
+    cog = build(topics)
+    cog.bot = FakeBot(None)
+    cog.remember_answer(77, 'Waiting Time')
+
+    assert not cog.record_feedback(FakeReactionPayload(1, 42, 78, HELPFUL))
+    assert not cog.record_feedback(FakeReactionPayload(1, 42, 77, '⭐'))
+
+
+def test_the_bot_forgets_the_oldest_answers(topics: Path) -> None:
+    cog = build(topics)
+
+    for message_id in range(FEEDBACK_MEMORY + 10):
+        cog.remember_answer(message_id, 'Waiting Time')
+
+    assert len(cog.answered) == FEEDBACK_MEMORY
+    assert 0 not in cog.answered
