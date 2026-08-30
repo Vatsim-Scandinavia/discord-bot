@@ -77,3 +77,33 @@ class FakeReactionPayload:
         self.user_id = user_id
         self.message_id = message_id
         self.emoji = FakeEmoji(emoji_name)
+
+
+class FakeChannel:
+    """Records what the bot posts, standing in for a text channel."""
+
+    def __init__(self, channel_id: int = 1) -> None:
+        self.id = channel_id
+        self.sent: list[tuple[str, object]] = []
+
+    async def send(self, content: str, embed: object = None) -> None:
+        self.sent.append((content, embed))
+
+
+class FakeAuthor:
+    def __init__(self, roles: list[FakeRole] | None = None, bot: bool = False) -> None:
+        self.roles = roles or []
+        self.bot = bot
+        self.mention = '@tester'
+
+
+class FakeMessage:
+    def __init__(
+        self,
+        content: str,
+        channel: FakeChannel | None = None,
+        author: FakeAuthor | None = None,
+    ) -> None:
+        self.content = content
+        self.channel = channel or FakeChannel()
+        self.author = author or FakeAuthor()

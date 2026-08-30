@@ -123,21 +123,21 @@ class FAQ(commands.Cog):
         now: float = time.time()
         one_hour: int = 3600
 
-        topics = self.rank_topics(content)
-        if not topics:
+        # The cooldown holds back one topic in one channel, not the whole
+        # message. A topic that has not answered here recently still may, even
+        # when a better matching topic is resting.
+        for topic in self.rank_topics(content):
+            key = (message.channel.id, topic)
+            last_time = self.recent_replies.get(key, 0)
+
+            if now - last_time < one_hour:
+                continue
+
+            self.recent_replies[key] = now
+            await send_faq_embed(
+                message.channel, message.author.mention, topic, self.faqs[topic]
+            )
             return
-
-        topic = topics[0]
-        key = (message.channel.id, topic)
-        last_time = self.recent_replies.get(key, 0)
-
-        if now - last_time < one_hour:
-            return
-
-        self.recent_replies[key] = now
-        await send_faq_embed(
-            message.channel, message.author.mention, topic, self.faqs[topic]
-        )
 
 
 async def setup(bot: commands.Bot) -> None:
