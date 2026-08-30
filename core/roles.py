@@ -20,12 +20,18 @@ logger = structlog.stdlib.get_logger()
 
 async def update_role(
     user: discord.Member,
-    role: discord.Role,
+    role: discord.Role | None,
     condition: bool,
     add_reason: str,
     remove_reason: str,
 ) -> None:
     """Add or remove a role based on a condition."""
+    # discord.utils.get yields None for an unconfigured (id 0) or deleted role and
+    # callers pass its result straight in. Adding None raises for every member.
+    if role is None:
+        logger.warning('Skipping role update, role not found in guild', name=user.name)
+        return
+
     if condition and role not in user.roles:
         await user.add_roles(role, reason=add_reason)
     elif not condition and role in user.roles:
