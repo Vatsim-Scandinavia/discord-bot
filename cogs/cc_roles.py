@@ -1,15 +1,13 @@
 import asyncio
 import datetime
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal
 
 import discord
-import emoji
 import structlog
 from discord import app_commands
 from discord.ext import commands, tasks
 
-from core.exceptions import GuildNotFound
+from core.roles import cleanup_membership_roles, update_role
 from helpers.config import config
 from helpers.handler import Handler
 from helpers.roles import Roles
@@ -29,14 +27,9 @@ class MentorBuddyInfo:
     training_staff_should_be: bool
 
 
-# We don't instantiate these, but we need to import them for type checking
-if TYPE_CHECKING:
-    from collections.abc import Coroutine
+class CCRolesCog(commands.Cog):
+    """Syncs Discord roles from the Control Center training system."""
 
-    from cogs.station_prefix import StationPrefixCog
-
-
-class RolesCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.roles = Roles()
@@ -171,7 +164,7 @@ class RolesCog(commands.Cog):
             # Check if the user has the VATSIM member role, if not clear all managed roles and skip.
             cid = self.handler.get_cid(user)
             if cid is None:
-                await self.cleanup_membership_roles(
+                await cleanup_membership_roles(
                     user, config.ROLE_REASONS['no_cid'], include_vatsca=True
                 )
                 return
@@ -186,28 +179,28 @@ class RolesCog(commands.Cog):
             )
 
             tasks = [
-                self.update_role(
+                update_role(
                     user,
                     mentor_role,
                     mentor_buddy_info.mentor_should_be,
                     config.ROLE_REASONS['mentor_add'],
                     config.ROLE_REASONS['mentor_remove'],
                 ),
-                self.update_role(
+                update_role(
                     user,
                     buddy_role,
                     mentor_buddy_info.buddy_should_be,
                     config.ROLE_REASONS['buddy_add'],
                     config.ROLE_REASONS['buddy_remove'],
                 ),
-                self.update_role(
+                update_role(
                     user,
                     training_staff_role,
                     mentor_buddy_info.training_staff_should_be,
                     config.ROLE_REASONS['training_staff_add'],
                     config.ROLE_REASONS['training_staff_remove'],
                 ),
-                self.update_role(
+                update_role(
                     user,
                     visitor_role,
                     should_be_visitor,
@@ -242,7 +235,7 @@ class RolesCog(commands.Cog):
                 nick=user.nick,
                 error=e,
             )
-            await self.cleanup_membership_roles(
+            await cleanup_membership_roles(
                 user, config.ROLE_REASONS['unknown_cid'], include_vatsca=True
             )
 
@@ -381,13 +374,6 @@ class RolesCog(commands.Cog):
 
         return student_data, should_be_student
 
-    async def update_role(self, user, role, condition, add_reason, remove_reason):
-        """Add or remove a role based on a condition."""
-        if condition and role not in user.roles:
-            await user.add_roles(role, reason=add_reason)
-        elif not condition and role in user.roles:
-            await user.remove_roles(role, reason=remove_reason)
-
     async def update_fir_roles(self, user, fir_data, role_type, should_be_assigned):
         """
         Update FIR-specific roles for the member.
@@ -420,7 +406,7 @@ class RolesCog(commands.Cog):
             # are still listed for this FIR. Anything else means remove it, so a
             # member who moves between FIRs does not keep the old one.
             condition = should_be_assigned and fir in fir_data
-            await self.update_role(user, fir_role, condition, add_reason, remove_reason)
+            await update_role(user, fir_role, condition, add_reason, remove_reason)
 
     async def update_training_roles(self, user, student_data, should_be_student):
         """
@@ -438,52 +424,13 @@ class RolesCog(commands.Cog):
                     and rating in student_data[area]
                     and should_be_student
                 )
-                await self.update_role(
+                await update_role(
                     user,
                     training_role,
                     condition,
                     config.ROLE_REASONS['training_add'],
                     config.ROLE_REASONS['training_remove'],
                 )
-
-    def _membership_role_ids(self, include_vatsca: bool = False) -> set[int]:
-        role_ids = {
-            config.MENTOR_ROLE,
-            config.BUDDY_ROLE,
-            config.TRAINING_STAFF_ROLE,
-            config.VISITOR_ROLE,
-        }
-
-        if include_vatsca:
-            role_ids.add(config.VATSCA_MEMBER_ROLE)
-
-        role_ids.update(int(role_id) for role_id in config.FIR_MENTORS.values())
-        role_ids.update(int(role_id) for role_id in config.FIR_BUDDIES.values())
-        role_ids.update(int(role_id) for role_id in config.FIR_EXAMINERS.values())
-        role_ids.update(
-            int(role_id)
-            for ratings in config.TRAINING_ROLES.values()
-            for role_id in ratings.values()
-        )
-        role_ids.update(
-            int(role_id) for role_id in config.CONTROLLER_FIR_ROLES.values()
-        )
-        role_ids.update(
-            int(role_id)
-            for ratings in config.RATING_FIR_DATA.values()
-            for role_id in ratings.values()
-        )
-
-        return {role_id for role_id in role_ids if role_id}
-
-    async def cleanup_membership_roles(
-        self, user: discord.Member, reason: str, include_vatsca: bool = False
-    ) -> None:
-        role_ids = self._membership_role_ids(include_vatsca=include_vatsca)
-        roles_to_remove = [role for role in user.roles if role.id in role_ids]
-
-        if roles_to_remove:
-            await user.remove_roles(*roles_to_remove, reason=reason)
 
     async def update_fir_atc_roles(self, user, cid, atc_activity_data):
         """Update FIR-specific ATC roles based on activity and rating."""
@@ -501,7 +448,7 @@ class RolesCog(commands.Cog):
                 fir_role = discord.utils.get(guild.roles, id=int(role_id))
                 if fir_role:
                     role_tasks.append(
-                        self.update_role(
+                        update_role(
                             user, fir_role, False, '', f'Not active in {fir} (no data)'
                         )
                     )
@@ -511,7 +458,7 @@ class RolesCog(commands.Cog):
                     fir_role = discord.utils.get(guild.roles, id=int(role_id))
                     if fir_role:
                         role_tasks.append(
-                            self.update_role(
+                            update_role(
                                 user,
                                 fir_role,
                                 False,
@@ -540,7 +487,7 @@ class RolesCog(commands.Cog):
                 fir_role = discord.utils.get(guild.roles, id=int(role_id))
                 if fir_role:
                     role_tasks.append(
-                        self.update_role(
+                        update_role(
                             user,
                             fir_role,
                             is_active,
@@ -557,7 +504,7 @@ class RolesCog(commands.Cog):
                 )
                 if controller_role:
                     role_tasks.append(
-                        self.update_role(
+                        update_role(
                             user,
                             controller_role,
                             is_active,
@@ -567,57 +514,6 @@ class RolesCog(commands.Cog):
                     )
 
         await asyncio.gather(*role_tasks)
-
-    async def _handle_role_reaction(
-        self, payload: discord.RawReactionActionEvent, action: Literal['add', 'remove']
-    ):
-        """Handles changing roles based on reactions."""
-        if not payload.guild_id:
-            return
-
-        guild = self.bot.get_guild(payload.guild_id)
-        if not guild:
-            raise GuildNotFound(payload.guild_id, payload)
-
-        user = guild.get_member(payload.user_id)
-        if not user:
-            return
-
-        emoji_name = emoji.demojize(payload.emoji.name)
-        message_id = str(payload.message_id)
-
-        if (
-            message_id not in config.REACTION_MESSAGE_IDS
-            or emoji_name not in config.REACTION_ROLES
-        ):
-            return
-
-        role_id = int(config.REACTION_ROLES[emoji_name])
-        role = discord.utils.get(guild.roles, id=role_id)
-
-        if action == 'add' and role and role not in user.roles:
-            await user.add_roles(role, reason=config.ROLE_REASONS['reaction_add'])
-            await self._send_dm(
-                user,
-                f'You have been given the `{role.name}` role because you reacted with {payload.emoji}',
-            )
-
-        if action == 'remove' and role and role in user.roles:
-            await user.remove_roles(role, reason=config.ROLE_REASONS['reaction_remove'])
-            await self._send_dm(
-                user,
-                f'You no longer have the `{role.name}` role because you removed your reaction.',
-            )
-
-    async def _send_dm(self, member: discord.Member, message: str):
-        """Attempts to send a DM to the user and handles cases where DMs are closed."""
-        try:
-            await member.send(message)
-        except discord.Forbidden:
-            logger.warning(
-                'Could not send DM to member, they might have DMs disabled.',
-                name=member.name,
-            )
 
     @tasks.loop(seconds=config.CHECK_MEMBERS_INTERVAL)
     async def check_roles_loop(self):
@@ -636,143 +532,6 @@ class RolesCog(commands.Cog):
             'User roles refresh process completed.', ephemeral=True
         )
 
-    @commands.Cog.listener()
-    async def on_member_update(self, before: discord.Member, after: discord.Member):
-        """
-        Listen to member updates and assigns role according to the nick.
-
-        We listen to member update events to catch changes made by the VATSIM Community bot.
-        One alternative approach include listening to the audit log.
-
-        Todo:
-            This entire function should possibly be merged with the cogs.tasks.check_members routine.
-
-        """
-        if before.nick == after.nick:
-            return
-
-        station_prefix: StationPrefixCog | None = self.bot.get_cog('StationPrefixCog')  # pyright: ignore[reportAssignmentType]
-        if not station_prefix:
-            logger.warning(
-                'Could not get the station_prefix cog; cannot check for modified nicknames.',
-                user=after.name,
-                nick=after.nick,
-            )
-
-        # NOTE: While this should prevent the bot from assigning roles while a member has
-        # a modified (i.e. position-prefixed station) nickname, it doesn't prevent any
-        # race condition from occuring *during* the user's state change (i.e. when moving
-        # between or leaving voice channels).
-        if station_prefix and await station_prefix.has_modified_nick(after):
-            logger.info(
-                'User has modified nick: skipping role assignment.',
-                user=after.name,
-                nick=after.nick,
-            )
-            return
-
-        # Define role objects
-        vatsca_member = discord.utils.get(
-            after.guild.roles, id=config.VATSCA_MEMBER_ROLE
-        )
-        vatsim_member = discord.utils.get(
-            after.guild.roles, id=config.VATSIM_MEMBER_ROLE
-        )
-
-        if not vatsca_member or not vatsim_member:
-            # TODO(thor): Replace with a custom exception (which probably belongs in the core module)
-            logger.error(
-                'The (sub-)division or VATSIM role was not found in the guild.',
-                division=config.VATSCA_MEMBER_ROLE,
-                vatsim=config.VATSIM_MEMBER_ROLE,
-            )
-            return
-
-        try:
-            # Extract CID from nickname, clearing managed roles if the member is no longer eligible.
-            cid = self.handler.get_cid(after)
-            if cid is None:
-                await self.cleanup_membership_roles(
-                    after,
-                    config.ROLE_REASONS['no_vatsim_role'],
-                    include_vatsca=True,
-                )
-                return
-
-            api_data = await self.handler.get_division_members()
-
-            should_have_vatsca = any(
-                int(entry['id']) == cid
-                and str(entry['subdivision']) == str(config.VATSIM_SUBDIVISION)
-                for entry in api_data
-            )
-            logger.info('Fetched division members from API', len=len(api_data))
-
-            # Manage role assignments
-            tasks: list[Coroutine[Any, Any, None]] = []
-
-            if vatsim_member in after.roles:
-                # add VATSCA if required otherwise remove it
-                if should_have_vatsca and vatsca_member not in after.roles:
-                    tasks.append(
-                        after.add_roles(
-                            vatsca_member, reason='Missing role in on_member_update'
-                        )
-                    )
-                elif not should_have_vatsca and vatsca_member in after.roles:
-                    tasks.append(
-                        after.remove_roles(
-                            vatsca_member, reason='Redundant role in on_member_update'
-                        )
-                    )
-
-            elif vatsca_member in after.roles:
-                # Remove VATSCA if the user doesn't have VATSIM role
-                tasks.append(
-                    after.remove_roles(
-                        vatsca_member,
-                        reason='Redunant role because VATSIM role is missing in on_member_update',
-                    )
-                )
-
-            if tasks:
-                await asyncio.gather(*tasks)
-
-        except ValueError as e:
-            logger.warning(
-                'Failed to process member update due to invalid or missing CID; cleaning managed roles.',
-                name=after.name,
-                nick=after.nick,
-                error=e,
-            )
-            await self.cleanup_membership_roles(
-                after, config.ROLE_REASONS['no_cid'], include_vatsca=True
-            )
-
-        # TODO(thor): Replace with either custom exceptions or find out how to move them out to the core handler
-        except discord.Forbidden as e:
-            logger.exception('Bot lacks permission for action', error=e)
-
-        except discord.HTTPException as e:
-            logger.exception('HTTP error', error=e)
-
-        except Exception as e:
-            logger.exception('Unexpected error', error=e)
-
-    @commands.Cog.listener()
-    async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
-        """Event listener for adding roles based on reactions."""
-        if self.bot.user and payload.user_id == self.bot.user.id:
-            return
-        await self._handle_role_reaction(payload, 'add')
-
-    @commands.Cog.listener()
-    async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
-        """Event listener for removing roles based on reactions."""
-        if self.bot.user and payload.user_id == self.bot.user.id:
-            return
-        await self._handle_role_reaction(payload, 'remove')
-
 
 async def setup(bot: commands.Bot):
-    await bot.add_cog(RolesCog(bot))
+    await bot.add_cog(CCRolesCog(bot))

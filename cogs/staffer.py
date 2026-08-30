@@ -1,10 +1,10 @@
-from typing import TypeVar, Any
+from typing import Any, TypeVar
 
 import discord
-from discord.ui.button import Button
 import structlog
 from discord import Client, Interaction, app_commands, ui
 from discord.ext.commands import Bot, Cog
+from discord.ui.button import Button
 
 logger = structlog.stdlib.get_logger()
 
@@ -28,7 +28,7 @@ class InterestView(ui.LayoutView):
     def __init__(self, positions: list[str], staffing_view: 'StaffingView'):
         super().__init__(timeout=600)
         self.staffing_view = staffing_view
-        # TODO: Make a reasonable limit of some sort
+        # TODO(thor): Make a reasonable limit of some sort
         # NOTE: Limit to 25 options per select menu
         self.positions = positions[:25]
 
@@ -109,7 +109,7 @@ class InterestView(ui.LayoutView):
         await interaction.response.edit_message(
             content=f'Your preferences have been noted.\n**Interested:** {", ".join(self.interested.values)}\n**Not Interested:** {", ".join(self.not_interested.values)}',
             view=None,
-            embed=None
+            embed=None,
         )
 
 
@@ -120,7 +120,7 @@ class StaffingView(ui.LayoutView):
         self.positions: list[str] = []
         self.message: discord.Message | None = None
         self.user_preferences: dict[int, dict] = {}
-        self.add_item(Button(label="hi"))
+        self.add_item(Button(label='hi'))
 
     async def on_error(
         self, interaction: Interaction, error: Exception, item: ui.Item
@@ -172,7 +172,7 @@ class StaffingView(ui.LayoutView):
         print(f'--- Ad-hoc Staffing Finalized: {self.title} ---')
         print(f'Positions: {", ".join(self.positions)}')
         print('User Interests:')
-        for user_id, prefs in self.user_preferences.items():
+        for prefs in self.user_preferences.values():
             print(f'- {prefs["name"]} ({prefs["username"]}):')
             print(f'  Interested: {", ".join(prefs["interested"])}')
             print(f'  Not Interested: {", ".join(prefs["not_interested"])}')

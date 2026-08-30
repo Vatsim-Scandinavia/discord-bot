@@ -21,7 +21,7 @@ def test_structlog_and_stdlib_share_one_logfmt_format(capsys) -> None:
     """
     configure_logging(debug=False)
 
-    structlog.stdlib.get_logger('cogs.roles').info('native event', member=42)
+    structlog.stdlib.get_logger('cogs.cc_roles').info('native event', member=42)
     logging.getLogger('discord.gateway').warning('foreign event')
 
     lines = [line for line in capsys.readouterr().out.splitlines() if line.strip()]
@@ -38,7 +38,7 @@ def test_structlog_and_stdlib_share_one_logfmt_format(capsys) -> None:
 
     assert native['event'] == 'native event'
     assert native['level'] == 'info'
-    assert native['logger'] == 'cogs.roles'
+    assert native['logger'] == 'cogs.cc_roles'
     assert native['member'] == '42'  # logfmt is untyped text
 
     assert foreign['event'] == 'foreign event'
@@ -49,9 +49,9 @@ def test_structlog_and_stdlib_share_one_logfmt_format(capsys) -> None:
 def test_debug_flag_controls_level(capsys) -> None:
     """Level filtering replaces scattered ``if config.DEBUG`` guards."""
     configure_logging(debug=False)
-    structlog.stdlib.get_logger('cogs.roles').debug('suppressed')
+    structlog.stdlib.get_logger('cogs.cc_roles').debug('suppressed')
     assert capsys.readouterr().out.strip() == ''
 
     configure_logging(debug=True)
-    structlog.stdlib.get_logger('cogs.roles').debug('emitted')
+    structlog.stdlib.get_logger('cogs.cc_roles').debug('emitted')
     assert 'emitted' in capsys.readouterr().out

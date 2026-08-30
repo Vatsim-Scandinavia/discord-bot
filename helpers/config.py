@@ -4,10 +4,8 @@ from pathlib import Path
 import discord
 import discord.ext
 import structlog
-import discord.ext
 from discord.ext.commands import Bot
 from dotenv import load_dotenv
-import structlog
 
 load_dotenv('.env')
 
@@ -37,7 +35,9 @@ class Config:
             'cogs.fastapi',
             'cogs.member',
             'cogs.publisher',
-            'cogs.roles',
+            'cogs.cc_roles',
+            'cogs.vatsim_roles',
+            'cogs.reaction_roles',
             'cogs.tasks',
             # 'cogs.update_messages',
             # 'cogs.staffings',
@@ -51,7 +51,9 @@ class Config:
             'fastapi': 'cogs.fastapi',
             'member': 'cogs.member',
             'publisher': 'cogs.publisher',
-            'roles': 'cogs.roles',
+            'cc_roles': 'cogs.cc_roles',
+            'vatsim_roles': 'cogs.vatsim_roles',
+            'reaction_roles': 'cogs.reaction_roles',
             'tasks': 'cogs.tasks',
             'update_messages': 'cogs.update_messages',
             'staffings': 'cogs.staffings',
@@ -104,7 +106,7 @@ class Config:
         # CC role identifiers that map to Discord roles. Comma-separated; a
         # single Discord role can be driven by several CC identifiers. Matching
         # is case-insensitive (identifiers are lowercased here to pair with the
-        # lowercasing of the CC payload in RolesCog.get_mentor_roles).
+        # lowercasing of the CC payload in CCRolesCog.get_mentor_roles).
         self.CC_MENTOR_ROLES = self._parse_cc_roles('CC_MENTOR_ROLES', 'mentor')
         self.CC_BUDDY_ROLES = self._parse_cc_roles('CC_BUDDY_ROLES', 'buddy')
         self.CC_TRAINING_ROLES = self._parse_cc_roles('CC_TRAINING_ROLES', 'moderator')
@@ -273,7 +275,7 @@ class Config:
     async def load_cogs(self, bot: Bot) -> None:
         for cog in self.COGS:
             try:
-                logger.info("Loading cog", cog=cog)
+                logger.info('Loading cog', cog=cog)
                 await bot.load_extension(cog)
             except Exception:
                 logger.exception('Failed to load cog', cog=cog)

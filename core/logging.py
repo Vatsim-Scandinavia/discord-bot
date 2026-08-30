@@ -21,7 +21,7 @@ import structlog
 _SHARED_PROCESSORS: list = [
     structlog.contextvars.merge_contextvars,
     structlog.stdlib.add_log_level,
-    structlog.stdlib.add_logger_name,  # e.g. "cogs.roles" — the module location
+    structlog.stdlib.add_logger_name,  # e.g. "cogs.cc_roles" — the module location
     structlog.stdlib.PositionalArgumentsFormatter(),
     structlog.processors.TimeStamper(fmt='iso', utc=True),
     structlog.processors.StackInfoRenderer(),
