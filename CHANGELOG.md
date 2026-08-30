@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.6.1](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.6.0...v2.6.1) (2026-08-30)
+
+
+### Features
+
+* introduce ad-hoc staffer that uses uhhh staffer ([5c04098](https://github.com/Vatsim-Scandinavia/discord-bot/commit/5c0409899219505cddc2c646701bc744a1f36dc1))
+
+
+### Bug Fixes
+
+* **roles:** add guard for accidentally missing CC data ([bfe00d9](https://github.com/Vatsim-Scandinavia/discord-bot/commit/bfe00d9fbde185ef32ff07adea7ef56cd62c76b3))
+* **roles:** remove old rating roles & clean-up removed controllers ([#226](https://github.com/Vatsim-Scandinavia/discord-bot/issues/226)) ([3a494c7](https://github.com/Vatsim-Scandinavia/discord-bot/commit/3a494c7a2cdacffc2e96e600a0be57d6d9025377))
+
+
+### Reverts
+
+* introduce ad-hoc staffer that uses uhhh staffer ([f561c3e](https://github.com/Vatsim-Scandinavia/discord-bot/commit/f561c3e653606c04aebffe529670d81ac2bd3ded))
+
 ## [2.6.0](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.5.10...v2.6.0) (2026-08-10)
 
 
