@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.6.2](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.6.1...v2.6.2) (2026-08-31)
+
+
+### Bug Fixes
+
+* **faq:** answer with the best matching topic, not the first defined ([#231](https://github.com/Vatsim-Scandinavia/discord-bot/issues/231)) ([63cd254](https://github.com/Vatsim-Scandinavia/discord-bot/commit/63cd2544330c3c7a6e9ee66d61dd3c9a7d042737))
+* **faq:** let a resting topic silence itself, not the message ([#232](https://github.com/Vatsim-Scandinavia/discord-bot/issues/232)) ([a07e225](https://github.com/Vatsim-Scandinavia/discord-bot/commit/a07e2258c066316d4a310feba88801cb287b7bc6))
+
+
+### Documentation
+
+* rewrite and update the README till "completion" ([#228](https://github.com/Vatsim-Scandinavia/discord-bot/issues/228)) ([6a7632c](https://github.com/Vatsim-Scandinavia/discord-bot/commit/6a7632c2f3c398a7251ba762448853e9064bb470))
+
 ## [2.6.1](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.6.0...v2.6.1) (2026-08-30)
 
 
