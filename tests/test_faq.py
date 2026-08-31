@@ -1,6 +1,9 @@
+import asyncio
+
 import pytest
 
 from cogs.faq import FAQ
+from tests.conftest import FakeChannel, FakeMessage
 
 TRIGGERS = {
     'ATC Application': {'triggers': {'apply', 'atc', 'training'}, 'threshold': 2},
@@ -62,3 +65,45 @@ def test_only_qualifying_topics_are_ranked(cog: FAQ) -> None:
     assert cog.rank_topics('how long is the wait time for training?') == [
         'Waiting Time',
     ]
+
+
+def build(cog: FAQ) -> FAQ:
+    """Give the ranking cog what on_message needs to actually reply."""
+    cog.faqs = dict.fromkeys(TRIGGERS, 'answer text')
+    cog.recent_replies = {}
+    return cog
+
+
+def test_a_topic_on_cooldown_does_not_silence_the_others(cog: FAQ) -> None:
+    cog = build(cog)
+    channel = FakeChannel()
+
+    # Waiting Time answers first and goes on cooldown.
+    asyncio.run(cog.on_message(FakeMessage('how long is the wait time?', channel)))
+    # A different question in the same channel still deserves an answer.
+    asyncio.run(cog.on_message(FakeMessage('how do I apply for atc?', channel)))
+
+    assert len(channel.sent) == 2
+    assert 'Waiting Time' in channel.sent[0][0]
+    assert 'ATC Application' in channel.sent[1][0]
+
+
+def test_the_same_topic_stays_quiet_while_on_cooldown(cog: FAQ) -> None:
+    cog = build(cog)
+    channel = FakeChannel()
+
+    asyncio.run(cog.on_message(FakeMessage('how do I apply for atc?', channel)))
+    asyncio.run(cog.on_message(FakeMessage('where do I apply for atc?', channel)))
+
+    assert len(channel.sent) == 1
+
+
+def test_the_cooldown_is_per_channel(cog: FAQ) -> None:
+    cog = build(cog)
+    first, second = FakeChannel(1), FakeChannel(2)
+
+    asyncio.run(cog.on_message(FakeMessage('how do I apply for atc?', first)))
+    asyncio.run(cog.on_message(FakeMessage('how do I apply for atc?', second)))
+
+    assert len(first.sent) == 1
+    assert len(second.sent) == 1
