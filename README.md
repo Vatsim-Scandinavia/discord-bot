@@ -213,6 +213,8 @@ The bot watches for common questions and answers them on its own. When it stays 
 
 The bot replies to the original message and puts that topic on cooldown, so it will not repeat the answer by itself straight afterwards.
 
+If that topic has already been answered in the channel recently, the bot does not send it again. It tells you when the answer went out and leaves the picker open, so you can choose a different topic.
+
 ### Tell us whether an answer helped
 
 Every FAQ answer carries a 👍 and a 👎 for people to vote with. The votes are written to the log with the topic, so you can count them and see which topics land and which triggers need retuning. Nothing else happens: the bot does not delete or edit its answer either way.
