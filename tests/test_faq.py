@@ -1,4 +1,5 @@
 import asyncio
+import time
 from collections import OrderedDict
 from pathlib import Path
 
@@ -234,6 +235,54 @@ def test_a_manual_answer_puts_the_topic_on_cooldown(topics: Path) -> None:
     assert len(channel.sent) == 1
 
 
+def test_picking_a_topic_answered_here_recently_says_so_instead(
+    topics: Path,
+) -> None:
+    cog = build(topics)
+    channel = FakeChannel()
+    asked = FakeMessage('any idea about this?', channel)
+    interaction = FakeInteraction()
+
+    asyncio.run(cog.on_message(FakeMessage('how long is the wait?', channel)))
+
+    select = FAQTopicSelect(cog, asked, list(cog.topics))
+    select._values = ['Waiting Time']
+    asyncio.run(select.callback(interaction))
+
+    assert len(channel.sent) == 1
+    assert 'Waiting Time' in interaction.response.edits[0]
+    assert 'already answered' in interaction.response.edits[0]
+
+
+def test_a_topic_turned_down_leaves_the_picker_open_for_another(topics: Path) -> None:
+    cog = build(topics)
+    channel = FakeChannel()
+    asked = FakeMessage('any idea about this?', channel)
+
+    asyncio.run(cog.on_message(FakeMessage('how long is the wait?', channel)))
+
+    select = FAQTopicSelect(cog, asked, list(cog.topics))
+    select._values = ['Waiting Time']
+    asyncio.run(select.callback(FakeInteraction()))
+    select._values = ['ATC Application']
+    asyncio.run(select.callback(FakeInteraction()))
+
+    assert channel.sent[-1][1].description == 'Start in the Control Center.'
+
+
+def test_a_topic_can_be_picked_once_its_cooldown_has_passed(topics: Path) -> None:
+    cog = build(topics)
+    channel = FakeChannel()
+    asked = FakeMessage('any idea about this?', channel)
+    cog.recent_replies[(channel.id, 'Waiting Time')] = time.time() - 3600
+
+    select = FAQTopicSelect(cog, asked, list(cog.topics))
+    select._values = ['Waiting Time']
+    asyncio.run(select.callback(FakeInteraction()))
+
+    assert len(channel.sent) == 1
+
+
 def test_a_second_pick_does_not_answer_twice(topics: Path) -> None:
     cog = build(topics)
     channel = FakeChannel()
@@ -278,6 +327,40 @@ def test_a_refused_reply_can_be_tried_again(topics: Path) -> None:
     asyncio.run(select.callback(FakeInteraction()))
 
     assert len(channel.sent) == 1
+
+
+def test_an_automatic_answer_the_channel_refuses_leaves_no_cooldown(
+    topics: Path,
+) -> None:
+    cog = build(topics)
+    channel = FakeChannel()
+    channel.refuse_send = True
+
+    asyncio.run(cog.on_message(FakeMessage('how long is the wait?', channel)))
+
+    # Nothing was posted, so the topic must be free to be answered.
+    assert cog.recent_replies == {}
+
+
+def test_a_refused_automatic_answer_does_not_turn_the_picker_down(
+    topics: Path,
+) -> None:
+    cog = build(topics)
+    channel = FakeChannel()
+    channel.refuse_send = True
+
+    asyncio.run(cog.on_message(FakeMessage('how long is the wait?', channel)))
+
+    channel.refuse_send = False
+    asked = FakeMessage('any idea about this?', channel)
+    interaction = FakeInteraction()
+    select = FAQTopicSelect(cog, asked, list(cog.topics))
+    select._values = ['Waiting Time']
+    asyncio.run(select.callback(interaction))
+
+    # The bot never got its answer out, so the picker must not claim it did.
+    assert len(channel.sent) == 1
+    assert interaction.response.edits == ['Replied with **Waiting Time**.']
 
 
 def test_an_answer_offers_the_feedback_reactions(topics: Path) -> None:

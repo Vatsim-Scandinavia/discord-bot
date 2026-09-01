@@ -65,6 +65,40 @@ class FAQ(commands.Cog):
             ephemeral=True,
         )
 
+    def resting_since(self, channel_id: int, title: str, now: float) -> float | None:
+        """
+        Return when this topic last answered in this channel, or None.
+
+        Only while it is still on cooldown. One rule, asked by both the
+        automatic answers and the people picking a topic by hand.
+        """
+        last_time = self.recent_replies.get((channel_id, title))
+
+        if last_time is None or now - last_time >= self.topics[title].cooldown:
+            return None
+
+        return last_time
+
+    def claim(self, channel_id: int, title: str, now: float) -> float | None:
+        """
+        Hold this topic in this channel while its answer is on its way.
+
+        Returns what stood there before, to hand back if the answer never
+        lands. A claim is a reservation, not an answer that went out.
+        """
+        previous = self.recent_replies.get((channel_id, title))
+        self.recent_replies[(channel_id, title)] = now
+
+        return previous
+
+    def release(self, channel_id: int, title: str, previous: float | None) -> None:
+        """Undo a claim, so an answer that never landed costs nothing."""
+        if previous is None:
+            self.recent_replies.pop((channel_id, title), None)
+            return
+
+        self.recent_replies[(channel_id, title)] = previous
+
     def remember_answer(self, message_id: int, topic: str) -> None:
         """Note what an answer was about, forgetting the oldest to stay bounded."""
         self.answered[message_id] = topic
@@ -156,21 +190,31 @@ class FAQ(commands.Cog):
         # message. A topic that has not answered here recently still may, even
         # when a better matching topic is resting.
         for title in self.matcher.rank(content):
-            topic = self.topics[title]
-            key = (message.channel.id, title)
-            last_time = self.recent_replies.get(key, 0)
-
-            if now - last_time < topic.cooldown:
+            if self.resting_since(message.channel.id, title, now) is not None:
                 continue
 
-            self.recent_replies[key] = now
-            await send_faq_embed(
-                message.channel,
-                message.author.mention,
-                title,
-                topic.answer,
-                remember=self.remembering(title),
-            )
+            previous = self.claim(message.channel.id, title, now)
+
+            try:
+                await send_faq_embed(
+                    message.channel,
+                    message.author.mention,
+                    title,
+                    self.topics[title].answer,
+                    remember=self.remembering(title),
+                )
+            except discord.HTTPException:
+                # Nothing was said, so nothing is resting. A kept claim would
+                # silence this topic here for the whole cooldown and have the
+                # picker report an answer that was never posted.
+                logger.exception(
+                    'Could not post the FAQ answer',
+                    topic=title,
+                    channel_id=message.channel.id,
+                )
+                self.release(message.channel.id, title, previous)
+                return
+
             return
 
 
@@ -202,15 +246,30 @@ class FAQTopicSelect(ui.Select):
             await interaction.response.defer()
             return
 
-        self.claimed = True
         topic = self.values[0]
-        key = (self.target.channel.id, topic)
-        previous = self.cog.recent_replies.get(key)
+        now = time.time()
+        answered_at = self.cog.resting_since(self.target.channel.id, topic, now)
+
+        # This topic has just been answered here, by the bot or by someone
+        # else with the same menu. Say so instead of repeating it. No view is
+        # passed, which leaves the picker in place, so another topic can still
+        # be chosen; passing None would take it away.
+        if answered_at is not None:
+            await interaction.response.edit_message(
+                content=(
+                    f'**{topic}** was already answered in this channel '
+                    f'<t:{int(answered_at)}:R>. Pick another topic if that '
+                    f'answer did not cover it.'
+                )
+            )
+            return
+
+        self.claimed = True
 
         # Claim the cooldown before posting rather than after, so a question
         # arriving while this reply is in flight does not get the same answer
         # from the bot on its own.
-        self.cog.recent_replies[key] = time.time()
+        previous = self.cog.claim(self.target.channel.id, topic, now)
 
         try:
             await send_faq_embed(
@@ -228,7 +287,7 @@ class FAQTopicSelect(ui.Select):
                 topic=topic,
                 channel_id=self.target.channel.id,
             )
-            self._release(key, previous)
+            self._release(topic, previous)
             await interaction.response.send_message(
                 'I could not post that reply. Check that I am allowed to post '
                 'in that channel and that the message is still there.',
@@ -240,15 +299,10 @@ class FAQTopicSelect(ui.Select):
             content=f'Replied with **{topic}**.', view=None
         )
 
-    def _release(self, key: tuple[int, str], previous: float | None) -> None:
-        """Undo the cooldown claim, so a reply that never landed costs nothing."""
+    def _release(self, topic: str, previous: float | None) -> None:
+        """Hand the claim back and take another pick, the reply having failed."""
         self.claimed = False
-
-        if previous is None:
-            self.cog.recent_replies.pop(key, None)
-            return
-
-        self.cog.recent_replies[key] = previous
+        self.cog.release(self.target.channel.id, topic, previous)
 
 
 async def setup(bot: commands.Bot) -> None:
