@@ -213,6 +213,12 @@ The bot watches for common questions and answers them on its own. When it stays 
 
 The bot replies to the original message and puts that topic on cooldown, so it will not repeat the answer by itself straight afterwards.
 
+### Tell us whether an answer helped
+
+Every FAQ answer carries a 👍 and a 👎 for people to vote with. The votes are written to the log with the topic, so you can count them and see which topics land and which triggers need retuning. Nothing else happens: the bot does not delete or edit its answer either way.
+
+Votes are only recorded for answers the bot still remembers, which is the last 500 it posted since it last started.
+
 ### Write or change an FAQ
 
 Each FAQ is one Markdown file in `messages/faq/`. The block at the top says when the bot should use it, and everything below it is the answer.
