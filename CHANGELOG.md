@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.7.0](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.6.2...v2.7.0) (2026-09-01)
+
+
+### Features
+
+* **faq:** answer a message with an FAQ from the context menu ([#230](https://github.com/Vatsim-Scandinavia/discord-bot/issues/230)) ([3d41dfc](https://github.com/Vatsim-Scandinavia/discord-bot/commit/3d41dfc66cb3a1c56c477b2e6747474b27530124))
+* **faq:** collect a thumbs up or down on every FAQ answer ([#235](https://github.com/Vatsim-Scandinavia/discord-bot/issues/235)) ([a12edf0](https://github.com/Vatsim-Scandinavia/discord-bot/commit/a12edf01a0203079edf352f3ff2eb5f937eaa3ac))
+* **faq:** move FAQ topics into Markdown files with stemming and weights ([#234](https://github.com/Vatsim-Scandinavia/discord-bot/issues/234)) ([da5f8f0](https://github.com/Vatsim-Scandinavia/discord-bot/commit/da5f8f0bb740f3c478926cbca8f2c9df69dd5959))
+
+
+### Bug Fixes
+
+* **faq:** turn down a topic the channel just heard ([#236](https://github.com/Vatsim-Scandinavia/discord-bot/issues/236)) ([ed670f0](https://github.com/Vatsim-Scandinavia/discord-bot/commit/ed670f045815fea13f95a9432dfc855a9b7f09a5))
+
 ## [2.6.2](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.6.1...v2.6.2) (2026-08-31)
 
 
