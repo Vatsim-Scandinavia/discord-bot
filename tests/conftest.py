@@ -1,6 +1,8 @@
 import sys
 from pathlib import Path
 
+import discord
+
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
@@ -85,9 +87,21 @@ class FakeChannel:
     def __init__(self, channel_id: int = 1) -> None:
         self.id = channel_id
         self.sent: list[tuple[str, object]] = []
+        self.replied_to: list[object] = []
+        self.refuse_send = False
 
-    async def send(self, content: str, embed: object = None) -> None:
+    async def send(
+        self,
+        content: str,
+        embed: object = None,
+        reference: object = None,
+        mention_author: bool = True,
+    ) -> None:
+        if self.refuse_send:
+            raise discord.HTTPException(FakeResponse(), 'missing permissions')
+
         self.sent.append((content, embed))
+        self.replied_to.append(reference)
 
 
 class FakeAuthor:
@@ -107,3 +121,31 @@ class FakeMessage:
         self.content = content
         self.channel = channel or FakeChannel()
         self.author = author or FakeAuthor()
+
+
+class FakeInteractionResponse:
+    def __init__(self) -> None:
+        self.edits: list[str] = []
+        self.messages: list[str] = []
+        self.deferred = 0
+
+    async def edit_message(self, content: str, view: object = None) -> None:
+        self.edits.append(content)
+
+    async def send_message(self, content: str, ephemeral: bool = False) -> None:
+        self.messages.append(content)
+
+    async def defer(self) -> None:
+        self.deferred += 1
+
+
+class FakeInteraction:
+    def __init__(self) -> None:
+        self.response = FakeInteractionResponse()
+
+
+class FakeResponse:
+    """Enough of an HTTP response for discord.HTTPException to accept."""
+
+    status = 403
+    reason = 'Forbidden'

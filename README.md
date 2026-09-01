@@ -203,6 +203,16 @@ Most commands are limited to the staff roles listed in `helpers/config.py`.
 | `/say`, `/delete`, `/ping` | Staff | Small moderation helpers. |
 | `/load`, `/unload`, `/reload`, `/cogs` | Staff | Manages the bot's cogs at runtime. |
 
+### Answer a question with an FAQ
+
+The bot watches for common questions and answers them on its own. When it stays quiet or picks the wrong topic, staff, mentors, buddies, and training staff can answer for it.
+
+1. Right click the message, or press and hold it on mobile.
+2. Select **Apps**, then **Answer with FAQ**.
+3. Pick the topic. The bot's best guess is first in the list.
+
+The bot replies to the original message and puts that topic on cooldown, so it will not repeat the answer by itself straight afterwards.
+
 ## Project layout
 
 | Path | Contents |
