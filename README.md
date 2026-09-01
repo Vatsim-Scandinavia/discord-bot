@@ -213,6 +213,45 @@ The bot watches for common questions and answers them on its own. When it stays 
 
 The bot replies to the original message and puts that topic on cooldown, so it will not repeat the answer by itself straight afterwards.
 
+### Write or change an FAQ
+
+Each FAQ is one Markdown file in `messages/faq/`. The block at the top says when the bot should use it, and everything below it is the answer.
+
+```markdown
++++
+title = "Waiting Time"
+threshold = 2.0
+
+triggers = ["ventetid", "queue", "wait"]
+phrases = ["how long is the wait"]
+
+[weights]
+"time" = 0.3
++++
+## Waiting time in VATSIM Scandinavia
+The waiting time varies by country.
+```
+
+The bot adds up the weight of everything it finds in a message. If the total reaches `threshold`, the topic is a candidate, and the highest scoring candidate answers.
+
+| Key | What it does |
+| --- | --- |
+| `title` | The topic name, shown to the person who asks and in the staff picker. |
+| `threshold` | How much a message has to score before this topic answers. |
+| `triggers` | Single words. Matched on the word stem, so `ansøgning` also catches `ansøgningen` and `ansøgninger`. Worth 1.0 each. |
+| `phrases` | Whole phrases, matched exactly as written. Worth 2.0 each, because a phrase says far more than a word does. |
+| `weights` | Overrides the value of any trigger or phrase. |
+| `exclude` | If a message contains one of these words, the topic stays out of it. |
+| `cooldown` | Seconds before the topic may answer again in the same channel. Defaults to 3600. |
+
+Some guidance on weights:
+
+- Turn a word **down** when it is vague, or when another topic has a fair claim on it. `time` is 0.3 because most messages with "time" in them are not about waiting.
+- Turn a word **up** when it can only mean one thing. `ventetid` is 2.0 because it literally means waiting time, so it carries the topic on its own.
+- Stemming covers Danish, English, Finnish, Norwegian, and Swedish. Icelandic has no stemmer, so list the forms you want to match.
+
+After editing a file, run `/reload faq` in Discord. There is no need to restart the bot. A file the bot cannot read is logged and skipped, so a mistake in one FAQ never costs you the others.
+
 ## Project layout
 
 | Path | Contents |
@@ -221,7 +260,7 @@ The bot replies to the original message and puts that topic on cooldown, so it w
 | `cogs/` | One module per feature area, loaded at startup. |
 | `core/` | Shared building blocks such as logging and role helpers. New shared code belongs here. |
 | `helpers/` | Older shared code, including configuration and API clients. |
-| `messages/` | Markdown sources for the messages the bot posts. |
+| `messages/` | Markdown sources for the messages the bot posts, including the FAQ topics in `messages/faq/`. |
 | `tests/` | Test suite. |
 | `docs/` | Extra documentation, such as the [logging format](docs/logging.md). |
 
