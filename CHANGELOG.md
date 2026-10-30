@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.1](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.7.0...v2.7.1) (2026-10-30)
+
+
+### Bug Fixes
+
+* **faq:** update visiting/transfer links ([#240](https://github.com/Vatsim-Scandinavia/discord-bot/issues/240)) ([dc7b0d7](https://github.com/Vatsim-Scandinavia/discord-bot/commit/dc7b0d73b6fb847154ffd4264486207f3d55d79b))
+
 ## [2.7.0](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.6.2...v2.7.0) (2026-09-01)
 
 
