@@ -282,7 +282,8 @@ def visiting(rating: str, areas: list[str]) -> dict:
 def test_get_visiting_areas_maps_each_area_to_the_endorsement_rating(
     cog: CCRolesCog,
 ) -> None:
-    data = [visiting('S3', ['Denmark', 'Norway']), {'id': 7654321}]
+    other_member = {**visiting('C1', ['Sweden']), 'id': 7654321}
+    data = [visiting('S3', ['Denmark', 'Norway']), other_member]
 
     assert cog.get_visiting_areas(CID, data) == {'Denmark': 'S3', 'Norway': 'S3'}
 
@@ -336,3 +337,9 @@ def test_update_fir_atc_roles_prefers_activity_over_a_visiting_endorsement(
     asyncio.run(cog.update_fir_atc_roles(user, CID, data, {'Denmark': 'S3'}))
 
     assert sorted(role.id for role in user.roles) == [12, 13]
+
+
+def test_get_visiting_areas_keeps_the_area_capitalisation(cog: CCRolesCog) -> None:
+    data = [visiting('S2', ['Faroe Islands'])]
+
+    assert cog.get_visiting_areas(CID, data) == {'Faroe Islands': 'S2'}

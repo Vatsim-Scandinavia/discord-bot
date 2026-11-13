@@ -376,8 +376,10 @@ class CCRolesCog(commands.Cog):
             endorsements = member_data.get('endorsements') or {}
             for endorsement in endorsements.get('visiting') or []:
                 rating = endorsement.get('rating') or ''
+                # Endorsement areas keep Control Center's own capitalisation,
+                # the same names the FIR role config is keyed by.
                 for area in endorsement.get('areas') or []:
-                    visiting_areas[area.capitalize()] = rating
+                    visiting_areas[area] = rating
 
         return visiting_areas
 
