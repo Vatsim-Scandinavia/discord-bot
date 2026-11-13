@@ -174,6 +174,7 @@ class CCRolesCog(commands.Cog):
                 cid, endorsement_data
             )
             should_be_visitor = self.get_visitor_status(cid, endorsement_data)
+            visiting_areas = self.get_visiting_areas(cid, endorsement_data)
             student_data, should_be_student = self.get_training_data_state(
                 cid, trainings_data
             )
@@ -223,7 +224,7 @@ class CCRolesCog(commands.Cog):
                     user, examiner_firs, 'examiner', should_be_examiner
                 ),
                 self.update_training_roles(user, student_data, should_be_student),
-                self.update_fir_atc_roles(user, cid, atc_activity_data),
+                self.update_fir_atc_roles(user, cid, atc_activity_data, visiting_areas),
             ]
 
             await asyncio.gather(*tasks)
@@ -354,6 +355,32 @@ class CCRolesCog(commands.Cog):
 
         return should_be_visitor
 
+    def get_visiting_areas(self, cid, data):
+        """
+        Map each FIR the member holds a visiting endorsement for to its rating.
+
+        Args:
+            cid (int): The user's VATSIM CID.
+            data (list): The API response containing user endorsement data.
+
+        Returns:
+            dict[str, str]: FIR name mapped to the rating the endorsement grants.
+
+        """
+        visiting_areas = {}
+
+        for member_data in data:
+            if member_data['id'] != cid:
+                continue
+
+            endorsements = member_data.get('endorsements') or {}
+            for endorsement in endorsements.get('visiting') or []:
+                rating = endorsement.get('rating') or ''
+                for area in endorsement.get('areas') or []:
+                    visiting_areas[area.capitalize()] = rating
+
+        return visiting_areas
+
     def get_training_data_state(self, cid, trainings_data):
         """
         Determine the member's training roles based on training data.
@@ -435,7 +462,9 @@ class CCRolesCog(commands.Cog):
                     config.ROLE_REASONS['training_remove'],
                 )
 
-    async def update_fir_atc_roles(self, user, cid, atc_activity_data):
+    async def update_fir_atc_roles(
+        self, user, cid, atc_activity_data, visiting_areas=None
+    ):
         """Update FIR-specific ATC roles based on activity and rating."""
         guild = user.guild
         role_tasks = []
@@ -455,7 +484,19 @@ class CCRolesCog(commands.Cog):
         active_firs = {
             fir.capitalize() for fir, is_active in fir_activity.items() if is_active
         }
-        effective_rating = 'C1' if rating in config.c1_equivalent_ratings else rating
+
+        # Control Center only tracks activity for home members, so a visiting
+        # controller is never listed as active. Their visiting endorsement stands
+        # in for activity, at the rating it grants. Real activity wins in a FIR
+        # where the member has both.
+        visiting_firs = {
+            fir: visiting_rating
+            for fir, visiting_rating in (visiting_areas or {}).items()
+            if fir not in active_firs
+        }
+
+        def effective(fir_rating):
+            return 'C1' if fir_rating in config.c1_equivalent_ratings else fir_rating
 
         # General controller role per FIR
         for fir, role_id in config.CONTROLLER_FIR_ROLES.items():
@@ -467,15 +508,25 @@ class CCRolesCog(commands.Cog):
                 update_role(
                     user,
                     controller_role,
-                    fir in active_firs,
-                    f'Active controller in {fir}',
+                    fir in active_firs or fir in visiting_firs,
+                    f'Visiting controller in {fir}'
+                    if fir in visiting_firs
+                    else f'Active controller in {fir}',
                     f'Not active controller in {fir}',
                 )
             )
 
         # Rating-specific role per FIR
         for fir, fir_roles in config.RATING_FIR_DATA.items():
-            is_active = fir in active_firs
+            if fir in active_firs:
+                fir_rating = rating
+                add_reason = f'ATC active in {fir} as {rating}'
+            elif fir in visiting_firs:
+                fir_rating = visiting_firs[fir]
+                add_reason = f'Visiting controller in {fir} as {fir_rating}'
+            else:
+                fir_rating = None
+                add_reason = ''
 
             for role_rating, role_id in fir_roles.items():
                 fir_role = discord.utils.get(guild.roles, id=int(role_id))
@@ -486,8 +537,8 @@ class CCRolesCog(commands.Cog):
                     update_role(
                         user,
                         fir_role,
-                        is_active and role_rating == effective_rating,
-                        f'ATC active in {fir} as {rating}',
+                        fir_rating is not None and role_rating == effective(fir_rating),
+                        add_reason,
                         f'Not ATC active in {fir} as {role_rating}',
                     )
                 )

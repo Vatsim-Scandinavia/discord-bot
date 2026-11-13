@@ -270,3 +270,69 @@ def test_update_fir_atc_roles_clears_everything_without_an_entry(
     asyncio.run(cog.update_fir_atc_roles(user, CID, []))
 
     assert user.roles == []
+
+
+def visiting(rating: str, areas: list[str]) -> dict:
+    return {
+        'id': CID,
+        'endorsements': {'visiting': [{'rating': rating, 'areas': areas}]},
+    }
+
+
+def test_get_visiting_areas_maps_each_area_to_the_endorsement_rating(
+    cog: CCRolesCog,
+) -> None:
+    data = [visiting('S3', ['Denmark', 'Norway']), {'id': 7654321}]
+
+    assert cog.get_visiting_areas(CID, data) == {'Denmark': 'S3', 'Norway': 'S3'}
+
+
+def test_get_visiting_areas_is_empty_without_a_visiting_endorsement(
+    cog: CCRolesCog,
+) -> None:
+    data = [{'id': CID, 'endorsements': {'visiting': None, 'examiner': None}}]
+
+    assert cog.get_visiting_areas(CID, data) == {}
+
+
+def test_update_fir_atc_roles_gives_visitors_the_roles_for_endorsed_firs(
+    cog: CCRolesCog, atc_config: None
+) -> None:
+    # Control Center never lists a visitor as ATC active, so they have no
+    # activity entry; the visiting endorsement must grant the roles instead.
+    user = FakeMember(guild_roles=ATC_GUILD_ROLES, roles=[])
+
+    asyncio.run(cog.update_fir_atc_roles(user, CID, [], {'Denmark': 'S3'}))
+
+    assert sorted(role.id for role in user.roles) == [11, 13]
+
+
+def test_update_fir_atc_roles_maps_visiting_c1_equivalents_to_c1(
+    cog: CCRolesCog, atc_config: None
+) -> None:
+    user = FakeMember(guild_roles=ATC_GUILD_ROLES, roles=[])
+
+    asyncio.run(cog.update_fir_atc_roles(user, CID, [], {'Denmark': 'C3'}))
+
+    assert sorted(role.id for role in user.roles) == [12, 13]
+
+
+def test_update_fir_atc_roles_removes_roles_when_the_endorsement_ends(
+    cog: CCRolesCog, atc_config: None
+) -> None:
+    user = FakeMember(guild_roles=ATC_GUILD_ROLES, roles=[DENMARK_S3, DENMARK_CTR])
+
+    asyncio.run(cog.update_fir_atc_roles(user, CID, [], {}))
+
+    assert user.roles == []
+
+
+def test_update_fir_atc_roles_prefers_activity_over_a_visiting_endorsement(
+    cog: CCRolesCog, atc_config: None
+) -> None:
+    user = FakeMember(guild_roles=ATC_GUILD_ROLES, roles=[])
+    data = [{'id': CID, 'atc_active_areas': {'denmark': True}, 'rating': 'C1'}]
+
+    asyncio.run(cog.update_fir_atc_roles(user, CID, data, {'Denmark': 'S3'}))
+
+    assert sorted(role.id for role in user.roles) == [12, 13]
