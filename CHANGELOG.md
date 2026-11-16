@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.8.0](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.7.1...v2.8.0) (2026-11-16)
+
+
+### Features
+
+* **roles:** Handling visiting controllers ([#242](https://github.com/Vatsim-Scandinavia/discord-bot/issues/242)) ([9b33e36](https://github.com/Vatsim-Scandinavia/discord-bot/commit/9b33e36c594aadc5e7f215f569a411f99975984a))
+
 ## [2.7.1](https://github.com/Vatsim-Scandinavia/discord-bot/compare/v2.7.0...v2.7.1) (2026-10-30)
 
 
