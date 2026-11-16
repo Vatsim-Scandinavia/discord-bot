@@ -364,7 +364,8 @@ class CCRolesCog(commands.Cog):
             data (list): The API response containing user endorsement data.
 
         Returns:
-            dict[str, str]: FIR name mapped to the rating the endorsement grants.
+            dict[str, str | None]: FIR name mapped to the rating the endorsement
+            grants, or None when Control Center sent no rating.
 
         """
         visiting_areas = {}
@@ -375,7 +376,12 @@ class CCRolesCog(commands.Cog):
 
             endorsements = member_data.get('endorsements') or {}
             for endorsement in endorsements.get('visiting') or []:
-                rating = endorsement.get('rating') or ''
+                # Control Center always sends a rating today. If that changes, say
+                # so in the logs and grant no rating role rather than guess one.
+                rating = endorsement.get('rating')
+                if rating is None:
+                    logger.warning('Visiting endorsement has no rating', cid=cid)
+
                 # Endorsement areas keep Control Center's own capitalisation,
                 # the same names the FIR role config is keyed by.
                 for area in endorsement.get('areas') or []:

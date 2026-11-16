@@ -343,3 +343,18 @@ def test_get_visiting_areas_keeps_the_area_capitalisation(cog: CCRolesCog) -> No
     data = [visiting('S2', ['Faroe Islands'])]
 
     assert cog.get_visiting_areas(CID, data) == {'Faroe Islands': 'S2'}
+
+
+def test_update_fir_atc_roles_skips_the_rating_role_without_a_visiting_rating(
+    cog: CCRolesCog, atc_config: None
+) -> None:
+    # Without a rating the visitor still gets the FIR controller role, but no
+    # rating role is guessed for them.
+    user = FakeMember(guild_roles=ATC_GUILD_ROLES, roles=[])
+    data = [{'id': CID, 'endorsements': {'visiting': [{'areas': ['Denmark']}]}}]
+    visiting_areas = cog.get_visiting_areas(CID, data)
+
+    asyncio.run(cog.update_fir_atc_roles(user, CID, [], visiting_areas))
+
+    assert visiting_areas == {'Denmark': None}
+    assert [role.id for role in user.roles] == [13]
