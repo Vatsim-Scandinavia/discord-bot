@@ -138,6 +138,10 @@ class StaffingCog(commands.Cog):
         user_id = ctx.author.id
 
         try:
+            # Acknowledge within Discord's three seconds; the API calls below
+            # can take longer. Later ctx.send calls become followups.
+            await ctx.defer(ephemeral=True)
+
             allowed_roles = {config.VATSIM_MEMBER_ROLE, config.VATSCA_MEMBER_ROLE}
             if not any(role.id in allowed_roles for role in ctx.author.roles):
                 await ctx.send(

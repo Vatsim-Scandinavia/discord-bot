@@ -131,6 +131,11 @@ class StaffingAsync:
                 logger.warning(
                     'User attempted to book without a CID', user=ctx.author.id
                 )
+                await ctx.send(
+                    f'<@{ctx.author.id}> Booking failed: you need the VATSIM member role to book positions.',
+                    delete_after=5,
+                    ephemeral=True,
+                )
                 return
 
             sections_map = {

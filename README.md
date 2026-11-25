@@ -10,7 +10,7 @@ Open sourced for contributions. Read the license before you copy any of the code
 
 **Membership and roles**
 
-- Grants and revokes the subdivision member role based on the VATSIM member list, using the CID in the member's nickname. The global VATSIM Community bot does the verification, this bot reads the result.
+- Grants and revokes the subdivision member role based on the VATSIM member list. The member's CID comes from their nickname or, if enabled, from the Discord account they linked on VATSIM (see [CID lookup](#cid-lookup)). The global VATSIM Community bot does the verification, this bot reads the result.
 - Syncs mentor, buddy, examiner, training staff, visiting controller, and training roles from the [Control Center][control-center], including FIR specific variants.
 - Assigns roles when members react to a message, so they can opt in to a FIR or a topic themselves.
 
@@ -80,14 +80,26 @@ All configuration comes from environment variables, loaded from `.env` at startu
 | `BOT_TOKEN` | Your Discord bot token. |
 | `GUILD_ID` | The ID of your Discord server. |
 | `DEBUG` | Set to `True` in development. It switches logging to console format and skips the recurring jobs, which you can then start manually with the slash commands. |
-| `VATSIM_API_TOKEN` | Token for the VATSIM API. |
+| `VATSIM_API_TOKEN` | Token for the VATSIM API. Also used for the Core API CID lookup. |
 | `VATSIM_CHECK_MEMBER_URL` | The VATSIM member list for your subdivision, for example `https://api.vatsim.net/api/subdivisions/SCA/members/?paginated`. |
 | `VATSIM_SUBDIVISION` | The short code of your subdivision, for example `SCA`. |
 | `DIVISION_URL` | The full URL to your homepage, for example `https://vatsim-scandinavia.org`. |
 | `CC_API_URL`, `CC_API_TOKEN` | The [Control Center][control-center] API connection. |
 | `EVENT_CALENDAR_URL`, `EVENT_API_TOKEN` | The [event system][events] API connection. |
 | `SENTRY_KEY` | Sentry DSN. Sentry is only enabled when `DEBUG` is off. |
-| `CACHE_DIR` | Where the bot stores its nickname cache. Defaults to `/var/cache/discord-bot`. |
+| `CACHE_DIR` | Where the bot stores its nickname cache and CID cache. Defaults to `/var/cache/discord-bot`. |
+
+### CID lookup
+
+By default the bot reads each member's VATSIM CID from their nickname. The VATSIM Core API can also tell which CID a Discord account is linked to, for members who linked Discord on the VATSIM community portal. To move over safely, run in `shadow` mode first, check the `cid_check` log entries, then switch to `api`.
+
+| Setting | Description |
+| --- | --- |
+| `CID_SOURCE` | `nickname` (default) reads the nickname only. `shadow` still uses the nickname, but also asks the Core API and logs every difference. `api` asks the Core API first and falls back to the nickname. |
+| `VATSIM_CORE_API_URL` | The Core API base URL. Defaults to `https://api.vatsim.net/v2`. |
+| `CID_CACHE_TTL` | Seconds to keep a CID found through the API. Defaults to 86400 (1 day). |
+| `CID_NEGATIVE_CACHE_TTL` | Seconds to remember that a member has not linked Discord. Defaults to 86400. |
+| `CID_LOOKUP_CONCURRENCY` | Most Core API requests in flight at once. Defaults to 5. |
 
 ### HTTP API
 

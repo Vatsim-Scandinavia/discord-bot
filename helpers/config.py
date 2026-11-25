@@ -110,7 +110,7 @@ class Config:
                 'Unknown CID_SOURCE, using nickname', cid_source=self.CID_SOURCE
             )
             self.CID_SOURCE = 'nickname'
-        self.CID_CACHE_TTL = int(os.getenv('CID_CACHE_TTL', 7 * 86400))
+        self.CID_CACHE_TTL = int(os.getenv('CID_CACHE_TTL', 86400))
         self.CID_NEGATIVE_CACHE_TTL = int(os.getenv('CID_NEGATIVE_CACHE_TTL', 86400))
         self.CID_LOOKUP_CONCURRENCY = max(
             1, int(os.getenv('CID_LOOKUP_CONCURRENCY', 5))

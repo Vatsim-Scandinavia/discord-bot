@@ -11,34 +11,47 @@ linked Discord on the community portal. ``config.CID_SOURCE`` picks the source:
 - ``api``: ask the API first and fall back to the nickname.
 
 Lookups are cached on disk, keyed by Discord ID, so the daily loops do not
-send one request per guild member every run.
+send one request per guild member every run. The HTTP side lives in
+``helpers.vatsim_api``.
 """
 
 import asyncio
 import json
 import time
 from collections.abc import Awaitable, Callable, Iterable
-from dataclasses import dataclass
-from enum import Enum, StrEnum
-from http import HTTPStatus
+from enum import StrEnum
 from pathlib import Path
-from typing import Any, TypedDict
+from typing import TypedDict
 
 import aiofiles
-import aiohttp
 import discord
 import structlog
 
 from helpers.config import config
 from helpers.handler import Handler
+from helpers.vatsim_api import (
+    NOT_LINKED,
+    UNKNOWN,
+    Lookup,
+    LookupStatus,
+    vatsim_api,
+)
+
+__all__ = [
+    'NOT_LINKED',
+    'UNKNOWN',
+    'CidLookupUnavailableError',
+    'CidResolver',
+    'CidSource',
+    'Lookup',
+    'LookupStatus',
+    'cid_resolver',
+]
 
 logger = structlog.stdlib.get_logger()
 
-MAX_RETRY_AFTER = 60.0
-"""Longest wait, in seconds, honoured from a 429 Retry-After header."""
-
-DEFAULT_RETRY_AFTER = 5.0
-"""Wait, in seconds, after a 429 without a usable Retry-After header."""
+UNAVAILABLE_BACKOFF = 300.0
+"""Seconds to wait before asking the API again about a member it failed on."""
 
 
 class CidSource(StrEnum):
@@ -47,38 +60,8 @@ class CidSource(StrEnum):
     API = 'api'
 
 
-class LookupStatus(Enum):
-    LINKED = 'linked'
-    """The member linked Discord on the VATSIM community portal."""
-
-    NOT_LINKED = 'not_linked'
-    """The API answered 404: no VATSIM account is linked to this Discord user."""
-
-    UNKNOWN = 'unknown'
-    """The API could not be asked (network error, 5xx, rate limited, bad body)."""
-
-
-@dataclass(frozen=True)
-class Lookup:
-    status: LookupStatus
-    cid: int | None = None
-
-
-UNKNOWN = Lookup(LookupStatus.UNKNOWN)
-NOT_LINKED = Lookup(LookupStatus.NOT_LINKED)
-
-
-@dataclass(frozen=True)
-class RawResponse:
-    """The parts of an HTTP response the resolver looks at."""
-
-    status: int
-    data: Any = None
-    retry_after: str | None = None
-
-
-Fetch = Callable[[int], Awaitable[RawResponse]]
-"""Fetch the Core API response for a Discord user ID. May raise on network errors."""
+Fetch = Callable[[int], Awaitable[Lookup]]
+"""Look up the CID linked to a Discord user ID. Must not raise."""
 
 
 class CacheEntry(TypedDict):
@@ -109,42 +92,52 @@ class CidResolver:
         fetch: Fetch | None = None,
         ttl: float | None = None,
         negative_ttl: float | None = None,
+        unavailable_backoff: float = UNAVAILABLE_BACKOFF,
         concurrency: int | None = None,
         clock: Callable[[], float] = time.time,
-        sleep: Callable[[float], Awaitable[Any]] = asyncio.sleep,
         file: str = 'cid_cache.json',
     ) -> None:
         """
         Every argument left as ``None`` is read from ``config``.
 
-        ``fetch``, ``clock`` and ``sleep`` exist so tests can replace the HTTP
-        layer and time.
+        ``fetch`` defaults to the shared ``vatsim_api`` client. It and
+        ``clock`` exist so tests can replace the API and time.
         """
         self._cache_file = (cache_dir or config.CACHE_DIR).joinpath(file)
         self.source = CidSource(source or config.CID_SOURCE)
-        self._fetch = fetch or self._http_fetch
+        self._fetch = fetch or vatsim_api.get_discord_link
         self._ttl = config.CID_CACHE_TTL if ttl is None else ttl
         self._negative_ttl = (
             config.CID_NEGATIVE_CACHE_TTL if negative_ttl is None else negative_ttl
         )
+        self._unavailable_backoff = unavailable_backoff
         self._semaphore = asyncio.Semaphore(
             concurrency or config.CID_LOOKUP_CONCURRENCY
         )
         self._clock = clock
-        self._sleep = sleep
-        self._session: aiohttp.ClientSession | None = None
         self._cache: dict[str, CacheEntry] | None = None
         self._dirty = False
         self._lock = asyncio.Lock()
+        self._inflight: dict[int, asyncio.Task[Lookup]] = {}
+        self._unavailable: dict[int, float] = {}
+        """Discord ID -> when the API last failed on it. In memory only."""
         self._log = logger.bind(cid_source=str(self.source))
 
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
 
-    async def resolve(self, member: discord.Member) -> int | None:
+    async def resolve(
+        self, member: discord.Member, *, refresh: bool = False
+    ) -> int | None:
         """
         Get the member's CID from the configured source.
+
+        Args:
+            member: The Discord guild member.
+            refresh: Ask the API even if the cached entry is still fresh, for
+                example when the member's nickname changed and they may have
+                relinked another VATSIM account.
 
         Returns:
             None if the member lacks the VATSIM member role, otherwise the CID.
@@ -163,9 +156,9 @@ class CidResolver:
             return Handler.get_cid(member)
 
         if self.source is CidSource.SHADOW:
-            return await self._resolve_shadow(member)
+            return await self._resolve_shadow(member, refresh=refresh)
 
-        return await self._resolve_api(member)
+        return await self._resolve_api(member, refresh=refresh)
 
     async def warm(self, members: Iterable[discord.Member]) -> None:
         """
@@ -182,7 +175,9 @@ class CidResolver:
         pending = [
             member.id
             for member in members
-            if Handler.has_vatsim_member_role(member) and self._fresh(member.id) is None
+            if Handler.has_vatsim_member_role(member)
+            and self._fresh(member.id) is None
+            and not self._backing_off(member.id)
         ]
         if not pending:
             return
@@ -202,21 +197,17 @@ class CidResolver:
             seconds=round(self._clock() - started, 1),
         )
 
-    async def lookup(self, member_id: int) -> Lookup:
+    async def lookup(self, member_id: int, *, refresh: bool = False) -> Lookup:
         """Look up a Discord user ID through the cache and then the API."""
-        return await self._lookup(member_id, persist=True)
-
-    async def close(self) -> None:
-        if self._session is not None and not self._session.closed:
-            await self._session.close()
-
-        self._session = None
+        return await self._lookup(member_id, persist=True, refresh=refresh)
 
     # ------------------------------------------------------------------
     # Modes
     # ------------------------------------------------------------------
 
-    async def _resolve_shadow(self, member: discord.Member) -> int | None:
+    async def _resolve_shadow(
+        self, member: discord.Member, *, refresh: bool
+    ) -> int | None:
         nick_cid: int | None = None
         nick_error: ValueError | None = None
         try:
@@ -224,7 +215,7 @@ class CidResolver:
         except ValueError as e:
             nick_error = e
 
-        result = await self.lookup(member.id)
+        result = await self.lookup(member.id, refresh=refresh)
         log = self._log.bind(
             discord_id=member.id,
             nick=member.nick,
@@ -248,8 +239,8 @@ class CidResolver:
 
         return nick_cid
 
-    async def _resolve_api(self, member: discord.Member) -> int:
-        result = await self.lookup(member.id)
+    async def _resolve_api(self, member: discord.Member, *, refresh: bool) -> int:
+        result = await self.lookup(member.id, refresh=refresh)
         if result.status is LookupStatus.LINKED and result.cid is not None:
             return result.cid
 
@@ -278,91 +269,70 @@ class CidResolver:
     # Lookup and cache
     # ------------------------------------------------------------------
 
-    async def _lookup(self, member_id: int, *, persist: bool) -> Lookup:
+    async def _lookup(
+        self, member_id: int, *, persist: bool, refresh: bool = False
+    ) -> Lookup:
         self._load()
-        cached = self._fresh(member_id)
-        if cached is not None:
-            return cached
-
-        async with self._semaphore:
-            # Another task may have filled the entry while this one waited.
+        if not refresh:
             cached = self._fresh(member_id)
             if cached is not None:
                 return cached
 
-            result = await self._request(member_id)
+        if self._backing_off(member_id):
+            return self._unavailable_answer(member_id)
 
-        if result.status is LookupStatus.UNKNOWN:
-            # Not cached, so the next run asks again. An expired linked entry is
-            # still a better answer than none while the API is down.
-            stale = self._entry(member_id)
-            if stale is not None and stale['cid'] is not None:
-                self._log.debug('Using expired CID cache entry', discord_id=member_id)
-                return Lookup(LookupStatus.LINKED, stale['cid'])
+        # Share one request between concurrent lookups of the same member, so
+        # an older response can never overwrite a newer one.
+        task = self._inflight.get(member_id)
+        if task is None:
+            task = asyncio.ensure_future(self._fetch_and_store(member_id, refresh))
+            self._inflight[member_id] = task
+            task.add_done_callback(
+                lambda done: self._inflight.pop(member_id, None)
+                if self._inflight.get(member_id) is done
+                else None
+            )
 
-            return result
-
-        self._store(member_id, result.cid)
+        result = await asyncio.shield(task)
         if persist:
             await self._save()
 
         return result
 
-    async def _request(self, member_id: int) -> Lookup:
-        """Ask the API, retrying once after a 429."""
-        log = self._log.bind(discord_id=member_id)
+    async def _fetch_and_store(self, member_id: int, refresh: bool) -> Lookup:
+        async with self._semaphore:
+            # Another lookup may have filled the entry while this one waited.
+            cached = None if refresh else self._fresh(member_id)
+            if cached is not None:
+                return cached
 
-        for attempt in range(2):
-            try:
-                response = await self._fetch(member_id)
-            except (aiohttp.ClientError, TimeoutError) as e:
-                log.warning('Core API request failed', error=str(e))
-                return UNKNOWN
+            result = await self._fetch(member_id)
 
-            if response.status != HTTPStatus.TOO_MANY_REQUESTS:
-                return self._interpret(response, member_id, log)
+        if result.status is LookupStatus.UNKNOWN:
+            # Not written to the cache, so a later run asks again; remembered in
+            # memory for a while so this run does not repeat the request.
+            self._unavailable[member_id] = self._clock()
+            return self._unavailable_answer(member_id)
 
-            delay = _retry_after_seconds(response.retry_after)
-            log.warning('Core API rate limited', retry_after=delay, attempt=attempt)
-            if attempt == 0:
-                await self._sleep(delay)
+        self._unavailable.pop(member_id, None)
+        self._store(member_id, result.cid)
+        return result
+
+    def _backing_off(self, member_id: int) -> bool:
+        failed_at = self._unavailable.get(member_id)
+        return (
+            failed_at is not None
+            and self._clock() - failed_at < self._unavailable_backoff
+        )
+
+    def _unavailable_answer(self, member_id: int) -> Lookup:
+        """An expired linked entry is still a better answer than none."""
+        stale = self._entry(member_id)
+        if stale is not None and stale['cid'] is not None:
+            self._log.debug('Using expired CID cache entry', discord_id=member_id)
+            return Lookup(LookupStatus.LINKED, stale['cid'])
 
         return UNKNOWN
-
-    @staticmethod
-    def _interpret(response: RawResponse, member_id: int, log: Any) -> Lookup:
-        if response.status == HTTPStatus.NOT_FOUND:
-            return NOT_LINKED
-
-        if response.status != HTTPStatus.OK:
-            log.warning('Core API returned an error', status=response.status)
-            return UNKNOWN
-
-        try:
-            return Lookup(LookupStatus.LINKED, _cid_from_body(response.data, member_id))
-        except (KeyError, TypeError, ValueError):
-            log.warning('Core API returned an unexpected body', body=response.data)
-            return UNKNOWN
-
-    async def _http_fetch(self, member_id: int) -> RawResponse:
-        if self._session is None or self._session.closed:
-            self._session = aiohttp.ClientSession(
-                headers={'X-API-Key': config.VATSIM_API_TOKEN},
-                timeout=aiohttp.ClientTimeout(total=10),
-            )
-
-        url = f'{config.VATSIM_CORE_API_URL.rstrip("/")}/members/discord/{member_id}'
-        async with self._session.get(url) as response:
-            data = (
-                await response.json(content_type=None)
-                if response.status == HTTPStatus.OK
-                else None
-            )
-            return RawResponse(
-                status=response.status,
-                data=data,
-                retry_after=response.headers.get('Retry-After'),
-            )
 
     def _entry(self, member_id: int) -> CacheEntry | None:
         self._load()
@@ -417,38 +387,5 @@ class CidResolver:
                 self._log.exception('Failed to save CID cache', path=self._cache_file)
 
 
-def _cid_from_body(data: Any, member_id: int) -> int:
-    """
-    Pick the CID out of a ``{"id": str, "user_id": str}`` response.
-
-    The docs do not say which field holds the CID. ``user_id`` is the likely
-    one (a foreign key to the VATSIM user, with ``id`` the Discord ID), but if
-    ``user_id`` turns out to echo the Discord ID we asked about, ``id`` must be
-    the CID instead.
-
-    Raises:
-        KeyError, TypeError, ValueError: The body is not in the expected shape.
-
-    """
-    user_id = int(data['user_id'])
-    if user_id != member_id:
-        return user_id
-
-    other = int(data['id'])
-    if other == member_id:
-        raise ValueError('Neither field holds a CID')
-
-    return other
-
-
-def _retry_after_seconds(value: str | None) -> float:
-    try:
-        delay = float(value) if value is not None else DEFAULT_RETRY_AFTER
-    except ValueError:
-        delay = DEFAULT_RETRY_AFTER
-
-    return min(max(delay, 0.0), MAX_RETRY_AFTER)
-
-
 cid_resolver = CidResolver()
-"""The resolver shared by every cog, so they share one cache and one session."""
+"""The resolver shared by every cog, so they share one cache."""

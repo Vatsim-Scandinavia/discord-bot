@@ -8,7 +8,7 @@ from discord.ext.commands import Bot
 
 from core.logging import configure_logging
 from helpers.config import config
-from helpers.vatsim_ids import cid_resolver
+from helpers.vatsim_api import vatsim_api
 
 # Configure logging before anything is logged so structlog and every stdlib
 # logger (discord.py, uvicorn, aiohttp, …) share one consistent output format.
@@ -120,7 +120,7 @@ async def on_connect():
 
 
 async def shutdown() -> None:
-    await cid_resolver.close()
+    await vatsim_api.close()
     await bot.close()
 
 

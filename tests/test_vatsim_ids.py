@@ -2,16 +2,17 @@ import asyncio
 import json
 from pathlib import Path
 
-import aiohttp
 import pytest
 from structlog.testing import capture_logs
 
 from helpers.config import config
 from helpers.vatsim_ids import (
+    NOT_LINKED,
+    UNKNOWN,
     CidLookupUnavailableError,
     CidResolver,
+    Lookup,
     LookupStatus,
-    RawResponse,
 )
 from tests.conftest import FakeMember, FakeRole
 
@@ -37,30 +38,27 @@ def make_member(
     return member
 
 
-def linked(cid: int = API_CID, member_id: int = DISCORD_ID) -> RawResponse:
-    return RawResponse(200, {'id': str(member_id), 'user_id': str(cid)})
+def linked(cid: int = API_CID) -> Lookup:
+    return Lookup(LookupStatus.LINKED, cid)
 
 
 class FakeApi:
-    """Stands in for the HTTP layer, replaying queued responses."""
+    """Stands in for ``VatsimApi.get_discord_link``, replaying queued results."""
 
-    def __init__(self, *responses: RawResponse | Exception) -> None:
+    def __init__(self, *responses: Lookup) -> None:
         self.responses = list(responses)
-        self.default: RawResponse | Exception = linked()
+        self.default: Lookup = linked()
         self.calls: list[int] = []
         self.in_flight = 0
         self.max_in_flight = 0
 
-    async def __call__(self, member_id: int) -> RawResponse:
+    async def __call__(self, member_id: int) -> Lookup:
         self.calls.append(member_id)
         self.in_flight += 1
         self.max_in_flight = max(self.max_in_flight, self.in_flight)
         try:
             await asyncio.sleep(0)
-            response = self.responses.pop(0) if self.responses else self.default
-            if isinstance(response, Exception):
-                raise response
-            return response
+            return self.responses.pop(0) if self.responses else self.default
         finally:
             self.in_flight -= 1
 
@@ -76,10 +74,7 @@ class Clock:
 def make_resolver(
     tmp_path: Path, source: str, api: FakeApi, clock: Clock | None = None, **kwargs
 ) -> CidResolver:
-    async def no_sleep(_: float) -> None:
-        return None
-
-    kwargs.setdefault('sleep', no_sleep)
+    kwargs.setdefault('unavailable_backoff', 0)
     return CidResolver(
         tmp_path,
         source=source,
@@ -142,12 +137,12 @@ def test_shadow_mode_returns_nickname_cid_and_logs_mismatch(tmp_path: Path) -> N
     ('response', 'expected'),
     [
         (linked(NICK_CID), 'cid_match'),
-        (RawResponse(404), 'cid_api_missing'),
-        (RawResponse(503), 'cid_api_error'),
+        (NOT_LINKED, 'cid_api_missing'),
+        (UNKNOWN, 'cid_api_error'),
     ],
 )
 def test_shadow_mode_logs_api_result(
-    tmp_path: Path, response: RawResponse, expected: str
+    tmp_path: Path, response: Lookup, expected: str
 ) -> None:
     api = FakeApi(response)
     with capture_logs() as logs:
@@ -186,7 +181,7 @@ def test_api_mode_works_without_cid_in_nickname(tmp_path: Path) -> None:
 
 
 def test_api_mode_falls_back_to_nickname_on_404_and_caches_it(tmp_path: Path) -> None:
-    api = FakeApi(RawResponse(404))
+    api = FakeApi(NOT_LINKED)
     resolver = make_resolver(tmp_path, 'api', api)
 
     assert asyncio.run(resolver.resolve(make_member())) == NICK_CID
@@ -197,37 +192,26 @@ def test_api_mode_falls_back_to_nickname_on_404_and_caches_it(tmp_path: Path) ->
 def test_api_mode_raises_value_error_when_unlinked_and_no_nick_cid(
     tmp_path: Path,
 ) -> None:
-    api = FakeApi(RawResponse(404))
+    api = FakeApi(NOT_LINKED)
     resolver = make_resolver(tmp_path, 'api', api)
 
     with pytest.raises(ValueError, match=r'^$'):
         asyncio.run(resolver.resolve(make_member(nick='John Doe')))
 
 
-@pytest.mark.parametrize(
-    'failure',
-    [
-        RawResponse(500),
-        RawResponse(502),
-        aiohttp.ClientConnectionError('connection refused'),
-        TimeoutError(),
-        RawResponse(200, {'unexpected': 'shape'}),
-    ],
-)
-def test_api_failure_falls_back_to_nickname_without_caching(
-    tmp_path: Path, failure: RawResponse | Exception
-) -> None:
-    api = FakeApi(failure, failure)
+def test_api_failure_falls_back_to_nickname_without_caching(tmp_path: Path) -> None:
+    api = FakeApi(UNKNOWN, UNKNOWN)
     resolver = make_resolver(tmp_path, 'api', api)
 
     assert asyncio.run(resolver.resolve(make_member())) == NICK_CID
     assert asyncio.run(resolver.resolve(make_member())) == NICK_CID
     assert api.calls == [DISCORD_ID, DISCORD_ID]
+    assert not (tmp_path / 'cid_cache.json').exists()
 
 
 def test_api_failure_without_nick_cid_is_not_a_value_error(tmp_path: Path) -> None:
     # A ValueError makes callers strip the member's roles; an outage must not.
-    api = FakeApi(RawResponse(503))
+    api = FakeApi(UNKNOWN)
     resolver = make_resolver(tmp_path, 'api', api)
 
     with pytest.raises(CidLookupUnavailableError):
@@ -238,7 +222,7 @@ def test_api_failure_without_nick_cid_is_not_a_value_error(tmp_path: Path) -> No
 
 def test_api_failure_uses_expired_linked_entry(tmp_path: Path) -> None:
     clock = Clock()
-    api = FakeApi(linked(API_CID), RawResponse(503))
+    api = FakeApi(linked(API_CID), UNKNOWN)
     resolver = make_resolver(tmp_path, 'api', api, clock)
 
     assert asyncio.run(resolver.resolve(make_member(nick=None))) == API_CID
@@ -267,7 +251,7 @@ def test_linked_entry_expires_after_ttl(tmp_path: Path) -> None:
 
 def test_negative_entry_uses_shorter_ttl(tmp_path: Path) -> None:
     clock = Clock()
-    api = FakeApi(RawResponse(404), linked(API_CID))
+    api = FakeApi(NOT_LINKED, linked(API_CID))
     resolver = make_resolver(tmp_path, 'api', api, clock)
 
     assert asyncio.run(resolver.lookup(DISCORD_ID)).status is LookupStatus.NOT_LINKED
@@ -300,36 +284,59 @@ def test_corrupt_cache_file_is_ignored(tmp_path: Path) -> None:
     assert asyncio.run(resolver.resolve(make_member())) == API_CID
 
 
-# --- HTTP handling ---------------------------------------------------------
+# --- Concurrency and backoff ---------------------------------------------
 
 
-def test_rate_limit_waits_for_retry_after_and_retries_once(tmp_path: Path) -> None:
-    slept: list[float] = []
+def test_concurrent_lookups_of_one_member_share_a_request(tmp_path: Path) -> None:
+    api = FakeApi(linked(API_CID), linked(2222222))
+    resolver = make_resolver(tmp_path, 'api', api)
 
-    async def sleep(seconds: float) -> None:
-        slept.append(seconds)
+    async def both() -> list[Lookup]:
+        return await asyncio.gather(
+            resolver.lookup(DISCORD_ID), resolver.lookup(DISCORD_ID)
+        )
 
-    api = FakeApi(RawResponse(429, retry_after='3'), linked(API_CID))
-    resolver = make_resolver(tmp_path, 'api', api, sleep=sleep)
+    results = asyncio.run(both())
+
+    assert [r.cid for r in results] == [API_CID, API_CID]
+    assert api.calls == [DISCORD_ID]
+
+
+def test_unavailable_member_is_not_asked_again_within_backoff(tmp_path: Path) -> None:
+    clock = Clock()
+    api = FakeApi(UNKNOWN, linked(API_CID))
+    resolver = make_resolver(tmp_path, 'api', api, clock, unavailable_backoff=60)
+    member = make_member()
+
+    asyncio.run(resolver.warm([member]))
+    assert asyncio.run(resolver.resolve(member)) == NICK_CID
+    asyncio.run(resolver.warm([member]))
+    assert api.calls == [DISCORD_ID]
+
+    clock.now += 60
+    assert asyncio.run(resolver.resolve(member)) == API_CID
+    assert api.calls == [DISCORD_ID, DISCORD_ID]
+
+
+def test_refresh_skips_fresh_cache_entry(tmp_path: Path) -> None:
+    api = FakeApi(linked(API_CID), linked(2222222))
+    resolver = make_resolver(tmp_path, 'api', api)
 
     assert asyncio.run(resolver.resolve(make_member())) == API_CID
-    assert slept == [3.0]
+    assert asyncio.run(resolver.resolve(make_member())) == API_CID
+    assert asyncio.run(resolver.resolve(make_member(), refresh=True)) == 2222222
+    assert asyncio.run(resolver.resolve(make_member())) == 2222222
     assert len(api.calls) == 2
 
 
-def test_rate_limit_twice_gives_up(tmp_path: Path) -> None:
-    api = FakeApi(RawResponse(429, retry_after='999'), RawResponse(429))
+def test_refresh_during_outage_keeps_cached_cid(tmp_path: Path) -> None:
+    api = FakeApi(linked(API_CID), UNKNOWN)
     resolver = make_resolver(tmp_path, 'api', api)
 
-    assert asyncio.run(resolver.lookup(DISCORD_ID)).status is LookupStatus.UNKNOWN
-    assert len(api.calls) == 2
-
-
-def test_cid_is_read_from_id_when_user_id_echoes_discord_id(tmp_path: Path) -> None:
-    api = FakeApi(RawResponse(200, {'id': str(API_CID), 'user_id': str(DISCORD_ID)}))
-    resolver = make_resolver(tmp_path, 'api', api)
-
-    assert asyncio.run(resolver.lookup(DISCORD_ID)).cid == API_CID
+    assert asyncio.run(resolver.resolve(make_member(nick=None))) == API_CID
+    assert asyncio.run(resolver.resolve(make_member(nick=None), refresh=True)) == (
+        API_CID
+    )
 
 
 # --- Warm ------------------------------------------------------------------

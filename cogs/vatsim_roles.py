@@ -86,8 +86,10 @@ class VatsimRolesCog(commands.Cog):
             return
 
         try:
-            # Extract CID from nickname, clearing managed roles if the member is no longer eligible.
-            cid = await cid_resolver.resolve(after)
+            # Resolve the CID, clearing managed roles if the member is no longer
+            # eligible. The nickname changed, which is what the VATSIM Community
+            # bot does when someone relinks, so skip the cached API answer.
+            cid = await cid_resolver.resolve(after, refresh=True)
             if cid is None:
                 await cleanup_membership_roles(
                     after,
