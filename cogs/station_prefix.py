@@ -17,6 +17,7 @@ from discord.ext import commands, tasks
 from helpers.config import config
 from helpers.handler import Handler
 from helpers.member_cache import MemberCache
+from helpers.vatsim_ids import cid_resolver
 
 logger = structlog.stdlib.get_logger()
 
@@ -269,7 +270,7 @@ class StationPrefixCog(commands.Cog):
                 cid = modified_member['cid']
                 name = modified_member['name']
             else:
-                cid = self._handler.get_cid(member)
+                cid = await cid_resolver.resolve(member)
                 name = self._handler.get_name(member)
 
             if cid is None:

@@ -6,7 +6,7 @@ from datetime import datetime
 import structlog
 
 from helpers.api import APIHelper
-from helpers.handler import Handler
+from helpers.vatsim_ids import cid_resolver
 
 logger = structlog.stdlib.get_logger()
 
@@ -125,11 +125,16 @@ class StaffingAsync:
 
     async def _book(self, ctx, staffing, position, section):
         try:
-            cid = Handler.get_cid(ctx.author)
+            cid = await cid_resolver.resolve(ctx.author)
 
             if cid is None:
                 logger.warning(
                     'User attempted to book without a CID', user=ctx.author.id
+                )
+                await ctx.send(
+                    f'<@{ctx.author.id}> Booking failed: you need the VATSIM member role to book positions.',
+                    delete_after=5,
+                    ephemeral=True,
                 )
                 return
 

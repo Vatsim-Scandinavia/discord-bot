@@ -10,6 +10,7 @@ from discord.ext import commands
 from core.roles import cleanup_membership_roles
 from helpers.config import config
 from helpers.handler import Handler
+from helpers.vatsim_ids import CidLookupUnavailableError, cid_resolver
 
 logger = structlog.stdlib.get_logger()
 
@@ -85,8 +86,10 @@ class VatsimRolesCog(commands.Cog):
             return
 
         try:
-            # Extract CID from nickname, clearing managed roles if the member is no longer eligible.
-            cid = self.handler.get_cid(after)
+            # Resolve the CID, clearing managed roles if the member is no longer
+            # eligible. The nickname changed, which is what the VATSIM Community
+            # bot does when someone relinks, so skip the cached API answer.
+            cid = await cid_resolver.resolve(after, refresh=True)
             if cid is None:
                 await cleanup_membership_roles(
                     after,
@@ -133,6 +136,13 @@ class VatsimRolesCog(commands.Cog):
 
             if tasks:
                 await asyncio.gather(*tasks)
+
+        except CidLookupUnavailableError:
+            logger.warning(
+                'Skipped member update, CID lookup unavailable',
+                name=after.name,
+                nick=after.nick,
+            )
 
         except ValueError as e:
             logger.warning(
