@@ -11,6 +11,7 @@ from core.roles import cleanup_membership_roles, update_role
 from helpers.config import config
 from helpers.handler import Handler
 from helpers.roles import Roles
+from helpers.vatsim_ids import CidLookupUnavailableError, cid_resolver
 
 logger = structlog.stdlib.get_logger()
 ALREADY_PRINTED_DEBUG_MESSAGE = set()
@@ -96,6 +97,8 @@ class CCRolesCog(commands.Cog):
         )
         visitor_role = discord.utils.get(guild.roles, id=config.VISITOR_ROLE)
 
+        await cid_resolver.warm(guild.members)
+
         for user in guild.members:
             await self.process_member_roles(
                 user,
@@ -162,7 +165,7 @@ class CCRolesCog(commands.Cog):
         """
         try:
             # Check if the user has the VATSIM member role, if not clear all managed roles and skip.
-            cid = self.handler.get_cid(user)
+            cid = await cid_resolver.resolve(user)
             if cid is None:
                 await cleanup_membership_roles(
                     user, config.ROLE_REASONS['no_cid'], include_vatsca=True
@@ -228,6 +231,15 @@ class CCRolesCog(commands.Cog):
             ]
 
             await asyncio.gather(*tasks)
+
+        except CidLookupUnavailableError:
+            # The Core API is down and the nickname has no CID. Not knowing the
+            # CID is not the same as having none, so leave the roles alone.
+            logger.warning(
+                'Skipped processing member roles, CID lookup unavailable',
+                name=user.name,
+                nick=user.nick,
+            )
 
         except ValueError as e:
             logger.warning(

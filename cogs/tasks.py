@@ -9,6 +9,7 @@ from core.roles import update_role
 from helpers.config import config
 from helpers.handler import Handler
 from helpers.ux import NicknameAssignment
+from helpers.vatsim_ids import CidLookupUnavailableError, cid_resolver
 
 logger = structlog.stdlib.get_logger()
 ALREADY_PRINTED_DEBUG_MESSAGE = set()
@@ -68,6 +69,8 @@ class TasksCog(commands.Cog):
         member_map = {int(member['id']): member for member in division_members}
         logger.info('Fetched division members in check_members', len=len(member_map))
 
+        await cid_resolver.warm(guild.members)
+
         for user in guild.members:
             await self.proccess_member(user, vatsca_role, vatsim_role, member_map)
 
@@ -92,7 +95,7 @@ class TasksCog(commands.Cog):
 
         """
         try:
-            cid = self.handler.get_cid(user)
+            cid = await cid_resolver.resolve(user)
             if cid is None:
                 await user.remove_roles(
                     vatsca_role, reason=config.ROLE_REASONS['no_cid']
@@ -116,6 +119,12 @@ class TasksCog(commands.Cog):
                 await user.remove_roles(
                     vatsca_role, reason=config.ROLE_REASONS['no_auth']
                 )
+
+        except CidLookupUnavailableError:
+            # Unknown is not the same as no CID; leave the role alone.
+            logger.warning(
+                'Skipped processing member, CID lookup unavailable', member=user
+            )
 
         # TODO(thor): use a specific exception, or return null rather than throw a generic ValueError
         except ValueError:

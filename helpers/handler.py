@@ -106,6 +106,19 @@ class Handler:
             return data, next_url
 
     @staticmethod
+    def has_vatsim_member_role(member: discord.Member) -> bool:
+        """
+        Check the gate every CID lookup goes through.
+
+        Members without a roles collection (e.g. test stand-ins) pass, so only
+        a member known to lack the VATSIM member role is turned away.
+        """
+        roles = getattr(member, 'roles', None)
+        return roles is None or any(
+            getattr(role, 'id', role) == config.VATSIM_MEMBER_ROLE for role in roles
+        )
+
+    @staticmethod
     def get_cid(member: discord.Member) -> int | None:
         """
         Get CID based on VATSIM Discord member.
@@ -121,10 +134,7 @@ class Handler:
             ValueError: If the member has the VATSIM member role but a valid CID cannot be extracted from their nickname.
 
         """
-        roles = getattr(member, 'roles', None)
-        if roles is not None and not any(
-            getattr(role, 'id', role) == config.VATSIM_MEMBER_ROLE for role in roles
-        ):
+        if not Handler.has_vatsim_member_role(member):
             return None
 
         if member.nick is None:

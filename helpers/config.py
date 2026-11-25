@@ -97,6 +97,25 @@ class Config:
         self.VATSIM_SUBDIVISION = str(os.getenv('VATSIM_SUBDIVISION', ''))
         self.DIVISION_URL = str(os.getenv('DIVISION_URL', ''))
 
+        # VATSIM Core API lookup of CIDs from Discord IDs (issue #223).
+        # CID_SOURCE: 'nickname' (parse the nickname only), 'shadow' (use the
+        # nickname but compare it with the API and log differences) or 'api'
+        # (API first, nickname as fallback).
+        self.VATSIM_CORE_API_URL = os.getenv(
+            'VATSIM_CORE_API_URL', 'https://api.vatsim.net/v2'
+        )
+        self.CID_SOURCE = os.getenv('CID_SOURCE', 'nickname').strip().lower()
+        if self.CID_SOURCE not in ('nickname', 'shadow', 'api'):
+            logger.warning(
+                'Unknown CID_SOURCE, using nickname', cid_source=self.CID_SOURCE
+            )
+            self.CID_SOURCE = 'nickname'
+        self.CID_CACHE_TTL = int(os.getenv('CID_CACHE_TTL', 7 * 86400))
+        self.CID_NEGATIVE_CACHE_TTL = int(os.getenv('CID_NEGATIVE_CACHE_TTL', 86400))
+        self.CID_LOOKUP_CONCURRENCY = max(
+            1, int(os.getenv('CID_LOOKUP_CONCURRENCY', 5))
+        )
+
         # CC API
         self.CC_API_URL = str(os.getenv('CC_API_URL', ''))
         self.CC_API_TOKEN = str(os.getenv('CC_API_TOKEN', ''))

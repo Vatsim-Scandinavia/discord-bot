@@ -8,6 +8,7 @@ from discord.ext.commands import Bot
 
 from core.logging import configure_logging
 from helpers.config import config
+from helpers.vatsim_ids import cid_resolver
 
 # Configure logging before anything is logged so structlog and every stdlib
 # logger (discord.py, uvicorn, aiohttp, …) share one consistent output format.
@@ -118,10 +119,15 @@ async def on_connect():
     await config.load_cogs(bot)
 
 
+async def shutdown() -> None:
+    await cid_resolver.close()
+    await bot.close()
+
+
 # Signal handling for graceful shutdown
 def handle_exit_signal(signal_number, _):
     logger.info('Received shutdown signal; closing bot', signal=signal_number)
-    asyncio.create_task(bot.close())
+    asyncio.create_task(shutdown())
 
 
 # Register signals
